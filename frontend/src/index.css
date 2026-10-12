@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Clean Web UI Standard: Chuẩn hóa tỉ lệ bo góc 4px - 6px - 8px - 10px - 12px, dẹp bỏ bo tròn bong bóng 24px/32px */
+@theme {
+  --radius-3xl: 12px;
+  --radius-2xl: 10px;
+  --radius-xl: 8px;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+}
+
 @layer base {
   :root {
     --primary-blue: #0284c7;
@@ -8,6 +18,10 @@
     --brand-blue: #2563eb;
     --brand-blue-hover: #1d4ed8;
     --brand-emerald: #059669;
+
+    --radius-control: 6px;
+    --radius-card: 10px;
+    --radius-modal: 12px;
   }
   
   body {
@@ -20,7 +34,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
   }
 }
 

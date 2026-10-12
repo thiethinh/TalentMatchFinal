@@ -2,24 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 import type { Project } from '../types';
-import {
-  Search,
-  Send,
-  ShieldCheck,
-  ShieldAlert,
-  ArrowUpDown,
-  Tag,
-  DollarSign,
-  Clock,
-  CheckCircle2,
-  X,
-  SlidersHorizontal,
-  ChevronRight,
-  ChevronDown,
-  Users,
-  Heart,
-  Building2
-} from 'lucide-react';
 
 interface CategoryConfig {
   id: string;
@@ -282,12 +264,12 @@ export const Projects: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. Header Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-xl p-6 sm:p-10 text-white shadow-md relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 px-3.5 py-1 rounded-full text-xs font-bold text-blue-300">
-            <ShieldCheck className="w-4 h-4 text-blue-400" />
+          <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 px-3.5 py-1 rounded-md text-xs font-bold text-blue-300">
+            <i className="fa-solid fa-shield-halved text-blue-400 text-xs" />
             <span>Thị Trường Dự Án Dịch Vụ Số Chuẩn Escrow VNPAY</span>
           </div>
 
@@ -306,11 +288,11 @@ export const Projects: React.FC = () => {
         
         {/* Left Sidebar: Detailed Filters */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-6 sticky top-24">
+          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs space-y-6 sticky top-24">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2 font-extrabold text-slate-900 text-sm">
-                <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+                <i className="fa-solid fa-sliders text-blue-600 text-xs" />
                 <span>Bộ Lọc Nâng Cao</span>
               </div>
               {activeFiltersCount > 0 && (
@@ -318,7 +300,7 @@ export const Projects: React.FC = () => {
                   onClick={handleResetFilters}
                   className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <i className="fa-solid fa-xmark text-xs" />
                   <span>Xóa bộ lọc ({activeFiltersCount})</span>
                 </button>
               )}
@@ -333,9 +315,9 @@ export const Projects: React.FC = () => {
                   placeholder="React, Flutter, Figma..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:bg-white focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:bg-white focus:outline-none"
                 />
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <i className="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-3" />
               </div>
             </div>
 
@@ -349,7 +331,7 @@ export const Projects: React.FC = () => {
                     setSelectedMainCategory(e.target.value);
                     setSelectedSubcategory('ALL');
                   }}
-                  className="w-full appearance-none pl-3.5 pr-9 py-2.5 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
+                  className="w-full appearance-none pl-3.5 pr-9 py-2.5 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-md font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
                 >
                   <option value="ALL">Tất cả lĩnh vực ngành</option>
                   {CATEGORY_DATA.map((cat) => (
@@ -358,30 +340,30 @@ export const Projects: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Detailed Subcategory Small Group Selector */}
             {selectedMainCategory !== 'ALL' && (
               <div className="space-y-1.5 animate-in fade-in duration-200">
-                <label className="block text-xs font-extrabold text-blue-700 flex items-center gap-1">
-                  <ChevronRight className="w-3.5 h-3.5 text-blue-600" />
+                <label className="block text-xs font-extrabold text-blue-700 flex items-center gap-1.5">
+                  <i className="fa-solid fa-chevron-right text-blue-600 text-xs" />
                   <span>Nhóm chuyên môn chi tiết:</span>
                 </label>
-                <div className="space-y-1 bg-blue-50/50 p-2 rounded-2xl border border-blue-100 max-h-48 overflow-y-auto">
+                <div className="space-y-1 bg-blue-50/50 p-2 rounded-md border border-blue-100 max-h-48 overflow-y-auto">
                   {CATEGORY_DATA.find((c) => c.id === selectedMainCategory)?.subcategories.map((sub) => (
                     <button
                       key={sub.id}
                       onClick={() => setSelectedSubcategory(sub.id)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer ${
                         selectedSubcategory === sub.id
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'hover:bg-blue-100/70 text-slate-700'
                       }`}
                     >
                       <span className="truncate">{sub.name}</span>
-                      {selectedSubcategory === sub.id && <CheckCircle2 className="w-3 h-3 text-white shrink-0" />}
+                      {selectedSubcategory === sub.id && <i className="fa-solid fa-circle-check text-white text-xs shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -390,8 +372,8 @@ export const Projects: React.FC = () => {
 
             {/* Price Range Filter */}
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                <i className="fa-solid fa-dong-sign text-emerald-600 text-xs" />
                 <span>Mức ngân sách dự án (VND):</span>
               </label>
 
@@ -407,7 +389,7 @@ export const Projects: React.FC = () => {
                       setMinBudgetInput(e.target.value);
                       setSelectedBudgetPreset(0);
                     }}
-                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-900"
+                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-900"
                   />
                 </div>
                 <div>
@@ -420,7 +402,7 @@ export const Projects: React.FC = () => {
                       setMaxBudgetInput(e.target.value);
                       setSelectedBudgetPreset(0);
                     }}
-                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-900"
+                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-900"
                   />
                 </div>
               </div>
@@ -437,7 +419,7 @@ export const Projects: React.FC = () => {
                         setMinBudgetInput('');
                         setMaxBudgetInput('');
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
                         selectedBudgetPreset === idx && !minBudgetInput && !maxBudgetInput
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -456,7 +438,7 @@ export const Projects: React.FC = () => {
               <div className="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
                 <button
                   onClick={() => setSelectedBudgetType('ALL')}
-                  className={`py-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`py-1.5 rounded-md border text-center transition-all cursor-pointer ${
                     selectedBudgetType === 'ALL' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -464,7 +446,7 @@ export const Projects: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setSelectedBudgetType('FIXED')}
-                  className={`py-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`py-1.5 rounded-md border text-center transition-all cursor-pointer ${
                     selectedBudgetType === 'FIXED' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -472,7 +454,7 @@ export const Projects: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setSelectedBudgetType('MILESTONE')}
-                  className={`py-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`py-1.5 rounded-md border text-center transition-all cursor-pointer ${
                     selectedBudgetType === 'MILESTONE' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -483,8 +465,8 @@ export const Projects: React.FC = () => {
 
             {/* Popular Skills Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1">
-                <Tag className="w-3.5 h-3.5 text-blue-600" />
+              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                <i className="fa-solid fa-tag text-blue-600 text-xs" />
                 <span>Kỹ năng yêu cầu:</span>
               </label>
               <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
@@ -494,7 +476,7 @@ export const Projects: React.FC = () => {
                     <button
                       key={sk}
                       onClick={() => handleToggleSkill(sk)}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -514,7 +496,7 @@ export const Projects: React.FC = () => {
         <div className="lg:col-span-3 space-y-5">
           
           {/* Toolbar: Counter, Sort & Status */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-slate-900 text-sm">
                 Tìm thấy <span className="text-blue-600 font-black">{filteredProjects.length}</span> dự án phù hợp
@@ -528,20 +510,21 @@ export const Projects: React.FC = () => {
 
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-1.5 text-xs text-slate-600">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                <i className="fa-solid fa-arrow-down-wide-short text-slate-400 text-xs" />
                 <span className="font-bold hidden sm:inline">Sắp xếp:</span>
                 <div className="relative">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
+                    className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-300 text-slate-800 font-bold text-xs rounded-md focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
                   >
+
                     <option value="newest">Mới nhất đăng lên</option>
                     <option value="budget_desc">Ngân sách: Cao đến Thấp</option>
                     <option value="budget_asc">Ngân sách: Thấp đến Cao</option>
                     <option value="proposals_asc">Số báo giá: Ít cạnh tranh</option>
                   </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -555,10 +538,10 @@ export const Projects: React.FC = () => {
                 <button
                   key={sk}
                   onClick={() => handleToggleSkill(sk)}
-                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer"
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{sk}</span>
-                  <X className="w-3 h-3" />
+                  <i className="fa-solid fa-xmark text-xs" />
                 </button>
               ))}
             </div>
@@ -566,19 +549,19 @@ export const Projects: React.FC = () => {
 
           {/* Projects List */}
           {filteredProjects.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-xs">
-              <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-3xl flex items-center justify-center mx-auto">
-                <Search className="w-8 h-8" />
+            <div className="bg-white rounded-lg border border-slate-200 p-12 text-center space-y-4 shadow-xs">
+              <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-md flex items-center justify-center mx-auto">
+                <i className="fa-solid fa-magnifying-glass text-xl" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Không tìm thấy dự án nào phù hợp</h3>
+                <h3 className="text-base font-bold text-slate-900">Không tìm thấy dự án nào phù hợp</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                   Hãy thử điều chỉnh lại khoảng giá ngân sách, bỏ bớt kỹ năng lọc hoặc tìm kiếm với từ khóa khác.
                 </p>
               </div>
               <button
                 onClick={handleResetFilters}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-md transition-all shadow-xs cursor-pointer"
               >
                 Xóa tất cả bộ lọc
               </button>
@@ -588,19 +571,19 @@ export const Projects: React.FC = () => {
               {filteredProjects.map((proj) => (
                 <div
                   key={proj.id}
-                  className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-md transition-all space-y-4 group"
+                  className="bg-white p-6 rounded-lg border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-md transition-all space-y-4 group"
                 >
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="space-y-2 flex-1">
                       
                       {/* Meta Tags */}
                       <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                        <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-md">
+                        <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-sm">
                           {proj.category}
                         </span>
                         <span className="text-slate-300 text-xs">•</span>
-                        <span className="text-slate-500 text-xs flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-500 text-xs flex items-center gap-1.5">
+                          <i className="fa-regular fa-clock text-slate-400 text-xs" />
                           <span>Hạn nộp: {proj.deadline}</span>
                         </span>
                         <span className="text-slate-300 text-xs">•</span>
@@ -608,7 +591,7 @@ export const Projects: React.FC = () => {
                       </div>
 
                       {/* Title */}
-                      <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors leading-snug">
+                      <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors leading-snug">
                         {proj.title}
                       </h3>
 
@@ -627,8 +610,8 @@ export const Projects: React.FC = () => {
                         </div>
 
                         {proj.employerVerified && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-bold">
-                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold border border-emerald-200/60">
+                            <i className="fa-solid fa-circle-check text-emerald-600 text-[9px]" />
                             <span>Doanh nghiệp xác thực</span>
                           </span>
                         )}
@@ -646,7 +629,7 @@ export const Projects: React.FC = () => {
                           }`}
                           title={isEmployerSaved(proj.employerId) ? 'Bỏ lưu nhà tuyển dụng' : 'Lưu nhà tuyển dụng này'}
                         >
-                          <Building2 className="w-3 h-3" />
+                          <i className="fa-solid fa-building text-[10px]" />
                           <span>{isEmployerSaved(proj.employerId) ? '✓ Đã lưu Cty' : '+ Lưu Cty'}</span>
                         </button>
                       </div>
@@ -654,7 +637,7 @@ export const Projects: React.FC = () => {
 
                     {/* Budget Badge & Project Bookmark Button */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
-                      <div className="text-right shrink-0 bg-slate-50 p-4 rounded-2xl border border-slate-200 min-w-[180px]">
+                      <div className="text-right shrink-0 bg-slate-50 p-4 rounded-md border border-slate-200 min-w-[180px]">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Ngân sách:</span>
                           <button
@@ -663,21 +646,21 @@ export const Projects: React.FC = () => {
                               e.stopPropagation();
                               toggleSaveProject(proj.id);
                             }}
-                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                            className={`p-1.5 rounded-md border transition-all cursor-pointer ${
                               isProjectSaved(proj.id)
                                 ? 'bg-rose-50 border-rose-300 text-rose-600'
                                 : 'bg-white border-slate-200 text-slate-400 hover:text-rose-500'
                             }`}
                             title={isProjectSaved(proj.id) ? 'Bỏ lưu dự án' : 'Lưu dự án để theo dõi'}
                           >
-                            <Heart className={`w-3.5 h-3.5 ${isProjectSaved(proj.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                            <i className={`text-xs ${isProjectSaved(proj.id) ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart'}`} />
                           </button>
                         </div>
                         <div className="text-xl sm:text-2xl font-black text-blue-700 mt-0.5">
                           {proj.budget.toLocaleString('vi-VN')} đ
                         </div>
-                        <div className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center justify-end gap-1">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center justify-end gap-1.5">
+                          <i className="fa-solid fa-shield-halved text-emerald-600 text-xs" />
                           <span>Hình thức: {proj.budgetType === 'FIXED' ? 'Trọn gói' : 'Cột mốc Escrow'}</span>
                         </div>
                       </div>
@@ -695,7 +678,7 @@ export const Projects: React.FC = () => {
                     {proj.requiredSkills.map((sk) => (
                       <span
                         key={sk}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold px-2 py-0.5 rounded-sm transition-colors"
                       >
                         {sk}
                       </span>
@@ -705,26 +688,26 @@ export const Projects: React.FC = () => {
                   {/* Action Bar */}
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
                     <div className="text-slate-500 flex items-center gap-1.5">
-                      <Users className="w-4 h-4 text-slate-400" />
+                      <i className="fa-solid fa-users text-slate-400 text-xs" />
                       <span>
-                        Đã có <strong className="text-slate-900 font-extrabold">{proj.proposalsCount} Báo giá</strong> nộp đến
+                        Đã có <strong className="text-slate-900 font-bold">{proj.proposalsCount} Báo giá</strong> nộp đến
                       </span>
                     </div>
 
                     {currentUser.role === 'freelancer' ? (
                       <button
                         onClick={() => handleOpenProposal(proj)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Nộp Báo Giá Ngay</span>
+                        <i className="fa-solid fa-paper-plane text-xs" />
+                        <span>Nộp Báo Giá</span>
                       </button>
                     ) : currentUser.role === 'guest' ? (
                       <button
                         onClick={() => handleOpenProposal(proj)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer"
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Send className="w-3.5 h-3.5" />
+                        <i className="fa-solid fa-paper-plane text-xs" />
                         <span>Đăng Nhập Để Nộp Báo Giá</span>
                       </button>
                     ) : (
@@ -747,56 +730,56 @@ export const Projects: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
           <form
             onSubmit={handleSubmitProposalForm}
-            className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center space-x-2 text-blue-700 font-extrabold text-base">
-                <Send className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center space-x-2 text-blue-700 font-bold text-base">
+                <i className="fa-solid fa-paper-plane text-blue-600 text-sm" />
                 <span>Nộp Báo Giá (Proposal) Dự Án</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowProposalModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-md cursor-pointer"
               >
-                ✕
+                <i className="fa-solid fa-xmark text-sm" />
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                <div className="font-extrabold text-slate-900 text-sm">{selectedProject.title}</div>
+              <div className="bg-slate-50 p-4 rounded-md border border-slate-200 space-y-1">
+                <div className="font-bold text-slate-900 text-sm">{selectedProject.title}</div>
                 <div className="text-slate-500">
-                  Ngân sách đề xuất: <span className="font-black text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</span>
+                  Ngân sách đề xuất: <span className="font-extrabold text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Mức giá bạn chào (VND):</label>
+                  <label className="block font-bold text-slate-700 mb-1">Mức giá bạn chào (VND):</label>
                   <input
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-bold text-blue-700 text-sm"
+                    className="w-full p-2.5 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-bold text-blue-700 text-sm"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Thời gian hoàn thành (ngày):</label>
+                  <label className="block font-bold text-slate-700 mb-1">Thời gian hoàn thành (ngày):</label>
                   <input
                     type="number"
                     value={estimatedDays}
                     onChange={(e) => setEstimatedDays(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-bold text-slate-900 text-sm"
+                    className="w-full p-2.5 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-bold text-slate-900 text-sm"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-extrabold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 mb-1">
                   Thư chào & Giải pháp thực hiện (Cover Letter):
                 </label>
                 <textarea
@@ -804,13 +787,13 @@ export const Projects: React.FC = () => {
                   value={coverLetter}
                   onChange={(e) => setCoverLetter(e.target.value)}
                   placeholder="Mô tả năng lực, kinh nghiệm với các dự án tương tự, giải pháp kỹ thuật đề xuất và cam kết tiến độ..."
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 text-xs leading-relaxed"
+                  className="w-full p-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 text-xs leading-relaxed"
                   required
                 />
               </div>
 
-              <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 text-blue-800 text-[11px] flex items-start space-x-2 leading-relaxed">
-                <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <div className="bg-blue-50 p-3.5 rounded-md border border-blue-200 text-blue-800 text-[11px] flex items-start space-x-2.5 leading-relaxed">
+                <i className="fa-solid fa-shield-halved text-blue-600 text-sm shrink-0 mt-0.5" />
                 <span>
                   Hệ thống tự động bảo vệ giao dịch qua Escrow VNPAY. Nghiêm cấm gửi Số điện thoại / Zalo để giao dịch ngoài sàn nhằm tránh rủi ro mất tiền.
                 </span>
@@ -821,13 +804,13 @@ export const Projects: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowProposalModal(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all cursor-pointer"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-md transition-all cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl transition-all shadow-md cursor-pointer"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-md transition-all shadow-sm cursor-pointer"
               >
                 Gửi Đề Xuất Báo Giá
               </button>

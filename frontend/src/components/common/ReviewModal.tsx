@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Star, X, Award, ThumbsUp, ShieldCheck } from 'lucide-react';
 import type { Order } from '../../types';
 
 interface ReviewModalProps {
@@ -62,13 +61,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             key={star}
             type="button"
             onClick={() => onChange(star)}
-            className="p-1 text-slate-300 hover:text-amber-400 focus:outline-none transition-colors"
+            className="p-1 text-slate-300 hover:text-amber-400 focus:outline-none transition-colors cursor-pointer"
           >
-            <Star
-              className={`w-5 h-5 ${
-                star <= value ? 'text-amber-400 fill-amber-400' : 'text-slate-300'
-              }`}
-            />
+            <i className={`text-sm ${star <= value ? 'fa-solid fa-star text-amber-400' : 'fa-regular fa-star text-slate-300'}`} />
           </button>
         ))}
         <span className="text-xs font-bold text-slate-800 ml-2 w-4">{value}</span>
@@ -78,32 +73,32 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative my-6 space-y-6">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative my-6 space-y-6">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
-              <Award className="w-5 h-5" />
+            <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center">
+              <i className="fa-solid fa-award text-sm" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">Đánh Giá & Nghiệm Thu Dịch Vụ</h3>
+              <h3 className="text-base font-bold text-slate-900">Đánh Giá & Nghiệm Thu Dịch Vụ</h3>
               <p className="text-[11px] text-slate-500">Đơn hàng: {order.orderNumber}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-100 cursor-pointer">
+            <i className="fa-solid fa-xmark text-sm" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
           {/* Target Freelancer Info */}
-          <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+          <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-md border border-slate-200">
             <img
               src={order.freelancerAvatar}
               alt={order.freelancerName}
-              className="w-11 h-11 rounded-full object-cover border border-slate-300 ring-2 ring-blue-500/20"
+              className="w-10 h-10 rounded-full object-cover border border-slate-300"
             />
             <div>
               <div className="font-bold text-slate-900 text-sm">{order.freelancerName}</div>
@@ -112,7 +107,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           </div>
 
           {/* Overall Star Rating */}
-          <div className="text-center py-2 bg-amber-50/50 rounded-2xl border border-amber-200/60 p-4 space-y-2">
+          <div className="text-center py-2 bg-amber-50/50 rounded-md border border-amber-200/60 p-4 space-y-2">
             <div className="text-xs font-bold text-amber-900">Đánh giá mức độ hài lòng chung:</div>
             <div className="flex items-center justify-center space-x-2">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -120,27 +115,23 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className="p-1 text-slate-300 hover:text-amber-400 focus:outline-none transition-transform hover:scale-110"
+                  className="p-1 text-slate-300 hover:text-amber-400 focus:outline-none transition-transform hover:scale-110 cursor-pointer"
                 >
-                  <Star
-                    className={`w-8 h-8 ${
-                      star <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'
-                    }`}
-                  />
+                  <i className={`text-2xl ${star <= rating ? 'fa-solid fa-star text-amber-400' : 'fa-regular fa-star text-slate-200'}`} />
                 </button>
               ))}
             </div>
-            <div className="text-xs font-extrabold text-amber-800">
-              {rating === 5 && '⭐⭐⭐⭐⭐ Tuyệt vời! Rất hài lòng'}
-              {rating === 4 && '⭐⭐⭐⭐ Tốt, đáp ứng đầy đủ cam kết'}
-              {rating === 3 && '⭐⭐⭐ Tạm ổn, cần cải thiện thêm'}
-              {rating === 2 && '⭐⭐ Chưa hài lòng'}
-              {rating === 1 && '⭐ Kém, không đáp ứng yêu cầu'}
+            <div className="text-xs font-bold text-amber-800">
+              {rating === 5 && 'Tuyệt vời! Rất hài lòng'}
+              {rating === 4 && 'Tốt, đáp ứng đầy đủ cam kết'}
+              {rating === 3 && 'Tạm ổn, cần cải thiện thêm'}
+              {rating === 2 && 'Chưa hài lòng'}
+              {rating === 1 && 'Kém, không đáp ứng yêu cầu'}
             </div>
           </div>
 
           {/* 3 Detail Criteria */}
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
+          <div className="bg-slate-50 p-3.5 rounded-md border border-slate-200 space-y-1">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Đánh giá theo từng tiêu chí cụ thể:
             </div>
@@ -169,13 +160,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Chia sẻ trải nghiệm làm việc cùng Freelancer, chất lượng bàn giao, thái độ hỗ trợ sửa bài..."
-              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white"
+              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white"
               required
             />
           </div>
 
-          <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-md border border-slate-200">
+            <i className="fa-solid fa-shield-halved text-emerald-600 text-xs shrink-0" />
             <span>Đánh giá của bạn sẽ giúp xây dựng điểm uy tín <strong>TalentCredit</strong> minh bạch trên sàn.</span>
           </div>
 
@@ -184,15 +175,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all"
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md transition-all cursor-pointer"
             >
               Để sau
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <ThumbsUp className="w-4 h-4" />
+              <i className="fa-solid fa-thumbs-up text-xs" />
               <span>Gửi Đánh Giá</span>
             </button>
           </div>
@@ -203,3 +194,4 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     </div>
   );
 };
+

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Lock, FileCheck, CheckCircle2 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -10,33 +9,33 @@ export const Footer: React.FC = () => {
         {/* Top Feature Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-neutral-800 text-sm">
           <div className="flex items-start space-x-3">
-            <ShieldCheck className="w-6 h-6 text-sky-400 shrink-0 mt-1" />
+            <i className="fa-solid fa-shield-halved text-sky-400 text-xl shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-extrabold text-white mb-1">Tạm Giữ Tiền Escrow</h4>
+              <h4 className="font-bold text-white mb-1">Tạm Giữ Tiền Escrow</h4>
               <p className="text-neutral-400 text-xs">100% tiền đặt cọc an toàn, chỉ giải ngân khi chấp nhận sản phẩm.</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <Lock className="w-6 h-6 text-sky-400 shrink-0 mt-1" />
+            <i className="fa-solid fa-lock text-sky-400 text-xl shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-extrabold text-white mb-1">Bảo Vệ Hai Chiều</h4>
+              <h4 className="font-bold text-white mb-1">Bảo Vệ Hai Chiều</h4>
               <p className="text-neutral-400 text-xs">Chống bùng tiền cho Freelancer, chống quỵt bài cho Nhà tuyển dụng.</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <FileCheck className="w-6 h-6 text-sky-400 shrink-0 mt-1" />
+            <i className="fa-solid fa-file-contract text-sky-400 text-xl shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-extrabold text-white mb-1">Quy Định NĐ 85/2021</h4>
+              <h4 className="font-bold text-white mb-1">Quy Định NĐ 85/2021</h4>
               <p className="text-neutral-400 text-xs">Sàn Thương mại Điện tử hợp pháp tuân thủ đầy đủ quy định Việt Nam.</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <CheckCircle2 className="w-6 h-6 text-sky-400 shrink-0 mt-1" />
+            <i className="fa-solid fa-circle-check text-sky-400 text-xl shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-extrabold text-white mb-1">TalentCredit Uy Tín</h4>
+              <h4 className="font-bold text-white mb-1">TalentCredit Uy Tín</h4>
               <p className="text-neutral-400 text-xs">Điểm uy tín được tích lũy từ lịch sử giao dịch & nghiệm thu thực tế.</p>
             </div>
           </div>
@@ -47,11 +46,11 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center space-x-3 group">
-              <div className="p-1 bg-white rounded-xl shadow-md group-hover:scale-105 transition-all shrink-0">
+              <div className="p-1 bg-white rounded-md shadow-sm group-hover:scale-105 transition-all shrink-0">
                 <img
                   src="/logo_talentMatch.png"
                   alt="TalentMatch Brand"
-                  className="h-8 w-8 object-contain rounded-lg"
+                  className="h-8 w-8 object-contain rounded"
                 />
               </div>
               <div className="flex flex-col text-left">

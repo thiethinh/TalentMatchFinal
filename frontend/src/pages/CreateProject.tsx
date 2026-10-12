@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
-import { PlusCircle, ShieldCheck } from 'lucide-react';
 
 export const CreateProject: React.FC = () => {
   const { createProject, currentUser } = useDemo();
@@ -42,7 +41,7 @@ export const CreateProject: React.FC = () => {
       
       <div className="border-b border-slate-200 pb-6 space-y-2">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center">
-          <PlusCircle className="w-7 h-7 text-blue-600 mr-2" />
+          <i className="fa-solid fa-circle-plus text-blue-600 mr-2.5 text-2xl" />
           <span>Đăng Dự Án Tuyển Dụng Dịch Vụ Mới</span>
         </h1>
         <p className="text-slate-500 text-xs sm:text-sm">
@@ -50,7 +49,7 @@ export const CreateProject: React.FC = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-lg border border-slate-200 shadow-xs space-y-6">
         
         <div>
           <label className="block text-xs font-bold text-slate-800 mb-2">Tiêu đề dự án tuyển dụng (*):</label>
@@ -59,7 +58,7 @@ export const CreateProject: React.FC = () => {
             placeholder="Ví dụ: Cần thuê Lập trình viên ReactJS xây dựng Website bán hàng..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-medium"
+            className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium"
             required
           />
         </div>
@@ -70,7 +69,7 @@ export const CreateProject: React.FC = () => {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-medium bg-white"
+              className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium bg-white"
             >
               <option value="IT & Lập trình">IT & Lập trình</option>
               <option value="Thiết kế & Đồ họa">Thiết kế & Đồ họa</option>
@@ -85,7 +84,7 @@ export const CreateProject: React.FC = () => {
             <select
               value={budgetType}
               onChange={(e) => setBudgetType(e.target.value as 'FIXED' | 'MILESTONE')}
-              className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-medium bg-white"
+              className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium bg-white"
             >
               <option value="MILESTONE">Chia Cột mốc (Milestone-based)</option>
               <option value="FIXED">Trọn gói cố định (Fixed Price)</option>
@@ -100,7 +99,7 @@ export const CreateProject: React.FC = () => {
               type="number"
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
-              className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-bold text-blue-700"
+              className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-bold text-blue-700"
               required
             />
           </div>
@@ -111,7 +110,7 @@ export const CreateProject: React.FC = () => {
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-medium"
+              className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium"
               required
             />
           </div>
@@ -124,7 +123,7 @@ export const CreateProject: React.FC = () => {
             placeholder="ReactJS, Figma, UI/UX, Node.js..."
             value={skillsInput}
             onChange={(e) => setSkillsInput(e.target.value)}
-            className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 font-medium"
+            className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium"
           />
         </div>
 
@@ -135,13 +134,13 @@ export const CreateProject: React.FC = () => {
             placeholder="Mô tả cụ thể mục tiêu dự án, đầu ra cần bàn giao và các tiêu chí nghiệm thu..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 leading-relaxed"
+            className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 leading-relaxed"
             required
           />
         </div>
 
-        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+        <div className="bg-emerald-50 p-4 rounded-md border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2.5">
+          <i className="fa-solid fa-shield-halved text-emerald-600 text-sm shrink-0 mt-0.5" />
           <span>
             Đăng tin tuyển dụng hoàn toàn miễn phí. Tiền chỉ được nạp vào Ví Tạm Giữ Escrow khi bạn chọn được Báo giá ứng ý và ký hợp đồng với Freelancer.
           </span>
@@ -150,7 +149,7 @@ export const CreateProject: React.FC = () => {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm py-3.5 rounded-xl transition-all shadow-md"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-md transition-all shadow-xs cursor-pointer"
           >
             Đăng Dự Án Tuyển Dụng Ngay
           </button>
@@ -160,3 +159,4 @@ export const CreateProject: React.FC = () => {
     </div>
   );
 };
+

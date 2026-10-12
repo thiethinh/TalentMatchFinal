@@ -1,6 +1,5 @@
 import React from 'react';
 import { useDemo } from '../../context/DemoContext';
-import { CheckCircle2, AlertCircle, Info, XCircle, X } from 'lucide-react';
 
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useDemo();
@@ -12,31 +11,32 @@ export const ToastContainer: React.FC = () => {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`pointer-events-auto flex items-start space-x-3 p-4 rounded-xl shadow-xl border text-sm transition-all transform translate-y-0 ${
+          className={`pointer-events-auto flex items-start space-x-3 p-3.5 rounded-md shadow-lg border text-xs transition-all transform translate-y-0 ${
             t.type === 'success'
-              ? 'bg-emerald-900/95 text-emerald-100 border-emerald-700'
+              ? 'bg-slate-900 text-white border-emerald-500/60'
               : t.type === 'error'
-              ? 'bg-rose-900/95 text-rose-100 border-rose-700'
+              ? 'bg-slate-900 text-white border-rose-500/60'
               : t.type === 'warning'
-              ? 'bg-amber-900/95 text-amber-100 border-amber-700'
-              : 'bg-blue-900/95 text-blue-100 border-blue-700'
+              ? 'bg-slate-900 text-white border-amber-500/60'
+              : 'bg-slate-900 text-white border-blue-500/60'
           }`}
         >
-          {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
-          {t.type === 'error' && <XCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />}
-          {t.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
-          {t.type === 'info' && <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />}
+          {t.type === 'success' && <i className="fa-solid fa-circle-check text-emerald-400 text-sm shrink-0 mt-0.5" />}
+          {t.type === 'error' && <i className="fa-solid fa-circle-xmark text-rose-400 text-sm shrink-0 mt-0.5" />}
+          {t.type === 'warning' && <i className="fa-solid fa-triangle-exclamation text-amber-400 text-sm shrink-0 mt-0.5" />}
+          {t.type === 'info' && <i className="fa-solid fa-circle-info text-blue-400 text-sm shrink-0 mt-0.5" />}
 
           <div className="flex-1 font-medium leading-snug">{t.message}</div>
 
           <button
             onClick={() => removeToast(t.id)}
-            className="text-white/60 hover:text-white p-0.5 rounded"
+            className="text-white/60 hover:text-white p-1 rounded-sm cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <i className="fa-solid fa-xmark text-xs" />
           </button>
         </div>
       ))}
     </div>
   );
 };
+

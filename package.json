@@ -1,0 +1,12 @@
+{
+  "name": "talentmatch-platform",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:down": "docker compose down",
+    "backend:test": "cd backend && ./gradlew test",
+    "backend:run": "cd backend && ./gradlew bootRun",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:dev": "cd frontend && npm run dev"
+  }
+}

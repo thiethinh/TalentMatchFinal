@@ -1,0 +1,15 @@
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+.gradle/
+backend/.gradle/
+backend/build/
+frontend/node_modules/
+frontend/dist/
+mysql_data/
+README.md
+README_SETUP.md
+docs/
+*.bat

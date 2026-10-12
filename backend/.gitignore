@@ -1,0 +1,30 @@
+# ==========================================
+# TalentMatch Backend .gitignore
+# ==========================================
+
+# Gradle Build Outputs
+.gradle/
+build/
+out/
+
+# Compiled Java Classes & Archives
+*.class
+*.jar
+*.war
+
+# Retain Gradle Wrapper Jar & Properties (MUST be after *.jar)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db

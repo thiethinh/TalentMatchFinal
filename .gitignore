@@ -1,0 +1,62 @@
+# ==========================================
+# TalentMatch - Root .gitignore
+# ==========================================
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Files
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment & Local Secrets
+.env
+!.env.example
+*.local
+
+# Backend (Gradle & Java)
+.gradle/
+backend/.gradle/
+build/
+backend/build/
+out/
+backend/out/
+target/
+*.class
+*.jar
+*.war
+# Do NOT ignore Gradle Wrapper
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!backend/gradle/wrapper/gradle-wrapper.jar
+!backend/gradle/wrapper/gradle-wrapper.properties
+
+# Frontend (Node.js & Vite)
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+frontend/dist-ssr/
+*.tsbuildinfo
+frontend/node_modules/.tmp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Docker local data
+mysql_data/

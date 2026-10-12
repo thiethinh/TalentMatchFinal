@@ -96,8 +96,8 @@ interface DemoContextType {
 
   // Auth & Email Verification Modal
   isAuthModalOpen: boolean;
-  authModalMode: 'login' | 'register' | 'verification' | 'google-role';
-  openAuthModal: (mode?: 'login' | 'register' | 'verification') => void;
+  authModalMode: 'login' | 'register' | 'verification' | 'google-role' | 'google-auth';
+  openAuthModal: (mode?: 'login' | 'register' | 'verification' | 'google-auth') => void;
   closeAuthModal: () => void;
 
   // User Profile Detail Modal
@@ -150,7 +150,8 @@ interface DemoContextType {
     userId?: string;
   }) => void;
   loginUser: (email: string, password?: string) => { success: boolean; isUnverified?: boolean; message?: string };
-  loginWithGoogle: () => void;
+  loginWithGoogle: (targetEmail?: string) => void;
+  registerWithGoogle: (data: { email: string; name: string; role: 'freelancer' | 'employer'; phone?: string }) => void;
   completeGoogleRegister: (role: 'freelancer' | 'employer') => void;
   logout: () => void;
 
@@ -342,7 +343,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Auth Modals State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'verification' | 'google-role'>('login');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'verification' | 'google-role' | 'google-auth'>('login');
   const [pendingGoogleUser, setPendingGoogleUser] = useState<{ email: string; name: string; avatar: string } | null>(null);
 
   // Action Guard Modal State
@@ -505,7 +506,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addToast('Đã khôi phục toàn bộ dữ liệu mẫu TalentMatch ban đầu!', 'info');
   };
 
-  const openAuthModal = (mode: 'login' | 'register' | 'verification' = 'login') => {
+  const openAuthModal = (mode: 'login' | 'register' | 'verification' | 'google-auth' = 'login') => {
     setAuthModalMode(mode);
     setIsAuthModalOpen(true);
   };
@@ -707,37 +708,48 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: true };
   };
 
-  const loginWithGoogle = () => {
-    const googleEmail = 'google.user@gmail.com';
-    const found = users.find((u) => u.email === googleEmail);
-    if (found) {
-      setCurrentUser(found);
-      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
-      setIsAuthModalOpen(false);
-      addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
-    } else {
-      setPendingGoogleUser({
-        email: googleEmail,
-        name: 'Trần Google User',
-        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(googleEmail)}`
-      });
-      setAuthModalMode('google-role');
+  const loginWithGoogle = (targetEmail?: string) => {
+    if (targetEmail) {
+      const found = users.find((u) => u.email.toLowerCase() === targetEmail.toLowerCase());
+      if (found) {
+        setCurrentUser(found);
+        localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
+        setIsAuthModalOpen(false);
+        addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
+        return;
+      }
     }
+    // Chuyển sang màn hình chọn tài khoản Google & xác thực Gmail
+    setAuthModalMode('google-auth');
   };
 
-  const completeGoogleRegister = (role: 'freelancer' | 'employer') => {
-    if (!pendingGoogleUser) return;
+  const registerWithGoogle = (data: {
+    email: string;
+    name: string;
+    role: 'freelancer' | 'employer';
+    phone?: string;
+  }) => {
+    const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
+    if (existing) {
+      setCurrentUser(existing);
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, existing.id);
+      setIsAuthModalOpen(false);
+      addToast(`Đã tìm thấy tài khoản! Đăng nhập thành công: ${existing.name}`, 'success');
+      return;
+    }
+
     const newUser: User = {
       id: `usr-gg-${Date.now()}`,
-      name: pendingGoogleUser.name,
-      email: pendingGoogleUser.email,
-      avatar: pendingGoogleUser.avatar,
-      role: role,
+      name: data.name,
+      email: data.email,
+      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.email)}`,
+      role: data.role,
+      phone: data.phone || '0901234567',
       isVerified: true,
       emailVerified: true,
       accountStatus: 'ACTIVE',
       kycStatus: 'NOT_SUBMITTED',
-      balance: 10000000,
+      balance: data.role === 'employer' ? 30000000 : 10000000,
       escrowBalance: 0,
       createdAt: new Date().toISOString().split('T')[0],
       lastLogin: 'Vừa đăng nhập Google'
@@ -748,7 +760,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);
     setPendingGoogleUser(null);
     setIsAuthModalOpen(false);
-    addToast(`Tạo tài khoản ${role.toUpperCase()} thành công bằng Google!`, 'success');
+    addToast(
+      `Đăng ký & xác thực Gmail thành công! Chào mừng ${data.name} (${
+        data.role === 'freelancer' ? 'Freelancer' : 'Nhà tuyển dụng'
+      }).`,
+      'success'
+    );
+  };
+
+  const completeGoogleRegister = (role: 'freelancer' | 'employer') => {
+    if (!pendingGoogleUser) return;
+    registerWithGoogle({
+      email: pendingGoogleUser.email,
+      name: pendingGoogleUser.name,
+      role: role
+    });
   };
 
   const logout = () => {
@@ -1359,6 +1385,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         submitKyc,
         loginUser,
         loginWithGoogle,
+        registerWithGoogle,
         completeGoogleRegister,
         logout,
         adminUpdateUserStatus,

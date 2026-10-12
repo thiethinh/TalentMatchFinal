@@ -1,61 +1,82 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { DemoProvider } from './context/DemoContext';
-import { MainLayout } from './components/layout/MainLayout';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { DemoProvider, useDemo } from './context/DemoContext';
+import { UnverifiedBanner } from './components/auth/UnverifiedBanner';
+import { Navbar } from './components/layout/Navbar';
+import { Footer } from './components/layout/Footer';
+import { ToastContainer } from './components/common/ToastContainer';
+import { AuthModal } from './components/auth/AuthModal';
+import { UnverifiedRestrictionModal } from './components/auth/UnverifiedRestrictionModal';
+import { UserProfileModal } from './components/common/UserProfileModal';
+import { WithdrawModal } from './components/common/WithdrawModal';
+import { VNPayModal } from './components/common/VNPayModal';
 
-// Full Feature Pages ported from frontend2
 import { Home } from './pages/Home';
 import { Projects } from './pages/Projects';
 import { Freelancers } from './pages/Freelancers';
 import { CreateProject } from './pages/CreateProject';
-import { OrderWorkManagement } from './pages/OrderWorkManagement';
-import { KycVerification } from './pages/KycVerification';
 import { FreelancerDashboard } from './pages/FreelancerDashboard';
 import { EmployerDashboard } from './pages/EmployerDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { OrderWorkManagement } from './pages/OrderWorkManagement';
+import { KycVerification } from './pages/KycVerification';
 
-export function App() {
+const AppContent: React.FC = () => {
+  const { isVNPayModalOpen, vnpayModalParams, closeVNPayModal } = useDemo();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-blue-600 selection:text-white">
+      {/* Real app: No RoleSwitcher at the top */}
+      <UnverifiedBanner />
+      <Navbar />
+
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/freelancers" element={<Freelancers />} />
+          <Route path="/create-project" element={<CreateProject />} />
+          <Route path="/kyc" element={<KycVerification />} />
+          <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+          <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/orders/:id" element={<OrderWorkManagement />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </main>
+
+      <Footer />
+      <ToastContainer />
+      <AuthModal />
+      <UnverifiedRestrictionModal />
+      <UserProfileModal />
+      <WithdrawModal />
+
+      {/* Global VNPay Payment Modal */}
+      {isVNPayModalOpen && vnpayModalParams && (
+        <VNPayModal
+          isOpen={isVNPayModalOpen}
+          onClose={closeVNPayModal}
+          amount={vnpayModalParams.amount}
+          orderNumber={vnpayModalParams.orderNumber}
+          orderTitle={vnpayModalParams.orderTitle}
+          onSuccess={() => {
+            vnpayModalParams.onPaymentComplete();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export const App: React.FC = () => {
   return (
     <DemoProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<MainLayout />}>
-            {/* Public Marketplace */}
-            <Route path="/" element={<Home />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/jobs" element={<Projects />} />
-            <Route path="/freelancers" element={<Freelancers />} />
-
-            {/* Actions & Projects */}
-            <Route path="/create-project" element={<CreateProject />} />
-            <Route path="/customer/jobs/new" element={<CreateProject />} />
-            <Route path="/orders/:id" element={<OrderWorkManagement />} />
-            <Route path="/projects/:id" element={<OrderWorkManagement />} />
-
-            {/* Verification */}
-            <Route path="/kyc" element={<KycVerification />} />
-
-            {/* Role Dashboards */}
-            <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
-            <Route path="/employer/dashboard" element={<EmployerDashboard />} />
-            <Route path="/customer/dashboard" element={<EmployerDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
-            {/* Backward-compatibility alias routes */}
-            <Route path="/dashboard" element={<Navigate to="/" replace />} />
-            <Route path="/customer/jobs" element={<Navigate to="/employer/dashboard" replace />} />
-            <Route path="/customer/projects" element={<Navigate to="/employer/dashboard" replace />} />
-            <Route path="/freelancer/projects" element={<Navigate to="/freelancer/dashboard" replace />} />
-            <Route path="/freelancer/applications" element={<Navigate to="/freelancer/dashboard" replace />} />
-            <Route path="/freelancer/saved-jobs" element={<Navigate to="/projects" replace />} />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <Router>
+        <AppContent />
+      </Router>
     </DemoProvider>
   );
-}
+};
 
 export default App;

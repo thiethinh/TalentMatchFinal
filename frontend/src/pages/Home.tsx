@@ -28,45 +28,27 @@ export const Home: React.FC = () => {
   return (
     <div className="space-y-16 pb-16">
       
-      {/* 1. Fresh & Bright Daylight Hero Section */}
-      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center justify-center text-slate-900 py-12 lg:py-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-50 border-b border-slate-200">
-        
-        {/* Workspace Background Video */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=85&w=2200"
-            className="w-full h-full object-cover object-center opacity-25"
-          >
-            <source
-              src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4"
-              type="video/mp4"
-            />
-          </video>
-          <div className="absolute inset-0 bg-white/85" />
-        </div>
+      {/* 1. Fresh & Professional Daylight Hero Section */}
+      <section className="relative flex items-center justify-center text-slate-900 py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-b border-slate-200">
         
         {/* Main Center Content */}
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-6">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
           
           {/* Top Trust Badge */}
-          <div className="inline-flex items-center space-x-2 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-800 shadow-xs">
+          <div className="inline-flex items-center space-x-2 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-800 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>Sàn Tuyển Dụng Freelancer Uy Tín — Bảo Đảm 100% Tiền Cọc Escrow VNPAY</span>
           </div>
 
           {/* Headline with Clean, High-Contrast Typography */}
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight text-slate-900">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight max-w-3xl mx-auto leading-tight text-slate-900">
               <span className="block text-slate-900">Kết Nối Đúng Người — </span>
-              <span className="block text-sky-600">Hợp Tác Minh Bạch, Kiến Tạo Giá Trị</span>
+              <span className="block text-blue-700">Hợp Tác Minh Bạch, Kiến Tạo Giá Trị</span>
             </h1>
           </div>
 
-          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-slate-600 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
             Hệ sinh thái tuyển dụng dự án & nhân tài số hàng đầu Việt Nam. Nơi kết nối doanh nghiệp với chuyên gia lập trình, thiết kế, marketing chất lượng cao — Toàn bộ tiền cọc được bảo chứng an toàn tại Ví Escrow VNPAY.
           </p>
 
@@ -74,7 +56,7 @@ export const Home: React.FC = () => {
           <div className="space-y-3 max-w-2xl mx-auto">
             <form
               onSubmit={handleSearch}
-              className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 shadow-sm focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all"
+              className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 shadow-xs focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/10 transition-all"
             >
               <div className="flex-1 flex items-center px-3 w-full">
                 <i className="fa-solid fa-magnifying-glass text-slate-400 mr-3 text-sm shrink-0" />
@@ -88,7 +70,7 @@ export const Home: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-md transition-all shrink-0 cursor-pointer"
+                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-md transition-all shrink-0 cursor-pointer shadow-xs"
               >
                 Tìm Kiếm
               </button>
@@ -101,7 +83,7 @@ export const Home: React.FC = () => {
                 <button
                   key={tag}
                   onClick={() => handleQuickTag(tag)}
-                  className="bg-white hover:bg-sky-50 text-slate-700 hover:text-sky-700 hover:border-sky-300 px-2.5 py-0.5 rounded-md border border-slate-200 shadow-2xs transition-all text-[11px] font-medium cursor-pointer"
+                  className="bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 hover:border-blue-300 px-2.5 py-0.5 rounded-md border border-slate-200 shadow-2xs transition-all text-[11px] font-medium cursor-pointer"
                 >
                   {tag}
                 </button>
@@ -120,7 +102,7 @@ export const Home: React.FC = () => {
             </Link>
             <Link
               to="/freelancers"
-              className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm rounded-md border border-slate-300 shadow-2xs transition-all hover:border-sky-400"
+              className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm rounded-md border border-slate-300 shadow-2xs transition-all hover:border-blue-400"
             >
               <i className="fa-solid fa-user-tie mr-1.5 text-xs text-slate-600" />
               Xem Hồ Sơ & Portfolio Ứng Viên
@@ -129,7 +111,7 @@ export const Home: React.FC = () => {
 
           {/* 3 Live Feature Highlight Cards with Clean Minimalism */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-slate-200 text-left">
-            <div className="bg-white border-l-3 border-l-sky-500 border border-slate-200 rounded-lg p-3.5 shadow-2xs">
+            <div className="bg-white border-l-3 border-l-blue-600 border border-slate-200 rounded-lg p-3.5 shadow-2xs">
               <h4 className="text-slate-900 font-bold text-xs sm:text-sm">Bảo Đảm Escrow VNPAY</h4>
               <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Cọc 100% tạm giữ an toàn, chỉ giải ngân khi chấp nhận nghiệm thu.</p>
             </div>
@@ -154,7 +136,7 @@ export const Home: React.FC = () => {
           {categories.map((c, idx) => (
             <div
               key={idx}
-              className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-3 hover:border-sky-300 hover:shadow-sm transition-all group"
+              className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-3 hover:border-blue-300 hover:shadow-sm transition-all group"
             >
               <div className={`w-10 h-10 rounded-md flex items-center justify-center ${c.color}`}>
                 {c.icon}
@@ -197,7 +179,7 @@ export const Home: React.FC = () => {
               step: '03',
               title: 'Ký Hợp Đồng & Nạp Cọc VNPAY',
               desc: 'Nhà tuyển dụng chấp nhận báo giá và nạp 100% tiền cọc vào Ví Tạm Giữ Escrow qua cổng VNPAY.',
-              badgeColor: 'bg-sky-600 text-white'
+              badgeColor: 'bg-blue-600 text-white'
             },
             {
               step: '04',
@@ -209,7 +191,7 @@ export const Home: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-2 relative hover:border-sky-300 hover:shadow-sm transition-all group"
+                className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-2 relative hover:border-blue-300 hover:shadow-sm transition-all group"
               >
                 <span className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold font-mono ${item.badgeColor}`}>
                   BƯỚC {item.step}

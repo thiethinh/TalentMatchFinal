@@ -264,16 +264,14 @@ export const Projects: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. Header Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-xl p-6 sm:p-10 text-white shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-10 text-white shadow-sm relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 px-3.5 py-1 rounded-md text-xs font-bold text-blue-300">
+          <div className="inline-flex items-center space-x-2 bg-blue-950/80 border border-blue-700/50 px-3.5 py-1 rounded-md text-xs font-semibold text-blue-300">
             <i className="fa-solid fa-shield-halved text-blue-400 text-xs" />
             <span>Thị Trường Dự Án Dịch Vụ Số Chuẩn Escrow VNPAY</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">
             Tìm Kiếm Dự Án & Cơ Hội Việc Làm Freelance
           </h1>
 
@@ -291,7 +289,7 @@ export const Projects: React.FC = () => {
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs space-y-6 sticky top-24">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2 font-extrabold text-slate-900 text-sm">
+              <div className="flex items-center space-x-2 font-bold text-slate-900 text-sm">
                 <i className="fa-solid fa-sliders text-blue-600 text-xs" />
                 <span>Bộ Lọc Nâng Cao</span>
               </div>
@@ -308,7 +306,7 @@ export const Projects: React.FC = () => {
 
             {/* Keyword Search Input */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-extrabold text-slate-800">Từ khóa tìm kiếm:</label>
+              <label className="block text-xs font-bold text-slate-800">Từ khóa tìm kiếm:</label>
               <div className="relative">
                 <input
                   type="text"
@@ -323,7 +321,7 @@ export const Projects: React.FC = () => {
 
             {/* Category Selector */}
             <div className="space-y-2">
-              <label className="block text-xs font-extrabold text-slate-800">Lĩnh vực chính:</label>
+              <label className="block text-xs font-bold text-slate-800">Lĩnh vực chính:</label>
               <div className="relative">
                 <select
                   value={selectedMainCategory}
@@ -347,7 +345,7 @@ export const Projects: React.FC = () => {
             {/* Detailed Subcategory Small Group Selector */}
             {selectedMainCategory !== 'ALL' && (
               <div className="space-y-1.5 animate-in fade-in duration-200">
-                <label className="block text-xs font-extrabold text-blue-700 flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-blue-700 flex items-center gap-1.5">
                   <i className="fa-solid fa-chevron-right text-blue-600 text-xs" />
                   <span>Nhóm chuyên môn chi tiết:</span>
                 </label>
@@ -372,7 +370,7 @@ export const Projects: React.FC = () => {
 
             {/* Price Range Filter */}
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-dong-sign text-emerald-600 text-xs" />
                 <span>Mức ngân sách dự án (VND):</span>
               </label>
@@ -434,7 +432,7 @@ export const Projects: React.FC = () => {
 
             {/* Budget Type Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800">Hình thức thanh toán:</label>
+              <label className="block text-xs font-bold text-slate-800">Hình thức thanh toán:</label>
               <div className="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
                 <button
                   onClick={() => setSelectedBudgetType('ALL')}
@@ -465,7 +463,7 @@ export const Projects: React.FC = () => {
 
             {/* Popular Skills Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-tag text-blue-600 text-xs" />
                 <span>Kỹ năng yêu cầu:</span>
               </label>
@@ -498,8 +496,8 @@ export const Projects: React.FC = () => {
           {/* Toolbar: Counter, Sort & Status */}
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-slate-900 text-sm">
-                Tìm thấy <span className="text-blue-600 font-black">{filteredProjects.length}</span> dự án phù hợp
+              <span className="font-bold text-slate-900 text-sm">
+                Tìm thấy <span className="text-blue-600 font-bold">{filteredProjects.length}</span> dự án phù hợp
               </span>
               {activeFiltersCount > 0 && (
                 <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -656,7 +654,7 @@ export const Projects: React.FC = () => {
                             <i className={`text-xs ${isProjectSaved(proj.id) ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart'}`} />
                           </button>
                         </div>
-                        <div className="text-xl sm:text-2xl font-black text-blue-700 mt-0.5">
+                        <div className="text-xl sm:text-2xl font-bold text-blue-700 mt-0.5">
                           {proj.budget.toLocaleString('vi-VN')} đ
                         </div>
                         <div className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center justify-end gap-1.5">
@@ -750,7 +748,7 @@ export const Projects: React.FC = () => {
               <div className="bg-slate-50 p-4 rounded-md border border-slate-200 space-y-1">
                 <div className="font-bold text-slate-900 text-sm">{selectedProject.title}</div>
                 <div className="text-slate-500">
-                  Ngân sách đề xuất: <span className="font-extrabold text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</span>
+                  Ngân sách đề xuất: <span className="font-bold text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</span>
                 </div>
               </div>
 

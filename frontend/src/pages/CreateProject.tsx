@@ -40,7 +40,7 @@ export const CreateProject: React.FC = () => {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
       <div className="border-b border-slate-200 pb-6 space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center">
           <i className="fa-solid fa-circle-plus text-blue-600 mr-2.5 text-2xl" />
           <span>Đăng Dự Án Tuyển Dụng Dịch Vụ Mới</span>
         </h1>

@@ -65,7 +65,7 @@ export const Navbar: React.FC = () => {
       case 'CONTRACT':
         return <i className="fa-solid fa-file-contract text-indigo-600 text-xs" />;
       case 'WITHDRAWAL':
-        return <i className="fa-solid fa-wallet text-cyan-600 text-xs" />;
+        return <i className="fa-solid fa-wallet text-emerald-600 text-xs" />;
       case 'REVIEW':
         return <i className="fa-solid fa-star text-amber-500 text-xs" />;
       case 'SYSTEM':
@@ -85,7 +85,7 @@ export const Navbar: React.FC = () => {
       case 'CONTRACT':
         return 'bg-indigo-50 border-indigo-200';
       case 'WITHDRAWAL':
-        return 'bg-cyan-50 border-cyan-200';
+        return 'bg-emerald-50 border-emerald-200';
       case 'REVIEW':
         return 'bg-amber-50 border-amber-200';
       case 'SYSTEM':
@@ -110,21 +110,21 @@ export const Navbar: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col text-left">
-                <div className="flex items-center tracking-tight font-black text-lg sm:text-xl leading-none">
+                <div className="flex items-center tracking-tight font-bold text-lg sm:text-xl leading-none">
                   <span className="text-white">Talent</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400">Match</span>
-                  <span className="text-[9px] font-extrabold text-sky-400 ml-1.5 px-1.5 py-0.5 bg-sky-950/90 border border-sky-800/80 rounded-md leading-none">VN</span>
+                  <span className="text-blue-500 font-bold">Match</span>
+                  <span className="text-[10px] font-semibold text-blue-400 ml-1.5 px-1.5 py-0.5 bg-blue-950/80 border border-blue-800 rounded leading-none">VN</span>
                 </div>
-                <span className="text-[9px] font-bold text-neutral-400 tracking-wider uppercase mt-0.5">Freelancer Market</span>
+                <span className="text-[9px] font-semibold text-neutral-400 tracking-wider uppercase mt-0.5">Freelancer Market</span>
               </div>
             </Link>
 
             {/* Main Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-2 text-xs font-bold">
+            <nav className="hidden lg:flex items-center space-x-2 text-xs font-semibold">
               <Link
                 to="/projects"
                 className={`px-3 py-1.5 rounded-md transition-all ${isActive('/projects')
-                  ? 'text-sky-400 bg-sky-950/90 border border-sky-500/50 font-bold'
+                  ? 'text-blue-400 bg-blue-950/90 border border-blue-600/60 font-semibold'
                   : 'text-neutral-300 hover:text-white hover:bg-neutral-900 border border-transparent'
                   }`}
               >
@@ -134,7 +134,7 @@ export const Navbar: React.FC = () => {
               <Link
                 to="/freelancers"
                 className={`px-3 py-1.5 rounded-md transition-all ${isActive('/freelancers')
-                  ? 'text-sky-400 bg-sky-950/90 border border-sky-500/50 font-bold'
+                  ? 'text-blue-400 bg-blue-950/90 border border-blue-600/60 font-semibold'
                   : 'text-neutral-300 hover:text-white hover:bg-neutral-900 border border-transparent'
                   }`}
               >
@@ -169,7 +169,7 @@ export const Navbar: React.FC = () => {
                 title="Đổi nhanh tài khoản mẫu để test các vai trò"
               >
                 <span className="hidden xl:inline text-neutral-400">Test:</span>
-                <span className="text-sky-400 font-bold truncate max-w-[100px]">
+                <span className="text-blue-400 font-semibold truncate max-w-[100px]">
                   {currentUser.role === 'guest' ? 'Khách' : currentUser.name.split(' ').slice(-1)[0]}
                 </span>
                 <i className={`fa-solid fa-chevron-down text-[10px] text-neutral-400 transition-transform ${testAccountsOpen ? 'rotate-180' : ''}`} />
@@ -367,7 +367,7 @@ export const Navbar: React.FC = () => {
                 </button>
                 <button
                   onClick={() => openAuthModal('register')}
-                  className="px-3.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-md transition-all shadow-sm cursor-pointer"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-md transition-all shadow-sm cursor-pointer"
                 >
                   Đăng ký
                 </button>
@@ -384,21 +384,21 @@ export const Navbar: React.FC = () => {
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
-                      className="w-8 h-8 rounded-md object-cover border border-neutral-700 ring-1 ring-sky-500/40"
+                      className="w-8 h-8 rounded-md object-cover border border-neutral-700 ring-1 ring-blue-500/40"
                     />
                     {currentUser.isVerified && (
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-sky-400 rounded-full border-2 border-neutral-950" />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-neutral-950" />
                     )}
                   </div>
 
                   <div className="text-left text-xs hidden sm:block">
                     <div className="font-bold text-white line-clamp-1 max-w-[110px]">{currentUser.name}</div>
-                    <div className="text-[10px] text-sky-400 capitalize font-medium leading-tight">
+                    <div className="text-[10px] text-blue-400 capitalize font-medium leading-tight">
                       {currentUser.role === 'employer' ? 'Nhà tuyển dụng' : currentUser.role === 'freelancer' ? 'Freelancer' : 'Admin'}
                     </div>
                   </div>
 
-                  <i className={`fa-solid fa-chevron-down text-[10px] text-neutral-400 transition-transform ${userDropdownOpen ? 'rotate-180 text-sky-400' : ''}`} />
+                  <i className={`fa-solid fa-chevron-down text-[10px] text-neutral-400 transition-transform ${userDropdownOpen ? 'rotate-180 text-blue-400' : ''}`} />
                 </button>
 
                 {/* Profile Interactive Dropdown */}
@@ -448,7 +448,7 @@ export const Navbar: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-neutral-400 text-[11px] mb-2">
                         <span>Cọc Escrow:</span>
-                        <span className="font-bold text-sky-400">{(currentUser.escrowBalance || 0).toLocaleString('vi-VN')} đ</span>
+                        <span className="font-bold text-blue-400">{(currentUser.escrowBalance || 0).toLocaleString('vi-VN')} đ</span>
                       </div>
                       <button
                         onClick={() => {
@@ -473,7 +473,7 @@ export const Navbar: React.FC = () => {
                         }}
                         className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-md hover:bg-neutral-900 hover:text-white transition-all text-left cursor-pointer font-bold"
                       >
-                        <i className="fa-solid fa-user text-xs text-sky-400" />
+                        <i className="fa-solid fa-user text-xs text-blue-400" />
                         <span>Xem Thông Tin Cá Nhân Chi Tiết</span>
                       </button>
 
@@ -481,10 +481,10 @@ export const Navbar: React.FC = () => {
                       <Link
                         to="/kyc"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-neutral-900 hover:text-white transition-all text-left cursor-pointer font-bold text-sky-400"
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-neutral-900 hover:text-white transition-all text-left cursor-pointer font-bold text-blue-400"
                       >
                         <div className="flex items-center space-x-2.5">
-                          <i className="fa-solid fa-shield-halved text-xs text-sky-400" />
+                          <i className="fa-solid fa-shield-halved text-xs text-blue-400" />
                           <span>Xác Minh eKYC Danh Tính</span>
                         </div>
                         {currentUser.isVerified ? (
@@ -512,9 +512,9 @@ export const Navbar: React.FC = () => {
                           <Link
                             to="/create-project"
                             onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center space-x-2.5 px-3 py-2 rounded-md hover:bg-sky-950/60 text-sky-400 hover:text-sky-300 transition-all font-bold"
+                            className="flex items-center space-x-2.5 px-3 py-2 rounded-md hover:bg-blue-950/60 text-blue-400 hover:text-blue-300 transition-all font-bold"
                           >
-                            <i className="fa-solid fa-circle-plus text-xs text-sky-400" />
+                            <i className="fa-solid fa-circle-plus text-xs text-blue-400" />
                             <span>+ Đăng Dự Án Mới</span>
                           </Link>
                         </>
@@ -584,7 +584,7 @@ export const Navbar: React.FC = () => {
             >
               <i className="fa-solid fa-bell text-sm" />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -601,7 +601,7 @@ export const Navbar: React.FC = () => {
             ) : (
               <button
                 onClick={() => openAuthModal('login')}
-                className="px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-md cursor-pointer"
+                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-md cursor-pointer"
               >
                 Đăng nhập
               </button>
@@ -611,7 +611,7 @@ export const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-neutral-300 hover:text-white focus:outline-none cursor-pointer"
             >
-              {mobileMenuOpen ? <i className="fa-solid fa-xmark text-lg text-sky-400" /> : <i className="fa-solid fa-bars text-lg" />}
+              {mobileMenuOpen ? <i className="fa-solid fa-xmark text-lg text-blue-400" /> : <i className="fa-solid fa-bars text-lg" />}
             </button>
           </div>
         </div>
@@ -620,33 +620,33 @@ export const Navbar: React.FC = () => {
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-neutral-950 border-b border-neutral-800 px-4 pt-3 pb-6 space-y-4 text-xs animate-in slide-in-from-top-2 duration-150 text-neutral-200">
-          <div className="flex flex-col space-y-3 font-bold">
-            <Link to="/projects" onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-sky-400">
+          <div className="flex flex-col space-y-3 font-semibold">
+            <Link to="/projects" onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-blue-400">
               Dự Án Tuyển Dụng
             </Link>
-            <Link to="/freelancers" onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-sky-400">
+            <Link to="/freelancers" onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-blue-400">
               Hồ Sơ Freelancer & Portfolio
             </Link>
 
             {currentUser.role === 'employer' && (
               <>
-                <Link to="/employer/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-neutral-200 hover:text-sky-400">
+                <Link to="/employer/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-neutral-200 hover:text-blue-400">
                   Dashboard Tuyển Dụng
                 </Link>
-                <Link to="/create-project" onClick={() => setMobileMenuOpen(false)} className="text-sky-400 font-extrabold">
+                <Link to="/create-project" onClick={() => setMobileMenuOpen(false)} className="text-blue-400 font-bold">
                   + Đăng Dự Án Mới
                 </Link>
               </>
             )}
 
             {currentUser.role === 'freelancer' && (
-              <Link to="/freelancer/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sky-400 font-extrabold">
+              <Link to="/freelancer/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-blue-400 font-bold">
                 Dashboard Freelancer
               </Link>
             )}
 
             {currentUser.role === 'admin' && (
-              <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-purple-300 font-extrabold">
+              <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-purple-300 font-bold">
                 Dashboard Quản Trị Admin
               </Link>
             )}
@@ -657,7 +657,7 @@ export const Navbar: React.FC = () => {
                   setMobileMenuOpen(false);
                   openUserProfileModal();
                 }}
-                className="text-left text-sky-400 font-bold py-1 flex items-center gap-2 cursor-pointer"
+                className="text-left text-blue-400 font-semibold py-1 flex items-center gap-2 cursor-pointer"
               >
                 <i className="fa-solid fa-user text-xs" />
                 <span>Xem Thông Tin Cá Nhân Chi Tiết</span>
@@ -676,7 +676,7 @@ export const Navbar: React.FC = () => {
                       setMobileMenuOpen(false);
                       navigate('/');
                     }}
-                    className={`p-2 rounded-md text-[11px] text-left border ${currentUser.id === u.id ? 'bg-sky-950/70 border-sky-600 text-sky-200 font-bold' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                    className={`p-2 rounded-md text-[11px] text-left border ${currentUser.id === u.id ? 'bg-blue-950/70 border-blue-600 text-blue-200 font-semibold' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
                       }`}
                   >
                     <div className="font-bold truncate">{u.name}</div>
@@ -716,7 +716,7 @@ export const Navbar: React.FC = () => {
                       setMobileMenuOpen(false);
                       openAuthModal('register');
                     }}
-                    className="flex-1 py-2 bg-sky-500 text-slate-950 font-bold rounded-md"
+                    className="flex-1 py-2 bg-blue-600 text-white font-semibold rounded-md"
                   >
                     Đăng ký
                   </button>

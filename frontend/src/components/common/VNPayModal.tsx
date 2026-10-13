@@ -66,7 +66,7 @@ export const VNPayModal: React.FC<VNPayModalProps> = ({
       <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden relative my-6">
         
         {/* VNPay Header Bar */}
-        <div className="bg-gradient-to-r from-red-700 via-rose-600 to-blue-800 text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-[#005baa] text-white px-6 py-4 flex items-center justify-between border-b border-blue-900">
           <div className="flex items-center space-x-3">
             <div className="bg-white px-3 py-1 rounded-md shadow-xs flex items-center">
               <span className="font-extrabold tracking-tighter text-blue-800 text-lg">VN</span>
@@ -104,7 +104,7 @@ export const VNPayModal: React.FC<VNPayModalProps> = ({
           </div>
           <div className="text-right">
             <div className="text-slate-500">Số tiền thanh toán:</div>
-            <div className="text-lg font-black text-red-600">{amount.toLocaleString('vi-VN')} đ</div>
+            <div className="text-lg font-bold text-red-600">{amount.toLocaleString('vi-VN')} đ</div>
           </div>
         </div>
 

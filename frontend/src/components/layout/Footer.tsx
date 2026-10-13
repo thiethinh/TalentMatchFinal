@@ -9,7 +9,7 @@ export const Footer: React.FC = () => {
         {/* Top Feature Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-neutral-800 text-sm">
           <div className="flex items-start space-x-3">
-            <i className="fa-solid fa-shield-halved text-sky-400 text-xl shrink-0 mt-0.5" />
+            <i className="fa-solid fa-shield-halved text-blue-500 text-xl shrink-0 mt-0.5" />
             <div>
               <h4 className="font-bold text-white mb-1">Tạm Giữ Tiền Escrow</h4>
               <p className="text-neutral-400 text-xs">100% tiền đặt cọc an toàn, chỉ giải ngân khi chấp nhận sản phẩm.</p>
@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex items-start space-x-3">
-            <i className="fa-solid fa-lock text-sky-400 text-xl shrink-0 mt-0.5" />
+            <i className="fa-solid fa-lock text-blue-500 text-xl shrink-0 mt-0.5" />
             <div>
               <h4 className="font-bold text-white mb-1">Bảo Vệ Hai Chiều</h4>
               <p className="text-neutral-400 text-xs">Chống bùng tiền cho Freelancer, chống quỵt bài cho Nhà tuyển dụng.</p>
@@ -25,7 +25,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex items-start space-x-3">
-            <i className="fa-solid fa-file-contract text-sky-400 text-xl shrink-0 mt-0.5" />
+            <i className="fa-solid fa-file-contract text-blue-500 text-xl shrink-0 mt-0.5" />
             <div>
               <h4 className="font-bold text-white mb-1">Quy Định NĐ 85/2021</h4>
               <p className="text-neutral-400 text-xs">Sàn Thương mại Điện tử hợp pháp tuân thủ đầy đủ quy định Việt Nam.</p>
@@ -33,7 +33,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex items-start space-x-3">
-            <i className="fa-solid fa-circle-check text-sky-400 text-xl shrink-0 mt-0.5" />
+            <i className="fa-solid fa-circle-check text-blue-500 text-xl shrink-0 mt-0.5" />
             <div>
               <h4 className="font-bold text-white mb-1">TalentCredit Uy Tín</h4>
               <p className="text-neutral-400 text-xs">Điểm uy tín được tích lũy từ lịch sử giao dịch & nghiệm thu thực tế.</p>
@@ -54,10 +54,10 @@ export const Footer: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col text-left">
-                <div className="flex items-center tracking-tight font-black text-xl leading-none">
+                <div className="flex items-center tracking-tight font-bold text-xl leading-none">
                   <span className="text-white">Talent</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400">Match</span>
-                  <span className="text-[9px] font-extrabold text-sky-400 ml-1.5 px-1.5 py-0.5 bg-sky-950/90 border border-sky-800/80 rounded-md leading-none">VN</span>
+                  <span className="text-blue-500 font-bold">Match</span>
+                  <span className="text-[10px] font-semibold text-blue-400 ml-1.5 px-1.5 py-0.5 bg-blue-950/80 border border-blue-800 rounded leading-none">VN</span>
                 </div>
                 <span className="text-[10px] font-semibold text-neutral-400 tracking-wider uppercase mt-0.5">Freelancer Marketplace</span>
               </div>
@@ -73,34 +73,34 @@ export const Footer: React.FC = () => {
 
           {/* Categories */}
           <div>
-            <h5 className="font-extrabold text-white text-sm mb-4">Dịch Vụ Số Hot</h5>
+            <h5 className="font-bold text-white text-sm mb-4">Dịch Vụ Số Hot</h5>
             <ul className="space-y-2 text-xs text-neutral-400">
-              <li><Link to="/services?cat=IT" className="hover:text-sky-400 transition-colors">Lập trình Website & App</Link></li>
-              <li><Link to="/services?cat=Design" className="hover:text-sky-400 transition-colors">Thiết kế UI/UX & Landing Page</Link></li>
-              <li><Link to="/services?cat=Video" className="hover:text-sky-400 transition-colors">Video Editing & Motion Ads</Link></li>
-              <li><Link to="/services?cat=Marketing" className="hover:text-sky-400 transition-colors">Digital Marketing & SEO</Link></li>
+              <li><Link to="/services?cat=IT" className="hover:text-blue-400 transition-colors">Lập trình Website & App</Link></li>
+              <li><Link to="/services?cat=Design" className="hover:text-blue-400 transition-colors">Thiết kế UI/UX & Landing Page</Link></li>
+              <li><Link to="/services?cat=Video" className="hover:text-blue-400 transition-colors">Video Editing & Motion Ads</Link></li>
+              <li><Link to="/services?cat=Marketing" className="hover:text-blue-400 transition-colors">Digital Marketing & SEO</Link></li>
             </ul>
           </div>
 
           {/* For Users */}
           <div>
-            <h5 className="font-extrabold text-white text-sm mb-4">Người Dùng</h5>
+            <h5 className="font-bold text-white text-sm mb-4">Người Dùng</h5>
             <ul className="space-y-2 text-xs text-neutral-400">
-              <li><Link to="/services" className="hover:text-sky-400 transition-colors">Tìm Thuê Dịch Vụ</Link></li>
-              <li><Link to="/projects" className="hover:text-sky-400 transition-colors">Dự Án Đang Tuyển</Link></li>
-              <li><Link to="/create-project" className="hover:text-sky-400 transition-colors">Đăng Dự Án Mới</Link></li>
-              <li><Link to="/freelancer/dashboard" className="hover:text-sky-400 transition-colors">Trở Thành Freelancer</Link></li>
+              <li><Link to="/services" className="hover:text-blue-400 transition-colors">Tìm Thuê Dịch Vụ</Link></li>
+              <li><Link to="/projects" className="hover:text-blue-400 transition-colors">Dự Án Đang Tuyển</Link></li>
+              <li><Link to="/create-project" className="hover:text-blue-400 transition-colors">Đăng Dự Án Mới</Link></li>
+              <li><Link to="/freelancer/dashboard" className="hover:text-blue-400 transition-colors">Trở Thành Freelancer</Link></li>
             </ul>
           </div>
 
           {/* Policy & Legal */}
           <div>
-            <h5 className="font-extrabold text-white text-sm mb-4">Pháp Lý & An Toàn</h5>
+            <h5 className="font-bold text-white text-sm mb-4">Pháp Lý & An Toàn</h5>
             <ul className="space-y-2 text-xs text-neutral-400">
-              <li><span className="hover:text-sky-400 transition-colors cursor-pointer">Quy chế Escrow & Tạm giữ</span></li>
-              <li><span className="hover:text-sky-400 transition-colors cursor-pointer">Chính sách Tranh chấp</span></li>
-              <li><span className="hover:text-sky-400 transition-colors cursor-pointer">Chống Giao dịch chui Zalo</span></li>
-              <li><span className="hover:text-sky-400 transition-colors cursor-pointer">Bảo vệ Dữ liệu NĐ 13/2023</span></li>
+              <li><span className="hover:text-blue-400 transition-colors cursor-pointer">Quy chế Escrow & Tạm giữ</span></li>
+              <li><span className="hover:text-blue-400 transition-colors cursor-pointer">Chính sách Tranh chấp</span></li>
+              <li><span className="hover:text-blue-400 transition-colors cursor-pointer">Chống Giao dịch chui Zalo</span></li>
+              <li><span className="hover:text-blue-400 transition-colors cursor-pointer">Bảo vệ Dữ liệu NĐ 13/2023</span></li>
             </ul>
           </div>
         </div>

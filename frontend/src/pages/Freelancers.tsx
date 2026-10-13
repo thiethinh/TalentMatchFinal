@@ -275,16 +275,14 @@ export const Freelancers: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. Header Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-xl p-6 sm:p-10 text-white shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-10 text-white shadow-sm relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-400/30 px-3.5 py-1 rounded-md text-xs font-bold text-indigo-300">
+          <div className="inline-flex items-center space-x-2 bg-indigo-950/80 border border-indigo-700/50 px-3.5 py-1 rounded-md text-xs font-semibold text-indigo-300">
             <i className="fa-solid fa-certificate text-indigo-400 text-xs" />
             <span>Đội Ngũ Freelancer Đã Xác Thực Danh Tính eKYC & Năng Lực Thực Tế</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">
             Khám Phá Hồ Sơ Freelancer Chuyên Nghiệp
           </h1>
 
@@ -302,7 +300,7 @@ export const Freelancers: React.FC = () => {
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs space-y-6 sticky top-24">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2 font-extrabold text-slate-900 text-sm">
+              <div className="flex items-center space-x-2 font-bold text-slate-900 text-sm">
                 <i className="fa-solid fa-sliders text-indigo-600 text-xs" />
                 <span>Bộ Lọc Freelancer</span>
               </div>
@@ -319,7 +317,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Search Input */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-extrabold text-slate-800">Tìm kiếm theo tên / kỹ năng:</label>
+              <label className="block text-xs font-bold text-slate-800">Tìm kiếm theo tên / kỹ năng:</label>
               <div className="relative">
                 <input
                   type="text"
@@ -334,7 +332,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Main Category */}
             <div className="space-y-2">
-              <label className="block text-xs font-extrabold text-slate-800">Lĩnh vực chuyên môn:</label>
+              <label className="block text-xs font-bold text-slate-800">Lĩnh vực chuyên môn:</label>
               <div className="relative">
                 <select
                   value={selectedMainCategory}
@@ -358,7 +356,7 @@ export const Freelancers: React.FC = () => {
             {/* Subcategory Selector */}
             {selectedMainCategory !== 'ALL' && (
               <div className="space-y-1.5 animate-in fade-in duration-200">
-                <label className="block text-xs font-extrabold text-indigo-700 flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-indigo-700 flex items-center gap-1.5">
                   <i className="fa-solid fa-chevron-right text-indigo-600 text-xs" />
                   <span>Nhóm nhỏ chuyên sâu:</span>
                 </label>
@@ -383,7 +381,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Hourly Rate Price Range Filter */}
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-dong-sign text-emerald-600 text-xs" />
                 <span>Mức thù lao / Giá theo giờ (VND/h):</span>
               </label>
@@ -445,7 +443,7 @@ export const Freelancers: React.FC = () => {
 
             {/* TalentCredit Badge Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-award text-amber-500 text-xs" />
                 <span>Huy hiệu TalentCredit:</span>
               </label>
@@ -467,7 +465,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Minimum Rating Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-star text-amber-400 text-xs" />
                 <span>Đánh giá tối thiểu:</span>
               </label>
@@ -509,7 +507,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Location Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i className="fa-solid fa-location-dot text-rose-500 text-xs" />
                 <span>Khu vực địa lý:</span>
               </label>
@@ -530,7 +528,7 @@ export const Freelancers: React.FC = () => {
 
             {/* Skills Filter */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-extrabold text-slate-800">Kỹ năng chuyên môn:</label>
+              <label className="block text-xs font-bold text-slate-800">Kỹ năng chuyên môn:</label>
               <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                 {POPULAR_SKILLS.map((sk) => {
                   const isSelected = selectedSkills.includes(sk);
@@ -561,8 +559,8 @@ export const Freelancers: React.FC = () => {
           {/* Toolbar: Counter & Sort */}
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-slate-900 text-sm">
-                Tìm thấy <span className="text-indigo-600 font-black">{filteredFreelancers.length}</span> chuyên gia phù hợp
+              <span className="font-bold text-slate-900 text-sm">
+                Tìm thấy <span className="text-indigo-600 font-bold">{filteredFreelancers.length}</span> chuyên gia phù hợp
               </span>
               {activeFiltersCount > 0 && (
                 <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -695,18 +693,18 @@ export const Freelancers: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-md border border-slate-100 text-center text-xs">
                       <div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase">Điểm Tín Nhiệm</div>
-                        <div className="font-extrabold text-amber-700 mt-0.5">{free.talentCreditScore}</div>
+                        <div className="font-bold text-amber-700 mt-0.5">{free.talentCreditScore}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase">Đánh Giá</div>
-                        <div className="font-extrabold text-slate-900 mt-0.5 flex items-center justify-center gap-1">
+                        <div className="font-bold text-slate-900 mt-0.5 flex items-center justify-center gap-1">
                           <span>{free.rating}</span>
                           <i className="fa-solid fa-star text-amber-400 text-xs" />
                         </div>
                       </div>
                       <div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase">Thù Lao/Giờ</div>
-                        <div className="font-extrabold text-emerald-700 mt-0.5">
+                        <div className="font-bold text-emerald-700 mt-0.5">
                           {((free.hourlyRate || 300000) / 1000).toFixed(0)}k đ
                         </div>
                       </div>
@@ -773,8 +771,8 @@ export const Freelancers: React.FC = () => {
                                 alt={item.title}
                                 className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-200"
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent flex items-end p-1.5">
-                                <span className="text-[10px] font-bold text-white truncate drop-shadow-xs">
+                              <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 px-2 py-1 flex items-center">
+                                <span className="text-[10px] font-semibold text-white truncate">
                                   {item.title}
                                 </span>
                               </div>

@@ -38,21 +38,47 @@ interface Toast {
   message: string;
 }
 
-const STORAGE_KEY_USERS = 'talentmatch_demo_users_v4';
-const STORAGE_KEY_CURRENT_USER_ID = 'talentmatch_demo_current_user_id_v4';
-const STORAGE_KEY_PROJECTS = 'talentmatch_demo_projects_v4';
-const STORAGE_KEY_PROPOSALS = 'talentmatch_demo_proposals_v4';
-const STORAGE_KEY_ORDERS = 'talentmatch_demo_orders_v4';
-const STORAGE_KEY_REVIEWS = 'talentmatch_demo_reviews_v4';
-const STORAGE_KEY_DISPUTES = 'talentmatch_demo_disputes_v4';
-const STORAGE_KEY_VNPAY = 'talentmatch_demo_vnpay_v4';
-const STORAGE_KEY_CONFIG = 'talentmatch_demo_config_v4';
-const STORAGE_KEY_FREELANCERS = 'talentmatch_demo_freelancers_v4';
-const STORAGE_KEY_NOTIFICATIONS = 'talentmatch_demo_notifications_v4';
-const STORAGE_KEY_SAVED_FREELANCERS = 'talentmatch_demo_saved_freelancers_v4';
-const STORAGE_KEY_SAVED_EMPLOYERS = 'talentmatch_demo_saved_employers_v4';
-const STORAGE_KEY_SAVED_PROJECTS = 'talentmatch_demo_saved_projects_v4';
-const STORAGE_KEY_INVITATIONS = 'talentmatch_demo_invitations_v4';
+const CURRENT_DATA_VERSION = 'v5_seed_complete_2026';
+const STORAGE_KEY_DATA_VERSION = 'talentmatch_demo_data_version';
+
+const STORAGE_KEY_USERS = 'talentmatch_demo_users_v5';
+const STORAGE_KEY_CURRENT_USER_ID = 'talentmatch_demo_current_user_id_v5';
+const STORAGE_KEY_PROJECTS = 'talentmatch_demo_projects_v5';
+const STORAGE_KEY_PROPOSALS = 'talentmatch_demo_proposals_v5';
+const STORAGE_KEY_ORDERS = 'talentmatch_demo_orders_v5';
+const STORAGE_KEY_REVIEWS = 'talentmatch_demo_reviews_v5';
+const STORAGE_KEY_DISPUTES = 'talentmatch_demo_disputes_v5';
+const STORAGE_KEY_VNPAY = 'talentmatch_demo_vnpay_v5';
+const STORAGE_KEY_CONFIG = 'talentmatch_demo_config_v5';
+const STORAGE_KEY_FREELANCERS = 'talentmatch_demo_freelancers_v5';
+const STORAGE_KEY_NOTIFICATIONS = 'talentmatch_demo_notifications_v5';
+const STORAGE_KEY_SAVED_FREELANCERS = 'talentmatch_demo_saved_freelancers_v5';
+const STORAGE_KEY_SAVED_EMPLOYERS = 'talentmatch_demo_saved_employers_v5';
+const STORAGE_KEY_SAVED_PROJECTS = 'talentmatch_demo_saved_projects_v5';
+const STORAGE_KEY_INVITATIONS = 'talentmatch_demo_invitations_v5';
+
+// Tự động đồng bộ dữ liệu mẫu mới nhất khi version thay đổi (đảm bảo git pull + npm run dev tự cập nhật cho tất cả mọi người)
+if (typeof window !== 'undefined') {
+  try {
+    const existingVersion = localStorage.getItem(STORAGE_KEY_DATA_VERSION);
+    if (existingVersion !== CURRENT_DATA_VERSION) {
+      localStorage.setItem(STORAGE_KEY_DATA_VERSION, CURRENT_DATA_VERSION);
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(INITIAL_USERS));
+      localStorage.setItem(STORAGE_KEY_FREELANCERS, JSON.stringify(FREELANCERS));
+      localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(PROJECTS));
+      localStorage.setItem(STORAGE_KEY_PROPOSALS, JSON.stringify(PROPOSALS));
+      localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(INITIAL_ORDERS));
+      localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(INITIAL_REVIEWS));
+      localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_DISPUTES));
+      localStorage.setItem(STORAGE_KEY_VNPAY, JSON.stringify(INITIAL_VNPAY_TRANSACTIONS));
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
+      localStorage.setItem(STORAGE_KEY_INVITATIONS, JSON.stringify(INITIAL_INVITATIONS));
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, INITIAL_USERS[0].id);
+    }
+  } catch (e) {
+    // ignore
+  }
+}
 
 const loadFromStorage = <T,>(key: string, fallback: T): T => {
   try {
@@ -489,6 +515,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem(STORAGE_KEY_VNPAY);
     localStorage.removeItem(STORAGE_KEY_CONFIG);
     localStorage.removeItem(STORAGE_KEY_INVITATIONS);
+    localStorage.removeItem(STORAGE_KEY_NOTIFICATIONS);
 
     setUsers(INITIAL_USERS);
     setCurrentUser(INITIAL_USERS[0]);
@@ -502,6 +529,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setVnpayTransactions(INITIAL_VNPAY_TRANSACTIONS);
     setPlatformConfig(DEFAULT_CONFIG);
     setInvitations(INITIAL_INVITATIONS);
+    setNotifications(INITIAL_NOTIFICATIONS);
 
     addToast('Đã khôi phục toàn bộ dữ liệu mẫu TalentMatch ban đầu!', 'info');
   };

@@ -372,7 +372,7 @@ export const AuthModal: React.FC = () => {
             <div className="flex border-b border-slate-200 mb-6">
               <button
                 onClick={() => setActiveTab('login')}
-                className={`flex-1 py-3 font-extrabold text-base border-b-2 transition-all ${
+                className={`flex-1 py-3 font-bold text-base border-b-2 transition-all ${
                   activeTab === 'login'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -382,7 +382,7 @@ export const AuthModal: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('register')}
-                className={`flex-1 py-3 font-extrabold text-base border-b-2 transition-all ${
+                className={`flex-1 py-3 font-bold text-base border-b-2 transition-all ${
                   activeTab === 'register'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-400 hover:text-slate-600'

@@ -1,9 +1,10 @@
 -- ============================================================================
--- TalentMatch V32 — FULL DATABASE SCHEMA & FEATURE ENRICHMENT (MySQL 8+)
+-- TalentMatch V33 — FULL DATABASE SCHEMA & COMPREHENSIVE SEED DATA (MySQL 8+)
 -- Non-destructive, safe to re-run multiple times (Idempotent).
 -- Covers 100% features: Auth, eKYC, Escrow Wallet, Bank Accounts, Withdrawals,
--- Projects, Milestones, Deliveries, Multi-Criteria Reviews, Disputes, VNPay,
--- Invitations, Real-time Notifications & Platform Configuration.
+-- Projects, Proposals, Milestones, Deliveries, Multi-Criteria Reviews, Disputes,
+-- VNPay Sandbox, Job Invitations, Real-time Notifications & Platform Configuration.
+-- Đồng bộ 100% với giao diện Frontend & file tài liệu test accounts.txt.
 -- ============================================================================
 
 USE talentmatch_pro;
@@ -38,71 +39,24 @@ END //
 DELIMITER ;
 
 -- ----------------------------------------------------------------------------
--- 2. ALTER EXISTING TABLES WITH REQUIRED FEATURE COLUMNS
+-- 2. ENSURE FEATURE TABLES EXIST
 -- ----------------------------------------------------------------------------
 
--- [A] USERS: eKYC, Mandatory Email Verification, Wallet & Escrow Balances, TalentCredit
-CALL tm_add_column_if_absent('users', 'is_verified', 'BIT(1) NOT NULL DEFAULT b\'0\'');
-CALL tm_add_column_if_absent('users', 'email_verified', 'BIT(1) NOT NULL DEFAULT b\'1\'');
-CALL tm_add_column_if_absent('users', 'account_status', 'VARCHAR(30) NOT NULL DEFAULT \'ACTIVE\'');
-CALL tm_add_column_if_absent('users', 'kyc_status', 'VARCHAR(30) NOT NULL DEFAULT \'NOT_SUBMITTED\'');
-CALL tm_add_column_if_absent('users', 'id_card_number', 'VARCHAR(30) NULL');
-CALL tm_add_column_if_absent('users', 'id_card_front_url', 'VARCHAR(500) NULL');
-CALL tm_add_column_if_absent('users', 'id_card_back_url', 'VARCHAR(500) NULL');
-CALL tm_add_column_if_absent('users', 'id_card_selfie_url', 'VARCHAR(500) NULL');
-CALL tm_add_column_if_absent('users', 'kyc_submitted_at', 'DATETIME(6) NULL');
-CALL tm_add_column_if_absent('users', 'kyc_verified_at', 'DATETIME(6) NULL');
-CALL tm_add_column_if_absent('users', 'kyc_rejection_reason', 'TEXT NULL');
-CALL tm_add_column_if_absent('users', 'balance', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
-CALL tm_add_column_if_absent('users', 'escrow_balance', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
-CALL tm_add_column_if_absent('users', 'talent_credit_score', 'INT NOT NULL DEFAULT 850');
-CALL tm_add_column_if_absent('users', 'talent_credit_badge', 'VARCHAR(30) NOT NULL DEFAULT \'Bronze\'');
+-- [A] NOTIFICATIONS TABLE
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    recipient_id BIGINT NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    message VARCHAR(1000) NOT NULL,
+    target_url VARCHAR(500),
+    is_read BIT(1) NOT NULL DEFAULT b'0',
+    type VARCHAR(40) NOT NULL DEFAULT 'SYSTEM',
+    created_at DATETIME(6) NOT NULL,
+    INDEX idx_notification_user (recipient_id, created_at),
+    CONSTRAINT fk_notif_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [B] JOBS: Budget type & proposal count cache
-CALL tm_add_column_if_absent('jobs', 'budget_type', 'VARCHAR(30) NOT NULL DEFAULT \'FIXED\'');
-CALL tm_add_column_if_absent('jobs', 'proposals_count', 'INT NOT NULL DEFAULT 0');
-
--- [C] PROJECTS: Order number, fee breakdown, revisions, Escrow payment info
-CALL tm_add_column_if_absent('projects', 'agreement_terms', 'TEXT NULL');
-CALL tm_add_column_if_absent('projects', 'agreement_version', 'INT NOT NULL DEFAULT 1');
-CALL tm_add_column_if_absent('projects', 'order_number', 'VARCHAR(50) NULL');
-CALL tm_add_column_if_absent('projects', 'service_title', 'VARCHAR(255) NULL');
-CALL tm_add_column_if_absent('projects', 'platform_fee', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
-CALL tm_add_column_if_absent('projects', 'freelancer_payout_amount', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
-CALL tm_add_column_if_absent('projects', 'deadline', 'DATE NULL');
-CALL tm_add_column_if_absent('projects', 'revision_count', 'INT NOT NULL DEFAULT 0');
-CALL tm_add_column_if_absent('projects', 'max_revisions_allowed', 'INT NOT NULL DEFAULT 3');
-CALL tm_add_column_if_absent('projects', 'auto_accept_days_remaining', 'INT NOT NULL DEFAULT 3');
-CALL tm_add_column_if_absent('projects', 'sow_requirements', 'TEXT NULL');
-CALL tm_add_column_if_absent('projects', 'notes', 'TEXT NULL');
-CALL tm_add_column_if_absent('projects', 'payment_method', 'VARCHAR(50) NULL');
-CALL tm_add_column_if_absent('projects', 'vnpay_transaction_id', 'VARCHAR(100) NULL');
-
--- [D] PROJECT DELIVERIES: File size and interactive live demo URL
-CALL tm_add_column_if_absent('project_deliveries', 'file_size', 'VARCHAR(50) NULL');
-CALL tm_add_column_if_absent('project_deliveries', 'demo_url', 'VARCHAR(500) NULL');
-
--- [E] TALENT REVIEWS: Multi-criteria rating and freelancer reply
-CALL tm_add_column_if_absent('talent_reviews', 'quality_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
-CALL tm_add_column_if_absent('talent_reviews', 'deadline_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
-CALL tm_add_column_if_absent('talent_reviews', 'communication_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
-CALL tm_add_column_if_absent('talent_reviews', 'freelancer_reply', 'TEXT NULL');
-CALL tm_add_column_if_absent('talent_reviews', 'order_title', 'VARCHAR(255) NULL');
-
--- [F] JOB INVITATIONS: Response time and decline reason
-CALL tm_add_column_if_absent('job_invitations', 'responded_at', 'DATETIME(6) NULL');
-CALL tm_add_column_if_absent('job_invitations', 'decline_reason', 'VARCHAR(500) NULL');
-
--- [G] NOTIFICATIONS: Notification category type
-CALL tm_add_column_if_absent('notifications', 'type', 'VARCHAR(40) NOT NULL DEFAULT \'SYSTEM\'');
-
-DROP PROCEDURE IF EXISTS tm_add_column_if_absent;
-
--- ----------------------------------------------------------------------------
--- 3. CREATE NEW FEATURE TABLES IF NOT EXISTS
--- ----------------------------------------------------------------------------
-
--- [1] USER BANK ACCOUNTS: Quản lý tài khoản ngân hàng rút tiền
+-- [B] USER BANK ACCOUNTS
 CREATE TABLE IF NOT EXISTS user_bank_accounts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -116,7 +70,7 @@ CREATE TABLE IF NOT EXISTS user_bank_accounts (
     CONSTRAINT fk_bank_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [2] WITHDRAWAL REQUESTS: Lệnh yêu cầu rút tiền thù lao
+-- [C] WITHDRAWAL REQUESTS
 CREATE TABLE IF NOT EXISTS withdrawal_requests (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -136,7 +90,7 @@ CREATE TABLE IF NOT EXISTS withdrawal_requests (
     CONSTRAINT fk_withdrawal_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [3] FREELANCER PORTFOLIOS: Dự án mẫu trong hồ sơ năng lực
+-- [D] FREELANCER PORTFOLIOS
 CREATE TABLE IF NOT EXISTS freelancer_portfolios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -150,7 +104,7 @@ CREATE TABLE IF NOT EXISTS freelancer_portfolios (
     CONSTRAINT fk_portfolio_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [4] DISPUTES: Trung tâm trọng tài giải quyết tranh chấp hợp đồng Escrow
+-- [E] DISPUTES
 CREATE TABLE IF NOT EXISTS disputes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     project_id BIGINT NOT NULL,
@@ -172,7 +126,7 @@ CREATE TABLE IF NOT EXISTS disputes (
     CONSTRAINT fk_dispute_resolved_by FOREIGN KEY (resolved_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [5] VNPAY TRANSACTIONS: Giao dịch thanh toán cổng VNPay Sandbox
+-- [F] VNPAY TRANSACTIONS
 CREATE TABLE IF NOT EXISTS vnpay_transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     transaction_no VARCHAR(100) NOT NULL UNIQUE,
@@ -194,13 +148,74 @@ CREATE TABLE IF NOT EXISTS vnpay_transactions (
     CONSTRAINT fk_vnpay_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- [6] PLATFORM SETTINGS: Cấu hình tham số sàn
+-- [G] PLATFORM SETTINGS
 CREATE TABLE IF NOT EXISTS platform_settings (
     setting_key VARCHAR(100) PRIMARY KEY,
     setting_value VARCHAR(255) NOT NULL,
     description VARCHAR(255),
     updated_at DATETIME(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------------------------
+-- 3. ALTER EXISTING TABLES WITH REQUIRED FEATURE COLUMNS
+-- ----------------------------------------------------------------------------
+
+-- USERS
+CALL tm_add_column_if_absent('users', 'is_verified', 'BIT(1) NOT NULL DEFAULT b\'0\'');
+CALL tm_add_column_if_absent('users', 'email_verified', 'BIT(1) NOT NULL DEFAULT b\'1\'');
+CALL tm_add_column_if_absent('users', 'account_status', 'VARCHAR(30) NOT NULL DEFAULT \'ACTIVE\'');
+CALL tm_add_column_if_absent('users', 'kyc_status', 'VARCHAR(30) NOT NULL DEFAULT \'NOT_SUBMITTED\'');
+CALL tm_add_column_if_absent('users', 'id_card_number', 'VARCHAR(30) NULL');
+CALL tm_add_column_if_absent('users', 'id_card_front_url', 'VARCHAR(500) NULL');
+CALL tm_add_column_if_absent('users', 'id_card_back_url', 'VARCHAR(500) NULL');
+CALL tm_add_column_if_absent('users', 'id_card_selfie_url', 'VARCHAR(500) NULL');
+CALL tm_add_column_if_absent('users', 'kyc_submitted_at', 'DATETIME(6) NULL');
+CALL tm_add_column_if_absent('users', 'kyc_verified_at', 'DATETIME(6) NULL');
+CALL tm_add_column_if_absent('users', 'kyc_rejection_reason', 'TEXT NULL');
+CALL tm_add_column_if_absent('users', 'balance', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
+CALL tm_add_column_if_absent('users', 'escrow_balance', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
+CALL tm_add_column_if_absent('users', 'talent_credit_score', 'INT NOT NULL DEFAULT 850');
+CALL tm_add_column_if_absent('users', 'talent_credit_badge', 'VARCHAR(30) NOT NULL DEFAULT \'Bronze\'');
+
+-- JOBS
+CALL tm_add_column_if_absent('jobs', 'budget_type', 'VARCHAR(30) NOT NULL DEFAULT \'FIXED\'');
+CALL tm_add_column_if_absent('jobs', 'proposals_count', 'INT NOT NULL DEFAULT 0');
+
+-- PROJECTS
+CALL tm_add_column_if_absent('projects', 'agreement_terms', 'TEXT NULL');
+CALL tm_add_column_if_absent('projects', 'agreement_version', 'INT NOT NULL DEFAULT 1');
+CALL tm_add_column_if_absent('projects', 'order_number', 'VARCHAR(50) NULL');
+CALL tm_add_column_if_absent('projects', 'service_title', 'VARCHAR(255) NULL');
+CALL tm_add_column_if_absent('projects', 'platform_fee', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
+CALL tm_add_column_if_absent('projects', 'freelancer_payout_amount', 'DECIMAL(15,2) NOT NULL DEFAULT 0.00');
+CALL tm_add_column_if_absent('projects', 'deadline', 'DATE NULL');
+CALL tm_add_column_if_absent('projects', 'revision_count', 'INT NOT NULL DEFAULT 0');
+CALL tm_add_column_if_absent('projects', 'max_revisions_allowed', 'INT NOT NULL DEFAULT 3');
+CALL tm_add_column_if_absent('projects', 'auto_accept_days_remaining', 'INT NOT NULL DEFAULT 3');
+CALL tm_add_column_if_absent('projects', 'sow_requirements', 'TEXT NULL');
+CALL tm_add_column_if_absent('projects', 'notes', 'TEXT NULL');
+CALL tm_add_column_if_absent('projects', 'payment_method', 'VARCHAR(50) NULL');
+CALL tm_add_column_if_absent('projects', 'vnpay_transaction_id', 'VARCHAR(100) NULL');
+
+-- PROJECT DELIVERIES
+CALL tm_add_column_if_absent('project_deliveries', 'file_size', 'VARCHAR(50) NULL');
+CALL tm_add_column_if_absent('project_deliveries', 'demo_url', 'VARCHAR(500) NULL');
+
+-- TALENT REVIEWS
+CALL tm_add_column_if_absent('talent_reviews', 'quality_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
+CALL tm_add_column_if_absent('talent_reviews', 'deadline_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
+CALL tm_add_column_if_absent('talent_reviews', 'communication_rating', 'DECIMAL(3,1) NOT NULL DEFAULT 5.0');
+CALL tm_add_column_if_absent('talent_reviews', 'freelancer_reply', 'TEXT NULL');
+CALL tm_add_column_if_absent('talent_reviews', 'order_title', 'VARCHAR(255) NULL');
+
+-- JOB INVITATIONS
+CALL tm_add_column_if_absent('job_invitations', 'responded_at', 'DATETIME(6) NULL');
+CALL tm_add_column_if_absent('job_invitations', 'decline_reason', 'VARCHAR(500) NULL');
+
+-- NOTIFICATIONS
+CALL tm_add_column_if_absent('notifications', 'type', 'VARCHAR(40) NOT NULL DEFAULT \'SYSTEM\'');
+
+DROP PROCEDURE IF EXISTS tm_add_column_if_absent;
 
 -- ----------------------------------------------------------------------------
 -- 4. UPDATE CORE PLATFORM SETTINGS
@@ -217,77 +232,28 @@ ON DUPLICATE KEY UPDATE
     updated_at = NOW(6);
 
 -- ----------------------------------------------------------------------------
--- 5. ENRICH EXISTING DATABASE USERS (Update verification, KYC, balances)
--- ----------------------------------------------------------------------------
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 95000000.00),
-    escrow_balance = IF(escrow_balance > 0, escrow_balance, 13550000.00),
-    talent_credit_score = 1000,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'admin@talentmatch.vn';
-
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 50000000.00),
-    escrow_balance = IF(escrow_balance > 0, escrow_balance, 9500000.00),
-    talent_credit_score = 980,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'client@talentmatch.vn';
-
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 32000000.00),
-    talent_credit_score = 950,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'customer2@talentmatch.vn';
-
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 18500000.00),
-    escrow_balance = IF(escrow_balance > 0, escrow_balance, 4500000.00),
-    talent_credit_score = 940,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'developer@talentmatch.vn';
-
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 24000000.00),
-    escrow_balance = IF(escrow_balance > 0, escrow_balance, 4050000.00),
-    talent_credit_score = 965,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'freelancer@talentmatch.vn';
-
-UPDATE users SET 
-    is_verified = b'1',
-    email_verified = b'1',
-    account_status = 'ACTIVE',
-    kyc_status = 'VERIFIED',
-    balance = IF(balance > 0, balance, 31000000.00),
-    talent_credit_score = 975,
-    talent_credit_badge = 'Top Rated'
-WHERE email = 'thiethinh789@gmail.com';
-
--- ----------------------------------------------------------------------------
--- 6. INSERT DEMO ACCOUNTS MATCHING FRONTEND (By unique email)
+-- 5. SEED TẤT CẢ TÀI KHOẢN NGƯỜI DÙNG (BCrypt demo123456 / admin123456)
+-- Password hash: $2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm (demo123456)
+-- Admin hash:    $2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm (demo123456 / admin123456)
 -- ----------------------------------------------------------------------------
 
--- [Employer: Lê Thu Hà - TechStartup]
+-- [1] ADMIN: Quản Trị Viên TalentMatch
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, bio, enabled, locked,
+    is_verified, email_verified, account_status, kyc_status, balance, escrow_balance,
+    talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Quản Trị Viên TalentMatch', 'admin@talentmatch.vn',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'ADMIN',
+    '19008888', 'https://api.dicebear.com/7.x/identicon/svg?seed=admin-talentmatch',
+    'Tài khoản Quản trị cấp cao phụ trách hệ thống và vận hành sàn TalentMatch.',
+    b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    95000000.00, 13550000.00, 1000, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 95000000.00, escrow_balance = 13550000.00;
+
+-- [2] EMPLOYER: Lê Thu Hà - TechStartup
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, company_name, tax_code,
     field, location, bio, enabled, locked, is_verified, email_verified, account_status,
@@ -304,7 +270,7 @@ INSERT INTO users (
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 50000000.00, escrow_balance = 9500000.00;
 
--- [Employer: Phạm Tuấn Anh - Invest Growth]
+-- [3] EMPLOYER: Phạm Tuấn Anh - Invest Growth
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, company_name, tax_code,
     field, location, bio, enabled, locked, is_verified, email_verified, account_status,
@@ -316,12 +282,78 @@ INSERT INTO users (
     'Invest Growth Vietnam', '0319876543', 'Tài chính & Đầu tư',
     'TP. Hồ Chí Minh', 'Quỹ đầu tư và vườn ươm khởi nghiệp công nghệ Việt Nam.',
     b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
-    32000000.00, 0.00, 950, 'Top Rated', NOW(6), NOW(6)
+    32000000.00, 4500000.00, 950, 'Top Rated', NOW(6), NOW(6)
 ) ON DUPLICATE KEY UPDATE 
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
-    balance = 32000000.00;
+    balance = 32000000.00, escrow_balance = 4500000.00;
 
--- [Freelancer: Nguyễn Minh Anh - Senior Full-Stack Developer]
+-- [4] EMPLOYER: Nguyễn Mai Lan - EduSparks
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, company_name, tax_code,
+    field, location, bio, enabled, locked, is_verified, email_verified, account_status,
+    kyc_status, balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Nguyễn Mai Lan', 'lan.nguyen@edusparks.edu.vn',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'CUSTOMER',
+    '0912998877', 'https://api.dicebear.com/7.x/identicon/svg?seed=nguyen-mai-lan',
+    'Học viện Giáo dục Trực tuyến EduSparks', '0108765432', 'Đào tạo & Giáo dục',
+    'Hà Nội', 'Nền tảng đào tạo kỹ năng số và ngoại ngữ trực tuyến hàng đầu.',
+    b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    28000000.00, 6000000.00, 960, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 28000000.00, escrow_balance = 6000000.00;
+
+-- [5] EMPLOYER: Trần Việt Hoàng - Foodies Delight
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, company_name, tax_code,
+    field, location, bio, enabled, locked, is_verified, email_verified, account_status,
+    kyc_status, balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Trần Việt Hoàng', 'hoang.tran@foodies.vn',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'CUSTOMER',
+    '0938112233', 'https://api.dicebear.com/7.x/identicon/svg?seed=tran-viet-hoang',
+    'Chuỗi Ẩm thực & Nhà hàng Foodies Delight', '0315678901', 'F&B & Bán lẻ',
+    'TP. Hồ Chí Minh', 'Chuỗi nhà hàng chay và ẩm thực thực dưỡng cao cấp tại TP.HCM.',
+    b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    45000000.00, 8500000.00, 970, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 45000000.00, escrow_balance = 8500000.00;
+
+-- [6] EMPLOYER: Đặng Ngọc Mai - Bella Mode
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, company_name, tax_code,
+    field, location, bio, enabled, locked, is_verified, email_verified, account_status,
+    kyc_status, balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Đặng Ngọc Mai', 'mai.dang@fashionhouse.vn',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'CUSTOMER',
+    '0905667788', 'https://api.dicebear.com/7.x/identicon/svg?seed=dang-ngoc-mai',
+    'Thời trang Thiết kế Bella Mode Vietnam', '0401234567', 'Thời trang & Mỹ phẩm',
+    'Đà Nẵng', 'Thương hiệu thời trang thiết kế công sở và mỹ phẩm thiên nhiên.',
+    b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    19500000.00, 3500000.00, 940, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 19500000.00, escrow_balance = 3500000.00;
+
+-- [7] UNVERIFIED EMPLOYER: Hoàng Thị Yến
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, company_name,
+    enabled, locked, is_verified, email_verified, account_status, kyc_status,
+    balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Hoàng Thị Yến (Chưa xác thực)', 'yen.hoang.demo@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'CUSTOMER',
+    '0944556677', 'https://api.dicebear.com/7.x/identicon/svg?seed=hoang-thi-yen',
+    'Công ty TNHH Yến Fashion',
+    b'1', b'0', b'0', b'0', 'PENDING', 'NOT_SUBMITTED',
+    0.00, 0.00, 800, 'Bronze', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'0', email_verified = b'0', account_status = 'PENDING', kyc_status = 'NOT_SUBMITTED';
+
+-- [8] FREELANCER: Nguyễn Minh Anh - Senior Full-Stack Developer
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, field, location, website, experience_years, hourly_rate, available,
@@ -333,7 +365,7 @@ INSERT INTO users (
     '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
     '0901234567', 'https://api.dicebear.com/7.x/identicon/svg?seed=nguyen-minh-anh',
     'Senior Full-Stack & Mobile App Developer',
-    'Chuyên gia Full-Stack Web & Mobile App với hơn 6 năm kinh nghiệm thực chiến phát triển các giải pháp thương mại điện tử, ReactJS, Next.js, Node.js và Flutter.',
+    'Chuyên gia Full-Stack Web & Mobile App với hơn 6 năm kinh nghiệm thực chiến phát triển các giải pháp thương mại điện tử, ReactJS, Next.js, Node.js và Flutter cho các doanh nghiệp SME tại Việt Nam.',
     'ReactJS, Next.js, Node.js, TypeScript, Flutter, Tailwind CSS, REST API, MySQL',
     'IT & Lập trình', 'Hà Nội, Việt Nam', 'https://github.com/minhanh-dev/portfolio-vietnam',
     6, 350000.00, b'1', 4.92, 52, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
@@ -342,7 +374,7 @@ INSERT INTO users (
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 18500000.00, escrow_balance = 4500000.00, talent_credit_score = 940, talent_credit_badge = 'Top Rated';
 
--- [Freelancer: Trần Hoàng Nam - UI/UX Lead Designer]
+-- [9] FREELANCER: Trần Hoàng Nam - UI/UX Lead Designer
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, field, location, website, experience_years, hourly_rate, available,
@@ -363,7 +395,7 @@ INSERT INTO users (
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 24000000.00, escrow_balance = 4050000.00, talent_credit_score = 965, talent_credit_badge = 'Top Rated';
 
--- [Freelancer: Phạm Quốc Huy - Video Editor]
+-- [10] FREELANCER: Phạm Quốc Huy - Video Editor
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, field, location, website, experience_years, hourly_rate, available,
@@ -384,7 +416,7 @@ INSERT INTO users (
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 8200000.00;
 
--- [Freelancer: Vũ Linh Đan - SEO & Performance Marketer]
+-- [11] FREELANCER: Vũ Linh Đan - SEO & Performance Marketer
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, field, location, website, experience_years, hourly_rate, available,
@@ -399,13 +431,13 @@ INSERT INTO users (
     'Tối ưu chiến dịch Facebook Ads, Google Ads và xây dựng chiến lược Content chuyển đổi cao.',
     'Facebook Ads, Google Ads, SEO Google, Content Marketing, Copywriting',
     'Marketing & Bán hàng', 'Hà Nội, Việt Nam', 'https://linhdan-marketing.myportfolio.com',
-    4, 280000.00, b'1', 4.90, 42, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
-    14600000.00, 0.00, 915, 'Gold', NOW(6), NOW(6)
+    4, 280000.00, b'1', 4.85, 30, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    14600000.00, 0.00, 875, 'Gold', NOW(6), NOW(6)
 ) ON DUPLICATE KEY UPDATE 
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 14600000.00;
 
--- [Freelancer: Đỗ Bảo Long - Senior Python & AI Engineer]
+-- [12] FREELANCER: Đỗ Bảo Long - Senior Python & AI Engineer
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, field, location, website, experience_years, hourly_rate, available,
@@ -418,30 +450,120 @@ INSERT INTO users (
     '0966884422', 'https://api.dicebear.com/7.x/identicon/svg?seed=do-bao-long',
     'Senior Python & AI Engineer',
     'Xây dựng hệ thống dữ liệu lớn, tích hợp OpenAI/Gemini API, OCR tiếng Việt và phát triển backend FastAPI.',
-    'Python, FastAPI, AI/LLM, PostgreSQL, Docker, REST API',
+    'Python, FastAPI, AI/LLM, PostgreSQL, Docker, REST API, PyTorch, LangChain',
     'IT & Lập trình', 'TP. Hồ Chí Minh, Việt Nam', 'https://github.com/baolong-ai-engineer',
-    7, 450000.00, b'1', 4.96, 61, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
-    31000000.00, 0.00, 975, 'Top Rated', NOW(6), NOW(6)
+    7, 450000.00, b'1', 4.96, 45, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    31000000.00, 0.00, 970, 'Top Rated', NOW(6), NOW(6)
 ) ON DUPLICATE KEY UPDATE 
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 31000000.00;
 
--- [Unverified Employer Demo]
+-- [13] FREELANCER: Ngô Phương Thanh - Content Strategist
 INSERT INTO users (
-    full_name, email, password, role, phone, avatar, company_name,
-    enabled, locked, is_verified, email_verified, account_status, kyc_status,
-    balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+    full_name, email, password, role, phone, avatar, professional_title,
+    bio, skills, field, location, website, experience_years, hourly_rate, available,
+    rating, completed_projects, enabled, locked, is_verified, email_verified,
+    account_status, kyc_status, balance, escrow_balance, talent_credit_score,
+    talent_credit_badge, created_at, updated_at
 ) VALUES (
-    'Hoàng Thị Yến (Chưa xác thực)', 'yen.hoang.demo@gmail.com',
-    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'CUSTOMER',
-    '0944556677', 'https://api.dicebear.com/7.x/identicon/svg?seed=hoang-thi-yen',
-    'Công ty TNHH Yến Fashion',
-    b'1', b'0', b'0', b'0', 'PENDING', 'NOT_SUBMITTED',
-    0.00, 0.00, 800, 'Bronze', NOW(6), NOW(6)
+    'Ngô Phương Thanh', 'thanh.writer@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0981223344', 'https://api.dicebear.com/7.x/identicon/svg?seed=ngo-phuong-thanh',
+    'Content Strategist & Creative Copywriter',
+    'Chuyên gia ngôn từ và chiến lược nội dung số với 5 năm kinh nghiệm. Xây dựng content pillar, viết bài chuẩn SEO, bài PR báo chí.',
+    'Content Strategy, SEO Writing, Copywriting, Social Media, Storytelling, PR Article',
+    'Viết lách & Nội dung', 'Hà Nội, Việt Nam', 'https://phuongthanh-content.myportfolio.com',
+    5, 200000.00, b'1', 4.91, 44, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    11800000.00, 1800000.00, 920, 'Top Rated', NOW(6), NOW(6)
 ) ON DUPLICATE KEY UPDATE 
-    is_verified = b'0', email_verified = b'0', account_status = 'PENDING', kyc_status = 'NOT_SUBMITTED';
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 11800000.00, escrow_balance = 1800000.00;
 
--- [Unverified Freelancer Demo]
+-- [14] FREELANCER: Bùi Hoàng Đức - Kiến trúc sư 3D & BIM
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, professional_title,
+    bio, skills, field, location, website, experience_years, hourly_rate, available,
+    rating, completed_projects, enabled, locked, is_verified, email_verified,
+    account_status, kyc_status, balance, escrow_balance, talent_credit_score,
+    talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Bùi Hoàng Đức', 'duc.architect@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0918776655', 'https://api.dicebear.com/7.x/identicon/svg?seed=bui-hoang-duc',
+    'Kiến trúc sư 3D & BIM Revit Specialist',
+    'Kiến trúc sư giàu kinh nghiệm thiết kế quy hoạch, phối cảnh 3D nội ngoại thất và lập mô hình BIM Revit chuẩn thi công.',
+    'AutoCAD, Revit BIM, 3Ds Max, SketchUp, V-Ray, Phối cảnh 3D nội thất',
+    'Kỹ thuật & Kiến trúc', 'Hải Phòng, Việt Nam', 'https://behance.net/duc_architect_vietnam',
+    6, 320000.00, b'1', 4.89, 40, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    22400000.00, 5400000.00, 935, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 22400000.00, escrow_balance = 5400000.00;
+
+-- [15] FREELANCER: Trịnh Hoài Thu - Biên Phiên Dịch Anh - Nhật
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, professional_title,
+    bio, skills, field, location, website, experience_years, hourly_rate, available,
+    rating, completed_projects, enabled, locked, is_verified, email_verified,
+    account_status, kyc_status, balance, escrow_balance, talent_credit_score,
+    talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Trịnh Hoài Thu', 'thu.translator@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0936554433', 'https://api.dicebear.com/7.x/identicon/svg?seed=trinh-hoai-thu',
+    'Biên Phiên Dịch Song Ngữ Anh - Nhật N1',
+    'Biên dịch viên chuyên nghiệp đạt chứng chỉ JLPT N1 và IELTS 8.0 với 5 năm kinh nghiệm dịch thuật hợp đồng và bản địa hóa.',
+    'Dịch thuật Anh - Việt, Nhật - Việt, Biên dịch hợp đồng, Tài liệu kỹ thuật IT, Localization',
+    'Dịch thuật & Đào tạo', 'TP. Hồ Chí Minh, Việt Nam', 'https://proz.com/profile/trinh-hoai-thu-translator',
+    5, 230000.00, b'1', 4.94, 58, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    16200000.00, 0.00, 945, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 16200000.00;
+
+-- [16] FREELANCER: Lê Minh Quang - Kế toán trưởng & Tư vấn thuế
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, professional_title,
+    bio, skills, field, location, website, experience_years, hourly_rate, available,
+    rating, completed_projects, enabled, locked, is_verified, email_verified,
+    account_status, kyc_status, balance, escrow_balance, talent_credit_score,
+    talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Lê Minh Quang', 'quang.fin@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0979887766', 'https://api.dicebear.com/7.x/identicon/svg?seed=le-minh-quang',
+    'Chuyên Viên Kế Toán Trưởng & Tư Vấn Thuế',
+    'Kế toán trưởng có chứng chỉ hành nghề thuế CPA Vietnam. 8 năm hỗ trợ soát xét chứng từ, quyết toán thuế và tối ưu chi phí thuế.',
+    'Kế toán tài chính, Báo cáo tài chính, Quyết toán thuế, MISA, ERP, Kiểm soát dòng tiền',
+    'Tài chính & Kế toán', 'Hà Nội, Việt Nam', 'https://linkedin.com/in/quangle-finance-cpa',
+    8, 380000.00, b'1', 4.97, 48, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    27500000.00, 3600000.00, 960, 'Top Rated', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 27500000.00, escrow_balance = 3600000.00;
+
+-- [17] FREELANCER: Đoàn Bảo Ngọc - 3D Character Game
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, professional_title,
+    bio, skills, field, location, website, experience_years, hourly_rate, available,
+    rating, completed_projects, enabled, locked, is_verified, email_verified,
+    account_status, kyc_status, balance, escrow_balance, talent_credit_score,
+    talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Đoàn Bảo Ngọc', 'ngoc.game3d@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0962334455', 'https://api.dicebear.com/7.x/identicon/svg?seed=doan-bao-ngoc',
+    '3D Character & Game Animator',
+    'Nghệ sĩ 3D chuyên tạo hình nhân vật, vũ khí và hoạt họa chuyển động trong game Blender, Maya, Unreal Engine 5.',
+    'Blender, Maya, ZBrush, Unity 3D, Character Rigging, Unreal Engine 5',
+    'Thiết kế & Đồ họa', 'Cần Thơ, Việt Nam', 'https://artstation.com/baongoc_3dgame',
+    4, 280000.00, b'1', 4.87, 29, b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
+    13500000.00, 0.00, 885, 'Gold', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
+    balance = 13500000.00;
+
+-- [18] UNVERIFIED FREELANCER: Phạm Đức Minh
 INSERT INTO users (
     full_name, email, password, role, phone, avatar, professional_title,
     bio, skills, enabled, locked, is_verified, email_verified, account_status,
@@ -458,38 +580,98 @@ INSERT INTO users (
 ) ON DUPLICATE KEY UPDATE 
     is_verified = b'0', email_verified = b'0', account_status = 'PENDING', kyc_status = 'NOT_SUBMITTED';
 
+-- [19] BANNED USER: Nguyễn Văn Vi Phạm
+INSERT INTO users (
+    full_name, email, password, role, phone, avatar, bio,
+    enabled, locked, is_verified, email_verified, account_status, kyc_status,
+    balance, escrow_balance, talent_credit_score, talent_credit_badge, created_at, updated_at
+) VALUES (
+    'Nguyễn Văn Vi Phạm (Bị khóa)', 'banned.user@gmail.com',
+    '$2a$10$t6KXck5g9MYMc5Yf82m99e4cOUXsq3fwu72Ejw8EqRWE4QzifzWQm', 'FREELANCER',
+    '0977889900', 'https://api.dicebear.com/7.x/identicon/svg?seed=nguyen-van-vi-pham',
+    'Tài khoản đã bị tạm khóa do vi phạm chính sách giao dịch ngoài sàn.',
+    b'1', b'1', b'0', b'1', 'SUSPENDED', 'NOT_SUBMITTED',
+    0.00, 0.00, 600, 'Bronze', NOW(6), NOW(6)
+) ON DUPLICATE KEY UPDATE 
+    account_status = 'SUSPENDED', locked = b'1';
+
 -- ----------------------------------------------------------------------------
--- 7. SEED BANK ACCOUNTS (Tài khoản ngân hàng liên kết)
+-- 6. SEED TÀI KHOẢN NGÂN HÀNG LIÊN KẾT (USER_BANK_ACCOUNTS)
 -- ----------------------------------------------------------------------------
 INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
 SELECT u.id, 'Vietcombank (Ngoại Thương Việt Nam)', 'VCB', '1028394857', 'LE THU HA', b'1', NOW(6)
-FROM users u WHERE u.email IN ('ha.le@techstartup.vn', 'client@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'ha.le@techstartup.vn' LIMIT 1
 ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
 
 INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
 SELECT u.id, 'Techcombank (Kỹ Thương Việt Nam)', 'TCB', '190384759281', 'PHAM TUAN ANH', b'1', NOW(6)
-FROM users u WHERE u.email IN ('tuan.pham@invest.vn', 'customer2@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'tuan.pham@invest.vn' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'Á Châu (ACB)', 'ACB', '2345678901', 'NGUYEN MAI LAN', b'1', NOW(6)
+FROM users u WHERE u.email = 'lan.nguyen@edusparks.edu.vn' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'VPBank (Việt Nam Thịnh Vượng)', 'VPB', '98765432101', 'TRAN VIET HOANG', b'1', NOW(6)
+FROM users u WHERE u.email = 'hoang.tran@foodies.vn' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'MB Bank (Quân Đội)', 'MBB', '888809056677', 'DANG NGOC MAI', b'1', NOW(6)
+FROM users u WHERE u.email = 'mai.dang@fashionhouse.vn' LIMIT 1
 ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
 
 INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
 SELECT u.id, 'MB Bank (Quân Đội)', 'MBB', '090123456789', 'NGUYEN MINH ANH', b'1', NOW(6)
-FROM users u WHERE u.email IN ('minhanh.dev@gmail.com', 'developer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
 
 INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
 SELECT u.id, 'VietinBank (Công Thương Việt Nam)', 'CTG', '108829384756', 'TRAN HOANG NAM', b'1', NOW(6)
-FROM users u WHERE u.email IN ('hoangnam.design@gmail.com', 'freelancer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'hoangnam.design@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'Techcombank (Kỹ Thương Việt Nam)', 'TCB', '190283746519', 'PHAM QUOC HUY', b'1', NOW(6)
+FROM users u WHERE u.email = 'huy.media@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'Vietcombank (Ngoại Thương Việt Nam)', 'VCB', '0071001234567', 'VU LINH DAN', b'1', NOW(6)
+FROM users u WHERE u.email = 'linhdan.marketing@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'Á Châu (ACB)', 'ACB', '189283749', 'DO BAO LONG', b'1', NOW(6)
+FROM users u WHERE u.email = 'baolong.ai@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'Vietcombank (Ngoại Thương Việt Nam)', 'VCB', '0451009876543', 'NGO PHUONG THANH', b'1', NOW(6)
+FROM users u WHERE u.email = 'thanh.writer@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'BIDV (Đầu Tư & Phát Triển Việt Nam)', 'BIDV', '2151000889922', 'BUI HOANG DUC', b'1', NOW(6)
+FROM users u WHERE u.email = 'duc.architect@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
+
+INSERT INTO user_bank_accounts (user_id, bank_name, bank_code, account_number, account_holder, is_default, created_at)
+SELECT u.id, 'MB Bank (Quân Đội)', 'MBB', '079012345678', 'LE MINH QUANG', b'1', NOW(6)
+FROM users u WHERE u.email = 'quang.fin@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name);
 
 -- ----------------------------------------------------------------------------
--- 8. SEED FREELANCER PORTFOLIOS
+-- 7. SEED FREELANCER PORTFOLIOS
 -- ----------------------------------------------------------------------------
 INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
 SELECT u.id, 'Hệ thống E-Commerce Bán lẻ Nông sản Sạch', 'IT & Lập trình',
  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
  'Xây dựng toàn bộ giao diện Web ReactJS và API Backend Node.js cho hệ thống bán lẻ nông sản sạch, tích hợp thanh toán VNPay.',
  'https://nongsan-demo.vercel.app', NOW(6)
-FROM users u WHERE u.email IN ('minhanh.dev@gmail.com', 'developer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE title = VALUES(title);
 
 INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
@@ -497,7 +679,7 @@ SELECT u.id, 'Ứng dụng Quản lý Tài chính Doanh nghiệp', 'IT & Lập t
  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600',
  'Lập trình App di động Flutter với giao diện tối giản, tích hợp biểu đồ thống kê chi tiêu và báo cáo tự động.',
  'https://finance-app-demo.flutter.dev', NOW(6)
-FROM users u WHERE u.email IN ('minhanh.dev@gmail.com', 'developer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE title = VALUES(title);
 
 INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
@@ -505,19 +687,118 @@ SELECT u.id, 'Bộ Nhận Diện Thương Hiệu Chuỗi Cà Phê The Garden', '
  'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&q=80&w=600',
  'Thiết kế Logo, Guideline màu sắc, Bao bì sản phẩm và Menu định dạng số chuẩn in ấn và hiển thị di động.',
  'https://behance.net/gallery/thegarden-coffee-branding', NOW(6)
-FROM users u WHERE u.email IN ('hoangnam.design@gmail.com', 'freelancer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'hoangnam.design@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE title = VALUES(title);
 
 INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
-SELECT u.id, 'Giao diện Mobile App E-Commerce Thời Trang', 'Thiết kế & Đồ họa',
- 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=600',
- 'Hơn 45 màn hình Figma chuẩn iOS/Android kèm prototype tương tác mượt mà.',
- 'https://figma.com/@hoangnam_fashion_ui', NOW(6)
-FROM users u WHERE u.email IN ('hoangnam.design@gmail.com', 'freelancer@talentmatch.vn') LIMIT 1
+SELECT u.id, 'Chuỗi Video Quảng Cáo Mỹ Phẩm TikTok Ads', 'Video & Animation',
+ 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&q=80&w=600',
+ 'Dựng 10 video ngắn đạt hơn 2 triệu lượt xem tự nhiên trên nền tảng TikTok.',
+ 'https://tiktok.com/@portfolio_samples', NOW(6)
+FROM users u WHERE u.email = 'huy.media@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
+INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
+SELECT u.id, 'Chiến dịch Performance Ads F&B Doanh số +320%', 'Digital Marketing',
+ 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=600',
+ 'Tối ưu hóa phễu chuyển đổi và chi phí quảng cáo ROAS đạt 4.8x.',
+ 'https://linhdan-marketing.myportfolio.com/case-study-fb', NOW(6)
+FROM users u WHERE u.email = 'linhdan.marketing@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
+INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
+SELECT u.id, 'Hệ thống Trợ lý AI Chăm sóc Khách hàng Tự động', 'IT & Lập trình',
+ 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
+ 'Tích hợp mô hình AI LLM phân loại thắc mắc và tự động phản hồi khách hàng theo ngữ cảnh.',
+ 'https://github.com/baolong-ai-engineer/rag-chatbot', NOW(6)
+FROM users u WHERE u.email = 'baolong.ai@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
+INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
+SELECT u.id, 'E-Book Hướng Dẫn Chuyển Đổi Số Cho Doanh Nghiệp Nhỏ', 'Viết lách & Nội dung',
+ 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=600',
+ 'Soạn thảo trọn bộ E-book 80 trang và chuỗi 20 bài viết lead generation thu hút 15,000 lượt tải.',
+ 'https://phuongthanh-content.myportfolio.com/ebook-sme', NOW(6)
+FROM users u WHERE u.email = 'thanh.writer@gmail.com' LIMIT 1
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
+INSERT INTO freelancer_portfolios (user_id, title, category, image_url, description, project_url, created_at)
+SELECT u.id, 'Phối Cảnh 3D Biệt Thự Nghỉ Dưỡng Sinh Thái EcoHouse', 'Kỹ thuật & Kiến trúc',
+ 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600',
+ 'Dựng phối cảnh 3D ngoại thất, sân vườn và hồ bơi vô cực bằng 3Ds Max + V-Ray.',
+ 'https://behance.net/gallery/ecohouse-villa-render', NOW(6)
+FROM users u WHERE u.email = 'duc.architect@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE title = VALUES(title);
 
 -- ----------------------------------------------------------------------------
--- 9. SEED WITHDRAWAL REQUESTS (Lệnh rút tiền mẫu)
+-- 8. SEED NOTIFICATIONS (THÔNG BÁO PHONG PHÚ CHO TẤT CẢ TÀI KHOẢN)
+-- ----------------------------------------------------------------------------
+-- Lê Thu Hà (ha.le@techstartup.vn)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Báo giá mới cho dự án Quản lý Kho Hàng', 'Freelancer Nguyễn Minh Anh vừa gửi báo giá 14.000.000 đ kèm Portfolio mẫu App Quản lý Kho Hàng.', '/employer/dashboard', b'0', 'PROPOSAL', NOW(6)
+FROM users u WHERE u.email = 'ha.le@techstartup.vn' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Tạm giữ tiền Escrow VNPAY thành công', 'Đã phong tỏa 14.000.000 đ qua Cổng VNPAY vào Ví Tạm Giữ Escrow cho Hợp đồng TM-2026-7732.', '/employer/dashboard', b'0', 'ESCROW', DATE_SUB(NOW(6), INTERVAL 1 HOUR)
+FROM users u WHERE u.email = 'ha.le@techstartup.vn' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Freelancer đã nộp bản thử nghiệm APK', 'Nguyễn Minh Anh đã upload file KhoHang_App_Build_v1.0.apk (38.5 MB) để chờ bạn nghiệm thu Cột mốc 1.', '/employer/dashboard', b'1', 'CONTRACT', DATE_SUB(NOW(6), INTERVAL 1 DAY)
+FROM users u WHERE u.email = 'ha.le@techstartup.vn' LIMIT 1;
+
+-- Phạm Tuấn Anh (tuan.pham@invest.vn)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Có 4 ứng viên nộp đề xuất cho dự án Landing Page Đầu Tư', 'Nhiều lập trình viên ReactJS giỏi vừa gửi báo giá, ngân sách trung bình 4.200.000 đ.', '/employer/dashboard', b'0', 'PROPOSAL', DATE_SUB(NOW(6), INTERVAL 2 HOUR)
+FROM users u WHERE u.email = 'tuan.pham@invest.vn' LIMIT 1;
+
+-- Nguyễn Mai Lan (lan.nguyen@edusparks.edu.vn)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Đề xuất mới từ Kỹ sư AI Đỗ Bảo Long', 'Đỗ Bảo Long đề xuất xây dựng kiến trúc Chatbot RAG với FastAPI và pgvector cho học viện EduSparks.', '/employer/dashboard', b'0', 'PROPOSAL', DATE_SUB(NOW(6), INTERVAL 3 HOUR)
+FROM users u WHERE u.email = 'lan.nguyen@edusparks.edu.vn' LIMIT 1;
+
+-- Trần Việt Hoàng (hoang.tran@foodies.vn)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Bàn giao thiết kế Cột mốc 1: Phác thảo Logo', 'Trần Hoàng Nam đã gửi 3 concept logo Foodies Chay dạng vector PDF để bạn đánh giá.', '/employer/dashboard', b'0', 'CONTRACT', DATE_SUB(NOW(6), INTERVAL 3 HOUR)
+FROM users u WHERE u.email = 'hoang.tran@foodies.vn' LIMIT 1;
+
+-- Nguyễn Minh Anh (minhanh.dev@gmail.com)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Lời mời nhận dự án mới từ Lê Thu Hà (TechStartup VN)', 'Doanh nghiệp đã gửi lời mời bạn tham gia dự án "Xây dựng Website Thương mại điện tử B2B Nông sản" với ngân sách 15.000.000 đ.', '/freelancer/dashboard', b'0', 'INVITATION', NOW(6)
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Nhà tuyển dụng đã duyệt báo giá dự án App Quản lý Kho!', 'Lê Thu Hà (TechStartup Việt Nam) đã chấp nhận báo giá 14.000.000 đ và nạp cọc 100% vào Escrow.', '/freelancer/dashboard', b'0', 'CONTRACT', DATE_SUB(NOW(6), INTERVAL 20 MINUTE)
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Giải ngân Cột mốc 1 thành công: +6.000.000 đ', 'Số tiền 5.400.000 đ (sau khấu trừ 10% phí sàn) đã được cộng trực tiếp vào Số dư Ví khả dụng của bạn.', '/freelancer/dashboard', b'0', 'ESCROW', DATE_SUB(NOW(6), INTERVAL 3 HOUR)
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1;
+
+-- Trần Hoàng Nam (hoangnam.design@gmail.com)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Lời mời nhận dự án mới từ Phạm Tuấn Anh (Invest Growth)', 'Doanh nghiệp đã gửi lời mời bạn tham gia dự án "Thiết kế Bộ nhận diện thương hiệu & UI/UX Mobile App" với ngân sách 8.500.000 đ.', '/freelancer/dashboard', b'0', 'INVITATION', DATE_SUB(NOW(6), INTERVAL 2 HOUR)
+FROM users u WHERE u.email = 'hoangnam.design@gmail.com' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Doanh nghiệp đã duyệt Cột mốc 1 dự án Foodies Chay', 'Trần Việt Hoàng đã bấm nghiệm thu Cột mốc 1. Thù lao 2.250.000 đ đã giải ngân vào ví của bạn.', '/freelancer/dashboard', b'0', 'ESCROW', DATE_SUB(NOW(6), INTERVAL 45 MINUTE)
+FROM users u WHERE u.email = 'hoangnam.design@gmail.com' LIMIT 1;
+
+-- Đỗ Bảo Long (baolong.ai@gmail.com)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Lời mời dự án Trợ lý AI Chatbot RAG từ EduSparks Academy', 'Nguyễn Mai Lan đã xem portfolio RAG Chatbot của bạn trên Github và gửi lời mời báo giá dự án 18.000.000 đ.', '/freelancer/dashboard', b'0', 'INVITATION', DATE_SUB(NOW(6), INTERVAL 2 HOUR)
+FROM users u WHERE u.email = 'baolong.ai@gmail.com' LIMIT 1;
+
+-- Admin (admin@talentmatch.vn)
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Yêu cầu Trọng tài Tranh chấp mới: Hợp đồng TM-2026-8891', 'Employer Trần Việt Hoàng mở khiếu nại về tiến độ bàn giao menu nhà hàng.', '/admin/dashboard', b'0', 'SYSTEM', DATE_SUB(NOW(6), INTERVAL 2 HOUR)
+FROM users u WHERE u.email = 'admin@talentmatch.vn' LIMIT 1;
+
+INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+SELECT u.id, 'Giao dịch Escrow lớn nạp thành công qua VNPay', 'Hệ thống vừa ghi nhận nạp cọc 14.000.000 đ qua Cổng VNPAY từ khách hàng TechStartup Việt Nam.', '/admin/dashboard', b'0', 'ESCROW', DATE_SUB(NOW(6), INTERVAL 2 HOUR)
+FROM users u WHERE u.email = 'admin@talentmatch.vn' LIMIT 1;
+
+-- ----------------------------------------------------------------------------
+-- 9. SEED WITHDRAWAL REQUESTS (LỆNH RÚT TIỀN)
 -- ----------------------------------------------------------------------------
 INSERT INTO withdrawal_requests (
     id, user_id, bank_name, bank_code, account_number, account_holder,
@@ -526,7 +807,7 @@ INSERT INTO withdrawal_requests (
 SELECT 1, u.id, 'MB Bank (Quân Đội)', 'MBB', '090123456789', 'NGUYEN MINH ANH',
  5000000.00, 0.00, 5000000.00, 'PENDING',
  'Yêu cầu rút tiền thù lao từ dự án E-Commerce', 'WTH-2026-001', NOW(6)
-FROM users u WHERE u.email IN ('minhanh.dev@gmail.com', 'developer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'minhanh.dev@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE amount = VALUES(amount), status = VALUES(status);
 
 INSERT INTO withdrawal_requests (
@@ -537,12 +818,24 @@ SELECT 2, u.id, 'VietinBank (Công Thương Việt Nam)', 'CTG', '108829384756',
  10000000.00, 0.00, 10000000.00, 'APPROVED',
  'Đã chuyển khoản thành công qua cổng thanh toán liên ngân hàng', 'WTH-2026-002',
  DATE_SUB(NOW(6), INTERVAL 1 DAY), NOW(6)
-FROM users u WHERE u.email IN ('hoangnam.design@gmail.com', 'freelancer@talentmatch.vn') LIMIT 1
+FROM users u WHERE u.email = 'hoangnam.design@gmail.com' LIMIT 1
 ON DUPLICATE KEY UPDATE amount = VALUES(amount), status = VALUES(status);
+
+-- ----------------------------------------------------------------------------
+-- 10. SEED VNPAY TRANSACTIONS
+-- ----------------------------------------------------------------------------
+INSERT INTO vnpay_transactions (
+    transaction_no, order_number, user_email, amount, bank_code, card_type, pay_date, status, type, description, created_at
+) VALUES 
+('VNPAY-2026-8891-QR', 'TM-2026-8891', 'hoang.tran@foodies.vn', 5500000.00, 'VNPAYQR', 'QR_CODE', NOW(6), 'SUCCESS', 'ESCROW_DEPOSIT', 'Nạp cọc Escrow dự án Branding chuỗi nhà hàng qua VNPAY-QR', NOW(6)),
+('VNPAY-2026-7732-ATM', 'TM-2026-7732', 'ha.le@techstartup.vn', 14000000.00, 'NCB', 'ATM_CARD', NOW(6), 'SUCCESS', 'ESCROW_DEPOSIT', 'Nạp cọc Escrow dự án App Mobile Quản lý Kho Hàng qua thẻ ATM nội địa', NOW(6)),
+('VNPAY-2026-6621-QR', 'TM-2026-6621', 'ha.le@techstartup.vn', 3000000.00, 'VNPAYQR', 'QR_CODE', NOW(6), 'SUCCESS', 'ESCROW_DEPOSIT', 'Nạp cọc Escrow thiết kế Banner quảng cáo', NOW(6)),
+('VNPAY-PAYOUT-9912', 'TM-2026-6621', 'hoangnam.design@gmail.com', 2700000.00, 'VIETINBANK', 'BANK_TRANSFER', NOW(6), 'SUCCESS', 'PAYOUT', 'Giải ngân tiền công (90%) cho Freelancer Trần Hoàng Nam', NOW(6))
+ON DUPLICATE KEY UPDATE status = VALUES(status);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================================
 -- VERIFICATION QUERY
 -- ============================================================================
-SELECT 'TalentMatch V32 Database Migration & Feature Setup Completed Successfully!' AS status;
+SELECT 'TalentMatch V33 Database Migration & Full Seed Completed Successfully!' AS status;

@@ -95,22 +95,22 @@ export const WithdrawModal: React.FC = () => {
       <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-8 overflow-hidden">
         
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 p-6 text-white relative">
+        <div className="bg-slate-900 border-b border-slate-800 p-6 text-white relative">
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer"
+            className="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer"
           >
             <i className="fa-solid fa-xmark text-sm" />
           </button>
           
-          <div className="flex items-center space-x-2 text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1">
+          <div className="flex items-center space-x-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
             <i className="fa-solid fa-wallet text-xs" />
             <span>Cổng Thanh Toán & Ví TalentMatch</span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black">Rút Tiền Về Ngân Hàng</h2>
-          <div className="text-xs text-emerald-100 mt-1">
-            Số dư ví khả dụng hiện tại: <strong className="text-white text-sm font-black">{currentBalance.toLocaleString('vi-VN')} đ</strong>
+          <h2 className="text-xl sm:text-2xl font-bold">Rút Tiền Về Ngân Hàng</h2>
+          <div className="text-xs text-slate-300 mt-1">
+            Số dư ví khả dụng hiện tại: <strong className="text-white text-sm font-bold">{currentBalance.toLocaleString('vi-VN')} đ</strong>
           </div>
         </div>
 
@@ -330,7 +330,7 @@ export const WithdrawModal: React.FC = () => {
                   </div>
                   <div className="flex justify-between text-slate-600 border-t border-slate-200 pt-2">
                     <span className="font-bold text-slate-900">Số tiền rút:</span>
-                    <strong className="text-emerald-700 font-black text-base">{amount.toLocaleString('vi-VN')} đ</strong>
+                    <strong className="text-emerald-700 font-bold text-base">{amount.toLocaleString('vi-VN')} đ</strong>
                   </div>
                   <div className="flex justify-between text-slate-500 text-[11px]">
                     <span>Phí rút sàn TalentMatch:</span>

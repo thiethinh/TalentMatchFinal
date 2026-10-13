@@ -2,20 +2,28 @@
                     TALENTMATCH VIETNAM - DANH SÁCH TÀI KHOẢN TEST HỆ THỐNG
 ========================================================================================
 * Mật khẩu chung mặc định cho tất cả tài khoản test: demo123456 (hoặc admin123456 cho Admin)
-* Không cần thanh switcher trên cùng, bạn có thể đăng nhập trực tiếp qua nút "Đăng nhập"
-  trên Header hoặc dùng tính năng chọn nhanh "Tài khoản mẫu" ngay trong Modal Đăng nhập.
+* Tự động đồng bộ: Khi kéo code từ Git về và chạy `npm run dev`, hệ thống Frontend sẽ tự động
+  nhận diện phiên bản dữ liệu mẫu mới và nạp sẵn toàn bộ tài khoản, dự án, thông báo vào ứng dụng.
+* Đổi tài khoản test nhanh: Bạn có thể chọn nhanh tài khoản tại nút "Test" trên thanh Header,
+  hoặc đăng nhập thủ công qua nút "Đăng nhập" với Email và mật khẩu tương ứng.
+========================================================================================
+
+========================================================================================
+I. DANH SÁCH NHÀ TUYỂN DỤNG (EMPLOYERS)
 ========================================================================================
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 1: NHÀ TUYỂN DỤNG (EMPLOYER) DOANH NGHIỆP - ĐÃ XÁC THỰC]
+[1] NHÀ TUYỂN DỤNG CÔNG NGHỆ & TMĐT - LÊ THU HÀ
 ----------------------------------------------------------------------------------------
 - Email: ha.le@techstartup.vn
 - Mật khẩu: demo123456
 - Tên: Lê Thu Hà
 - Công ty: Công ty Cổ phần TechStartup Việt Nam (MST: 0101234567)
-- Trạng thái Email: ✓ ĐÃ XÁC THỰC (emailVerified = true)
-- Trạng thái eKYC: ✓ ĐÃ XÁC THỰC DOANH NGHIỆP
+- Địa điểm: Hà Nội | SĐT: 0987654321
+- Trạng thái: ✓ ĐÃ XÁC THỰC EMAIL & eKYC DOANH NGHIỆP
 - Số dư ví: 50,000,000 đ | Đang Escrow: 9,500,000 đ
+- Ngân hàng liên kết: Vietcombank (1028394857 - LE THU HA)
+- Thông báo sẵn có: 4 thông báo (Báo giá mới, Cọc Escrow 14tr, Bản APK nộp, Rút tiền thành công)
 - Mục đích test:
   + Đăng bài tuyển dụng dự án mới (Create Project)
   + Xem danh sách Proposal báo giá từ các Freelancer nộp vào
@@ -24,108 +32,248 @@
   + Mở khiếu nại Tranh chấp (Dispute) nếu freelancer giao sai cam kết
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 2: NHÀ TUYỂN DỤNG (EMPLOYER) CÁ NHÂN / STARTUP - ĐÃ XÁC THỰC]
+[2] NHÀ TUYỂN DỤNG TÀI CHÍNH & ĐẦU TƯ - PHẠM TUẤN ANH
 ----------------------------------------------------------------------------------------
 - Email: tuan.pham@invest.vn
 - Mật khẩu: demo123456
-- Tên: Phạm Tuấn Anh (Founder)
-- Trạng thái Email: ✓ ĐÃ XÁC THỰC
-- Trạng thái eKYC: ✓ VERIFIED
-- Mục đích test: Đăng dự án thiết kế Branding, nộp cọc Escrow VNPAY, trao đổi nghiệm thu.
+- Tên: Phạm Tuấn Anh (Founder & Investment Director)
+- Công ty: Invest Growth Vietnam (MST: 0319876543)
+- Địa điểm: TP. Hồ Chí Minh | SĐT: 0903332211
+- Trạng thái: ✓ ĐÃ XÁC THỰC EMAIL & eKYC
+- Số dư ví: 32,000,000 đ | Đang Escrow: 4,500,000 đ
+- Ngân hàng liên kết: Techcombank (190384759281 - PHAM TUAN ANH)
+- Thông báo sẵn có: Đề xuất mới cho Landing Page Đầu Tư, Freelancer chấp nhận lời mời dự án
+- Mục đích test: Đăng dự án thiết kế Branding & Landing Page, nộp cọc Escrow VNPAY, gửi lời mời dự án.
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 3: NHÀ TUYỂN DỤNG (EMPLOYER) MỚI TẠO - CHƯA XÁC THỰC EMAIL (TEST CHẶN)]
+[3] NHÀ TUYỂN DỤNG GIÁO DỤC TRỰC TUYẾN - NGUYỄN MAI LAN
+----------------------------------------------------------------------------------------
+- Email: lan.nguyen@edusparks.edu.vn
+- Mật khẩu: demo123456
+- Tên: Nguyễn Mai Lan (Managing Director)
+- Công ty: Học viện Giáo dục Trực tuyến EduSparks (MST: 0108765432)
+- Địa điểm: Hà Nội | SĐT: 0912998877
+- Trạng thái: ✓ ĐÃ XÁC THỰC EMAIL & eKYC
+- Số dư ví: 28,000,000 đ | Đang Escrow: 6,000,000 đ
+- Ngân hàng liên kết: Á Châu - ACB (2345678901 - NGUYEN MAI LAN)
+- Thông báo sẵn có: Đề xuất mới từ Kỹ sư AI Đỗ Bảo Long cho dự án Chatbot RAG EdTech
+- Mục đích test: Tuyển dụng lập trình viên AI, biên soạn tài liệu giáo dục, quản lý hợp đồng đào tạo.
+
+----------------------------------------------------------------------------------------
+[4] NHÀ TUYỂN DỤNG CHUỖI NHÀ HÀNG & F&B - TRẦN VIỆT HOÀNG
+----------------------------------------------------------------------------------------
+- Email: hoang.tran@foodies.vn
+- Mật khẩu: demo123456
+- Tên: Trần Việt Hoàng (Co-founder)
+- Công ty: Chuỗi Ẩm thực & Nhà hàng Foodies Delight (MST: 0315678901)
+- Địa điểm: TP. Hồ Chí Minh | SĐT: 0938112233
+- Trạng thái: ✓ ĐÃ XÁC THỰC EMAIL & eKYC
+- Số dư ví: 45,000,000 đ | Đang Escrow: 8,500,000 đ
+- Ngân hàng liên kết: VPBank (98765432101 - TRAN VIET HOANG)
+- Thông báo sẵn có: Bàn giao thiết kế Cột mốc 1 Logo Foodies Chay, Cập nhật giải quyết khiếu nại
+- Mục đích test: Test quy trình Hợp đồng Milestone, nghiệm thu từng đợt, xử lý tranh chấp khiếu nại.
+
+----------------------------------------------------------------------------------------
+[5] NHÀ TUYỂN DỤNG THỜI TRANG & MỸ PHẨM - ĐẶNG NGỌC MAI
+----------------------------------------------------------------------------------------
+- Email: mai.dang@fashionhouse.vn
+- Mật khẩu: demo123456
+- Tên: Đặng Ngọc Mai (Brand Manager)
+- Công ty: Thời trang Thiết kế Bella Mode Vietnam (MST: 0401234567)
+- Địa điểm: Đà Nẵng | SĐT: 0905667788
+- Trạng thái: ✓ ĐÃ XÁC THỰC EMAIL & eKYC
+- Số dư ví: 19,500,000 đ | Đang Escrow: 3,500,000 đ
+- Ngân hàng liên kết: MB Bank (888809056677 - DANG NGOC MAI)
+- Thông báo sẵn có: 5 Freelancer gửi báo giá cho dự án Sản xuất Video TikTok Ads
+- Mục đích test: Test tuyển dụng media, video creator, content writer, chạy ads.
+
+----------------------------------------------------------------------------------------
+[6] NHÀ TUYỂN DỤNG CHƯA XÁC THỰC EMAIL (TEST CHẶN HÀNH ĐỘNG ACTION GUARD)
 ----------------------------------------------------------------------------------------
 - Email: yen.hoang.demo@gmail.com
 - Mật khẩu: demo123456
 - Tên: Hoàng Thị Yến (Chưa xác thực)
+- Công ty: Công ty TNHH Yến Fashion
 - Trạng thái Email: ⚠️ CHƯA XÁC THỰC (emailVerified = false, status = PENDING)
 - Mục đích test:
-  + Kiểm tra luồng bảo vệ hành động (Action Guard): Khi bấm "Đăng Dự Án Mới" sẽ bị hệ thống chặn lại
-    và hiển thị popup cảnh báo yêu cầu vào màn hình Xác thực Email (Mã OTP / Link xác thực).
-  + Kiểm tra tự xác thực email để mở khóa tài khoản ngay lập tức.
+  + Khi bấm "Đăng Dự Án Mới" sẽ bị hệ thống chặn lại và hiển thị cảnh báo yêu cầu xác thực email.
+  + Kiểm tra màn hình Nhập mã OTP / Xác thực email để mở khóa tài khoản ngay lập tức.
+
+========================================================================================
+II. DANH SÁCH ỨNG VIÊN / CHUYÊN GIA (FREELANCERS)
+========================================================================================
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 4: FREELANCER TOP RATED (FULL BIO, SKILLS & PORTFOLIO LINKS)]
+[7] SENIOR FULL-STACK & MOBILE DEVELOPER - NGUYỄN MINH ANH
 ----------------------------------------------------------------------------------------
 - Email: minhanh.dev@gmail.com
 - Mật khẩu: demo123456
-- Tên: Nguyễn Minh Anh
-- Chức danh: Senior Full-Stack & Mobile Developer (6 năm kinh nghiệm)
-- Điểm TalentCredit: 920/1000 (Top Rated Badge)
-- Kỹ năng: ReactJS, Node.js, TypeScript, Flutter, Tailwind CSS, REST API, MySQL
-- Bio năng lực: "Chuyên gia lập trình với 6 năm kinh nghiệm xây dựng Website E-commerce, Web App ReactJS/Node.js và Ứng dụng di động Flutter cho doanh nghiệp SME tại Việt Nam."
+- Tên: Nguyễn Minh Anh | 6 năm kinh nghiệm | Điểm TalentCredit: 940/1000 (Top Rated)
+- Giá theo giờ: 350,000 đ/h | Đã hoàn thành: 52 dự án | Đánh giá: 4.92 ★ (48 reviews)
+- Kỹ năng: ReactJS, Next.js, Node.js, TypeScript, Flutter, Tailwind CSS, REST API, MySQL
 - Link Portfolio: https://github.com/minhanh-dev/portfolio-vietnam
-- Trạng thái Email: ✓ ĐÃ XÁC THỰC
-- Mục đích test:
-  + Tìm kiếm dự án tuyển dụng đang mở
-  + Nộp Báo giá (Proposal): Chào giá bid, thời gian dự kiến, đính kèm Cover letter & link Portfolio
-  + Nộp bài bàn giao (Deliver Work): Upload file zip/demo URL và kích hoạt đếm ngược 72h tự động nghiệm thu
-  + Xem thu nhập nhận về (sau khi trừ 10% phí sàn)
+- Ngân hàng: MB Bank (090123456789 - NGUYEN MINH ANH)
+- Số dư ví: 18,500,000 đ | Đang Escrow: 4,500,000 đ
+- Thông báo sẵn có: Lời mời dự án B2B 15tr, Duyệt báo giá dự án Kho 14tr, Giải ngân +5.4tr, Đánh giá 4.9★
+- Mục đích test: Test tìm việc IT, nộp proposal, bàn giao file APK, nhận giải ngân Escrow, rút tiền ngân hàng.
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 5: FREELANCER UI/UX LEAD DESIGNER (TOP RATED)]
+[8] UI/UX & BRAND IDENTITY LEAD DESIGNER - TRẦN HOÀNG NAM
 ----------------------------------------------------------------------------------------
 - Email: hoangnam.design@gmail.com
 - Mật khẩu: demo123456
-- Tên: Trần Hoàng Nam
-- Chức danh: UI/UX & Brand Identity Lead Designer
-- Điểm TalentCredit: 950/1000 (Top Rated Badge)
+- Tên: Trần Hoàng Nam | 5 năm kinh nghiệm | Điểm TalentCredit: 965/1000 (Top Rated)
+- Giá theo giờ: 300,000 đ/h | Đã hoàn thành: 70 dự án | Đánh giá: 4.95 ★ (65 reviews)
+- Kỹ năng: UI/UX Design, Figma, Branding, Design System, Logo Design, Adobe Illustrator
 - Link Portfolio: https://behance.net/hoangnam_uxui_vietnam
-- Bio năng lực: "Designer sáng tạo có 5 năm thiết kế Bộ nhận diện thương hiệu, UI/UX Web/Mobile App hiện đại cho hơn 80 startup và doanh nghiệp Việt Nam."
-- Trạng thái Email: ✓ ĐÃ XÁC THỰC
-- Mục đích test: Ứng tuyển các dự án thiết kế UI/UX, nộp sản phẩm Figma, nhận review và phản hồi review của Employer.
+- Ngân hàng: VietinBank (108829384756 - TRAN HOANG NAM)
+- Số dư ví: 24,000,000 đ | Đang Escrow: 4,050,000 đ
+- Thông báo sẵn có: Lời mời dự án Invest Growth, Duyệt Cột mốc 1 Foodies Chay, Đánh giá 5.0★ từ Lê Thu Hà
+- Mục đích test: Test nộp portfolio Behance, nhận lời mời dự án, bàn giao link Figma/PDF, phản hồi đánh giá.
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 6: FREELANCER MEDIA / VIDEO EDITOR (GOLD BADGE)]
+[9] VIDEO EDITOR & MOTION GRAPHICS SPECIALIST - PHẠM QUỐC HUY
 ----------------------------------------------------------------------------------------
 - Email: huy.media@gmail.com
 - Mật khẩu: demo123456
-- Tên: Phạm Quốc Huy
-- Chức danh: Video Editor & Motion Graphics Specialist
-- Kỹ năng: Premiere Pro, After Effects, TikTok Ads, Motion Graphics
-- Trạng thái Email: ✓ ĐÃ XÁC THỰC
-- Mục đích test: Nhận dự án edit video TikTok/Reels, theo dõi thanh toán qua VNPAY/Escrow.
+- Tên: Phạm Quốc Huy | 4 năm kinh nghiệm | Điểm TalentCredit: 890/1000 (Gold Badge)
+- Giá theo giờ: 250,000 đ/h | Đã hoàn thành: 36 dự án | Đánh giá: 4.88 ★ (32 reviews)
+- Kỹ năng: Premiere Pro, After Effects, Video Editing, Motion Graphics, TikTok Ads, Color Grading
+- Link Portfolio: https://youtube.com/@huy_media_portfolio
+- Ngân hàng: Techcombank (190283746519 - PHAM QUOC HUY)
+- Số dư ví: 8,200,000 đ
+- Thông báo sẵn có: Gợi ý dự án Sản xuất Video TikTok Ads 8.5tr từ Bella Mode Vietnam
+- Mục đích test: Test tìm kiếm dự án Media, nộp báo giá kèm link YouTube/TikTok mẫu.
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 7: FREELANCER CHƯA XÁC THỰC EMAIL (TEST CHẶN NỘP HỒ SƠ BÁO GIÁ)]
+[10] PERFORMANCE MARKETING & SEO SPECIALIST - VŨ LINH ĐAN
+----------------------------------------------------------------------------------------
+- Email: linhdan.marketing@gmail.com
+- Mật khẩu: demo123456
+- Tên: Vũ Linh Đan | 4 năm kinh nghiệm | Điểm TalentCredit: 875/1000 (Gold Badge)
+- Giá theo giờ: 220,000 đ/h | Đã hoàn thành: 30 dự án | Đánh giá: 4.85 ★ (28 reviews)
+- Kỹ năng: Facebook Ads, Google Ads, SEO Google, Content Marketing, Copywriting, Google Analytics
+- Link Portfolio: https://linhdan-marketing.myportfolio.com
+- Ngân hàng: Vietcombank (0071001234567 - VU LINH DAN)
+- Số dư ví: 14,600,000 đ
+- Thông báo sẵn có: Cơ hội nhận dự án SEO Portal Bất Động Sản 12.000.000 đ
+
+----------------------------------------------------------------------------------------
+[11] SENIOR PYTHON & AI/LLM ENGINEER - ĐỖ BẢO LONG
+----------------------------------------------------------------------------------------
+- Email: baolong.ai@gmail.com
+- Mật khẩu: demo123456
+- Tên: Đỗ Bảo Long | 7 năm kinh nghiệm | Điểm TalentCredit: 970/1000 (Top Rated)
+- Giá theo giờ: 450,000 đ/h | Đã hoàn thành: 45 dự án | Đánh giá: 4.96 ★ (42 reviews)
+- Kỹ năng: Python, FastAPI, AI/LLM, PostgreSQL, Docker, REST API, PyTorch, LangChain
+- Link Portfolio: https://github.com/baolong-ai-engineer
+- Ngân hàng: Á Châu - ACB (189283749 - DO BAO LONG)
+- Số dư ví: 31,000,000 đ
+- Thông báo sẵn có: Lời mời dự án Trợ lý AI Chatbot RAG từ Học viện EduSparks (18.000.000 đ)
+
+----------------------------------------------------------------------------------------
+[12] CONTENT STRATEGIST & CREATIVE COPYWRITER - NGÔ PHƯƠNG THANH
+----------------------------------------------------------------------------------------
+- Email: thanh.writer@gmail.com
+- Mật khẩu: demo123456
+- Tên: Ngô Phương Thanh | 5 năm kinh nghiệm | Điểm TalentCredit: 920/1000 (Top Rated)
+- Giá theo giờ: 200,000 đ/h | Đã hoàn thành: 44 dự án | Đánh giá: 4.91 ★ (39 reviews)
+- Kỹ năng: Content Strategy, SEO Writing, Copywriting, Social Media, Storytelling, PR Article
+- Link Portfolio: https://phuongthanh-content.myportfolio.com
+- Ngân hàng: Vietcombank (0451009876543 - NGO PHUONG THANH)
+- Số dư ví: 11,800,000 đ | Đang Escrow: 1,800,000 đ
+
+----------------------------------------------------------------------------------------
+[13] KIẾN TRÚC SƯ 3D & BIM REVIT SPECIALIST - BÙI HOÀNG ĐỨC
+----------------------------------------------------------------------------------------
+- Email: duc.architect@gmail.com
+- Mật khẩu: demo123456
+- Tên: Bùi Hoàng Đức | 6 năm kinh nghiệm | Điểm TalentCredit: 935/1000 (Top Rated)
+- Giá theo giờ: 320,000 đ/h | Đã hoàn thành: 40 dự án | Đánh giá: 4.89 ★ (35 reviews)
+- Kỹ năng: AutoCAD, Revit BIM, 3Ds Max, SketchUp, V-Ray, Phối cảnh 3D nội thất
+- Link Portfolio: https://behance.net/duc_architect_vietnam
+- Ngân hàng: BIDV (2151000889922 - BUI HOANG DUC)
+- Số dư ví: 22,400,000 đ | Đang Escrow: 5,400,000 đ
+
+----------------------------------------------------------------------------------------
+[14] BIÊN PHIÊN DỊCH SONG NGỮ ANH - NHẬT N1 - TRỊNH HOÀI THU
+----------------------------------------------------------------------------------------
+- Email: thu.translator@gmail.com
+- Mật khẩu: demo123456
+- Tên: Trịnh Hoài Thu | 5 năm kinh nghiệm | Điểm TalentCredit: 945/1000 (Top Rated)
+- Giá theo giờ: 230,000 đ/h | Đã hoàn thành: 58 dự án | Đánh giá: 4.94 ★ (50 reviews)
+- Kỹ năng: Dịch thuật Anh - Việt, Nhật - Việt, Biên dịch hợp đồng, Tài liệu kỹ thuật IT, Localization
+- Link Portfolio: https://proz.com/profile/trinh-hoai-thu-translator
+- Ngân hàng: Techcombank (190345678912 - TRINH HOAI THU)
+- Số dư ví: 16,200,000 đ
+
+----------------------------------------------------------------------------------------
+[15] CHUYÊN VIÊN KẾ TOÁN TRƯỞNG & TƯ VẤN THUẾ - LÊ MINH QUANG
+----------------------------------------------------------------------------------------
+- Email: quang.fin@gmail.com
+- Mật khẩu: demo123456
+- Tên: Lê Minh Quang | 8 năm kinh nghiệm | Điểm TalentCredit: 960/1000 (Top Rated)
+- Giá theo giờ: 380,000 đ/h | Đã hoàn thành: 48 dự án | Đánh giá: 4.97 ★ (44 reviews)
+- Kỹ năng: Kế toán tài chính, Báo cáo tài chính, Quyết toán thuế, MISA, ERP, Kiểm soát dòng tiền
+- Link Portfolio: https://linkedin.com/in/quangle-finance-cpa
+- Ngân hàng: MB Bank (079012345678 - LE MINH QUANG)
+- Số dư ví: 27,500,000 đ | Đang Escrow: 3,600,000 đ
+
+----------------------------------------------------------------------------------------
+[16] 3D CHARACTER & GAME ANIMATOR - ĐOÀN BẢO NGỌC
+----------------------------------------------------------------------------------------
+- Email: ngoc.game3d@gmail.com
+- Mật khẩu: demo123456
+- Tên: Đoàn Bảo Ngọc | 4 năm kinh nghiệm | Điểm TalentCredit: 885/1000 (Gold Badge)
+- Giá theo giờ: 280,000 đ/h | Đã hoàn thành: 29 dự án | Đánh giá: 4.87 ★ (26 reviews)
+- Kỹ năng: Blender, Maya, ZBrush, Unity 3D, Character Rigging, Unreal Engine 5
+- Link Portfolio: https://artstation.com/baongoc_3dgame
+- Ngân hàng: VietinBank (103847592819 - DOAN BAO NGOC)
+- Số dư ví: 13,500,000 đ
+
+----------------------------------------------------------------------------------------
+[17] FREELANCER CHƯA XÁC THỰC EMAIL (TEST CHẶN NỘP BÁO GIÁ PROPOSAL)
 ----------------------------------------------------------------------------------------
 - Email: ducminh.demo@gmail.com
 - Mật khẩu: demo123456
 - Tên: Phạm Đức Minh (Chưa xác thực)
-- Trạng thái Email: ⚠️ CHƯA XÁC THỰC (emailVerified = false)
-- Mục đích test:
-  + Thử bấm nút "Gửi Báo Giá (Proposal)" vào 1 dự án -> Hệ thống sẽ kích hoạt Modal chặn thao tác
-    và yêu cầu xác thực email trước khi được phép nộp hồ sơ.
+- Trạng thái Email: ⚠️ CHƯA XÁC THỰC (emailVerified = false, status = PENDING)
+- Mục đích test: Khi nhấn nút "Gửi Báo Giá (Proposal)" vào bất kỳ dự án nào sẽ bị chặn lại và mở Modal kích hoạt tài khoản.
 
 ----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 8: QUẢN TRỊ VIÊN HỆ THỐNG (SUPER ADMIN & FINANCE)]
-----------------------------------------------------------------------------------------
-- Email: admin@talentmatch.vn
-- Mật khẩu: admin123456
-- Tên: Quản Trị Viên TalentMatch
-- Vai trò: Super Admin
-- Giao diện đặc biệt: Có Cổng Quản Trị Admin với Bar bên trái (Sidebar) chuyên nghiệp
-- Mục đích test:
-  + Xem Dashboard Analytics với Biểu đồ tương tác (Doanh thu GMV, Phí sàn 10%, Phân bổ ngành nghề, Biểu đồ luồng tiền VNPAY)
-  + Quản lý Người dùng: Lọc theo vai trò, KYC, tìm kiếm, Khóa/Mở tài khoản, Kích hoạt/Hủy xác thực Email
-  + Quản lý Dự án Tuyển dụng: Duyệt tin, đóng dự án vi phạm
-  + Quản lý Dòng tiền & Sổ cái Giao dịch VNPAY Escrow
-  + Trung tâm Trọng tài Tranh chấp (Dispute Resolution): Xem bằng chứng và ra phán quyết hoàn tiền / giải ngân
-  + Kiểm duyệt Đánh giá & Phản hồi (Reviews)
-  + Cài đặt tham số hệ thống (% phí sàn, thời gian nghiệm thu tự động...)
-
-----------------------------------------------------------------------------------------
-[TRƯỜNG HỢP 9: TÀI KHOẢN BỊ KHÓA / TẠM DỪNG (SUSPENDED ACCOUNT)]
+[18] TÀI KHOẢN BỊ KHÓA / TẠM DỪNG (SUSPENDED ACCOUNT)
 ----------------------------------------------------------------------------------------
 - Email: banned.user@gmail.com
 - Mật khẩu: demo123456
 - Tên: Nguyễn Văn Vi Phạm (Bị khóa)
 - Trạng thái: SUSPENDED (Do vi phạm chính sách giao dịch ngoài sàn / lừa đảo)
-- Mục đích test: Kiểm tra thông báo cảnh báo tài khoản bị khóa khi cố gắng thực hiện giao dịch.
+- Mục đích test: Kiểm tra thông báo cảnh báo tài khoản bị khóa khi đăng nhập hoặc thực hiện giao dịch.
 
 ========================================================================================
-                      THÔNG TIN TEST CỔNG THANH TOÁN VNPAY SANDBOX
+III. QUẢN TRỊ VIÊN HỆ THỐNG (SUPER ADMIN)
+========================================================================================
+
+----------------------------------------------------------------------------------------
+[19] QUẢN TRỊ VIÊN CẤP CAO TALENTMATCH
+----------------------------------------------------------------------------------------
+- Email: admin@talentmatch.vn
+- Mật khẩu: admin123456 (hoặc demo123456)
+- Tên: Quản Trị Viên TalentMatch
+- Vai trò: Super Admin
+- Giao diện: Toàn quyền truy cập Cổng Quản Trị Admin (/admin/dashboard)
+- Thông báo sẵn có:
+  + Khiếu nại trọng tài tranh chấp hợp đồng TM-2026-8891
+  + Giao dịch nạp cọc Escrow 14tr từ Cổng VNPAY
+  + 2 Hồ sơ eKYC mới cần phê duyệt
+- Mục đích test:
+  + Xem Dashboard Analytics: Tổng doanh thu GMV, Doanh thu phí sàn 10%, Biểu đồ luồng tiền Escrow
+  + Quản lý Người dùng: Lọc theo vai trò, KYC, tìm kiếm, Khóa/Mở tài khoản, Kích hoạt/Hủy xác thực Email
+  + Quản lý Dự án Tuyển dụng: Duyệt tin, đóng dự án vi phạm
+  + Trung tâm Trọng tài Tranh chấp (Dispute Resolution): Xem chứng cứ và ra phán quyết hoàn tiền / giải ngân
+  + Cài đặt tham số hệ thống (% phí sàn, thời gian nghiệm thu tự động...)
+
+========================================================================================
+IV. THÔNG TIN TEST CỔNG THANH TOÁN VNPAY SANDBOX
 ========================================================================================
 Khi thực hiện nạp tiền cọc Escrow hoặc ký hợp đồng dự án:
 - Ngân hàng test: NCB / Vietcombank / MBBank / Techcombank

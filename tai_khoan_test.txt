@@ -1,0 +1,45 @@
+======================================================================================================================================================
+                                         BẢNG TRA CỨU NHANH TÀI KHOẢN TEST - TALENTMATCH VIETNAM
+======================================================================================================================================================
+* MẬT KHẨU CHUNG MẶC ĐỊNH: demo123456 (cho tất cả tài khoản Freelancer và Employer)
+* MẬT KHẨU ADMIN:          admin123456 (hoặc demo123456)
+* CÁCH ĐĂNG NHẬP NHANH:    Trên Header website có nút "Test" -> bấm vào để chuyển đổi qua lại giữa các tài khoản ngay lập tức mà không cần gõ mật khẩu.
+                           Hoặc bấm "Đăng nhập" rồi nhập Email & Mật khẩu bên dưới.
+======================================================================================================================================================
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+STT | VAI TRÒ         | HỌ VÀ TÊN                   | EMAIL ĐĂNG NHẬP              | MẬT KHẨU    | SỐ DƯ VÍ      | ĐẶC ĐIỂM / MỤC ĐÍCH TEST
+------------------------------------------------------------------------------------------------------------------------------------------------------
+1   | Employer (DN)   | Lê Thu Hà                   | ha.le@techstartup.vn         | demo123456  | 50.000.000 đ  | Đăng việc, nạp cọc Escrow VNPAY, nghiệm thu sản phẩm
+2   | Employer (DN)   | Phạm Tuấn Anh               | tuan.pham@invest.vn          | demo123456  | 32.000.000 đ  | Tuyển Branding, gửi lời mời dự án trực tiếp
+3   | Employer (DN)   | Nguyễn Mai Lan              | lan.nguyen@edusparks.edu.vn  | demo123456  | 28.000.000 đ  | Tuyển Kỹ sư AI Chatbot, Hợp đồng EdTech
+4   | Employer (DN)   | Trần Việt Hoàng             | hoang.tran@foodies.vn        | demo123456  | 45.000.000 đ  | Hợp đồng Milestone, mở khiếu nại Tranh chấp
+5   | Employer (DN)   | Đặng Ngọc Mai               | mai.dang@fashionhouse.vn     | demo123456  | 19.500.000 đ  | Tuyển Video Editor TikTok Ads, Media, Content
+6   | Employer (Chặn) | Hoàng Thị Yến               | yen.hoang.demo@gmail.com     | demo123456  | 0 đ           | Chưa xác thực email -> Test popup chặn đăng tin
+------------------------------------------------------------------------------------------------------------------------------------------------------
+7   | Freelancer      | Nguyễn Minh Anh (Full-Stack)| minhanh.dev@gmail.com        | demo123456  | 18.500.000 đ  | Nhận dự án Mobile Flutter, nộp file APK, nhận tiền Escrow
+8   | Freelancer      | Trần Hoàng Nam (UI/UX)      | hoangnam.design@gmail.com    | demo123456  | 24.000.000 đ  | Bàn giao file Figma/PDF, nhận review 5 sao
+9   | Freelancer      | Phạm Quốc Huy (Video)       | huy.media@gmail.com          | demo123456  | 8.200.000 đ   | Test tìm việc Video Editor TikTok Ads
+10  | Freelancer      | Vũ Linh Đan (Marketing)     | linhdan.marketing@gmail.com  | demo123456  | 14.600.000 đ  | Test tìm việc SEO, Facebook/Google Ads
+11  | Freelancer      | Đỗ Bảo Long (AI/LLM)        | baolong.ai@gmail.com         | demo123456  | 31.000.000 đ  | Kỹ sư AI Python, nhận lời mời dự án RAG Chatbot
+12  | Freelancer      | Ngô Phương Thanh (Content)  | thanh.writer@gmail.com       | demo123456  | 11.800.000 đ  | Test nộp đề xuất viết bài chuẩn SEO, Copywriting
+13  | Freelancer      | Bùi Hoàng Đức (Kiến trúc)   | duc.architect@gmail.com      | demo123456  | 22.400.000 đ  | Phối cảnh 3D nội thất, hồ sơ Revit BIM
+14  | Freelancer      | Trịnh Hoài Thu (Dịch thuật) | thu.translator@gmail.com     | demo123456  | 16.200.000 đ  | Biên dịch hợp đồng song ngữ Anh - Nhật N1
+15  | Freelancer      | Lê Minh Quang (Kế toán)     | quang.fin@gmail.com          | demo123456  | 27.500.000 đ  | Quyết toán thuế, soát xét Báo cáo tài chính
+16  | Freelancer      | Đoàn Bảo Ngọc (3D Game)     | ngoc.game3d@gmail.com        | demo123456  | 13.500.000 đ  | Tạo hình nhân vật 3D Blender, Unreal Engine
+17  | Freelancer(Chặn)| Phạm Đức Minh               | ducminh.demo@gmail.com       | demo123456  | 0 đ           | Chưa xác thực email -> Test chặn nộp báo giá Proposal
+18  | Bị khóa (Ban)   | Nguyễn Văn Vi Phạm          | banned.user@gmail.com        | demo123456  | 0 đ           | Tài khoản bị tạm khóa do vi phạm chính sách sàn
+------------------------------------------------------------------------------------------------------------------------------------------------------
+19  | Super Admin     | Quản Trị Viên TalentMatch   | admin@talentmatch.vn         | admin123456 | 95.000.000 đ  | Quản trị hệ thống, duyệt KYC, phân xử khiếu nại Trọng tài
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================================
+                                         THÔNG TIN TEST CỔNG THANH TOÁN VNPAY SANDBOX
+======================================================================================================================================================
+Khi test nạp tiền cọc Escrow hoặc ký hợp đồng:
+- Ngân hàng test: NCB / Vietcombank / MBBank / Techcombank
+- Số thẻ test:    9704198526191432152
+- Tên chủ thẻ:    NGUYEN VAN A
+- Ngày phát hành: 07/15
+- Mã OTP test:    123456 (hoặc bấm "Xác nhận tự động" trong giao diện giả lập VNPAY)
+======================================================================================================================================================

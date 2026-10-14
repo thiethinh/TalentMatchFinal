@@ -5,13 +5,11 @@ import { useDemo } from '../../context/DemoContext';
 export const Navbar: React.FC = () => {
   const {
     currentUser,
-    users,
     openAuthModal,
     logout,
     openVNPayModal,
     openUserProfileModal,
     openWithdrawModal,
-    switchUserById,
     notifications,
     unreadNotificationsCount,
     markNotificationAsRead,
@@ -23,11 +21,9 @@ export const Navbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [testAccountsOpen, setTestAccountsOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const testMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
@@ -35,9 +31,6 @@ export const Navbar: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
-      }
-      if (testMenuRef.current && !testMenuRef.current.contains(event.target as Node)) {
-        setTestAccountsOpen(false);
       }
       if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
         setNotificationDropdownOpen(false);
@@ -161,68 +154,6 @@ export const Navbar: React.FC = () => {
           {/* 2. Right Side Controls */}
           <div className="hidden md:flex items-center space-x-3">
 
-            {/* Quick Test Accounts Switcher Dropdown */}
-            <div className="relative" ref={testMenuRef}>
-              <button
-                onClick={() => setTestAccountsOpen(!testAccountsOpen)}
-                className="flex items-center space-x-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 text-xs font-bold px-3 py-1.5 rounded-md transition-all border border-neutral-700/80 cursor-pointer"
-                title="Đổi nhanh tài khoản mẫu để test các vai trò"
-              >
-                <span className="hidden xl:inline text-neutral-400">Test:</span>
-                <span className="text-blue-400 font-semibold truncate max-w-[100px]">
-                  {currentUser.role === 'guest' ? 'Khách' : currentUser.name.split(' ').slice(-1)[0]}
-                </span>
-                <i className={`fa-solid fa-chevron-down text-[10px] text-neutral-400 transition-transform ${testAccountsOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {testAccountsOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in duration-100">
-                  <div className="px-3.5 py-2 border-b border-slate-100">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Test Tài Khoản
-                    </div>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto p-1.5 space-y-1 text-xs">
-                    {users.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          switchUserById(u.id);
-                          setTestAccountsOpen(false);
-                          navigate('/');
-                        }}
-                        className={`w-full flex items-center justify-between p-2 rounded-md transition-all text-left cursor-pointer ${currentUser.id === u.id ? 'bg-blue-50 text-blue-900 font-bold border border-blue-200' : 'hover:bg-slate-50 text-slate-700'
-                          }`}
-                      >
-                        <div className="flex items-center space-x-2.5">
-                          <img src={u.avatar} alt={u.name} className="w-7 h-7 rounded-md object-cover border border-slate-200" />
-                          <div>
-                            <div className="font-bold text-slate-900 leading-tight">{u.name}</div>
-                            <div className="text-[10px] text-slate-500 capitalize">{u.role} {u.accountStatus === 'SUSPENDED' && '• Bị khóa'}</div>
-                          </div>
-                        </div>
-                        {u.emailVerified ? (
-                          <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">✓ Active</span>
-                        ) : (
-                          <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-bold">! Chưa xác thực</span>
-                        )}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => {
-                        logout();
-                        setTestAccountsOpen(false);
-                        navigate('/');
-                      }}
-                      className="w-full flex items-center space-x-2.5 p-2 rounded-md hover:bg-rose-50 text-rose-700 transition-all font-bold cursor-pointer border-t border-slate-100 mt-1"
-                    >
-                      <i className="fa-solid fa-right-from-bracket text-rose-500 text-xs" />
-                      <span>Đăng xuất (Chế độ Khách)</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Notification Bell Icon & Dropdown */}
             <div className="relative" ref={notifMenuRef}>
@@ -664,27 +595,6 @@ export const Navbar: React.FC = () => {
               </button>
             )}
 
-            {/* Quick Test Switcher for Mobile */}
-            <div className="pt-3 border-t border-neutral-800">
-              <div className="text-[11px] font-bold text-neutral-400 uppercase mb-2">Đổi tài khoản test:</div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {users.slice(0, 4).map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      switchUserById(u.id);
-                      setMobileMenuOpen(false);
-                      navigate('/');
-                    }}
-                    className={`p-2 rounded-md text-[11px] text-left border ${currentUser.id === u.id ? 'bg-blue-950/70 border-blue-600 text-blue-200 font-semibold' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
-                      }`}
-                  >
-                    <div className="font-bold truncate">{u.name}</div>
-                    <div className="text-[9px] text-neutral-400 capitalize">{u.role}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Logout / Login in Mobile */}
             <div className="pt-2 border-t border-neutral-800">

@@ -7,11 +7,13 @@
 ## 📑 Mục Lục
 1. [Giới Thiệu Dự Án](#1-giới-thiệu-dự-án)
 2. [Cấu Trúc Thư Mục Chuẩn](#2-cấu-trúc-thư-mục-chuẩn)
-3. [Công Nghệ & Thư Viện Sử Dụng (Giải Thích Chi Tiết)](#3-công-nghệ--thư-viện-sử-dụng-giải-thích-chi-tiết)
-4. [Hướng Dẫn Khởi Động Nhanh (1 Lệnh Duy Nhất)](#4-hướng-dẫn-khởi-động-nhanh-1-lệnh-duy-nhất)
-5. [Hướng Dẫn Chạy Môi Trường Phát Triển (Local Dev)](#5-hướng-dẫn-chạy-môi-trường-phát-triển-local-dev)
-6. [Tài Khoản Mẫu Trải Nghiệm Hệ Thống](#6-tài-khoản-mẫu-trải-nghiệm-hệ-thống)
-7. [Quy Chuẩn Git & Docker Ignore](#7-quy-chuẩn-git--docker-ignore)
+3. [Thông Tin Kết Nối Cơ Sở Dữ Liệu (Database Info)](#3-thông-tin-kết-nối-cơ-sở-dữ-liệu-database-info)
+4. [Công Nghệ & Thư Viện Sử Dụng](#4-công-nghệ--thư-viện-sử-dụng)
+5. [Hướng Dẫn Khởi Động Nhanh (1 Lệnh Duy Nhất)](#5-hướng-dẫn-khởi-động-nhanh-1-lệnh-duy-nhất)
+6. [Hướng Dẫn Chạy Môi Trường Phát Triển (Local Dev)](#6-hướng-dẫn-chạy-môi-trường-phát-triển-local-dev)
+7. [Tài Khoản Mẫu Trải Nghiệm Hệ Thống](#7-tài-khoản-mẫu-trải-nghiệm-hệ-thống)
+8. [Bảng Lệnh Tiện Ích NPM](#8-bảng-lệnh-tiện-ích-npm)
+9. [Quy Chuẩn Git & Docker Ignore](#9-quy-chuẩn-git--docker-ignore)
 
 ---
 
@@ -56,129 +58,142 @@ TalentMatch/
 │   │   └── utils/                 # Hàm tiện ích format tiền tệ VND, ngày tháng
 │   ├── package.json               # Khai báo thư viện phụ thuộc và scripts
 │   ├── vite.config.ts             # Cấu hình dev server và proxy tự động /api -> backend:8080
-│   ├── tailwind.config.js         # Hệ thống màu sắc và chuẩn thiết kế Clean Web UI
 │   ├── Dockerfile                 # Dockerfile cho Vite frontend container
 │   └── .dockerignore              # Loại trừ node_modules/ và dist/ khi build
 │
 ├── docker-entrypoint-initdb.d/    # Thư mục nạp dữ liệu mẫu khởi tạo MySQL lần đầu
-│   ├── 01_init_schema.sql         # Tạo database talentmatch_pro và các bảng cốt lõi
-│   └── 02_TalentMatch_database.sql# Script mở rộng và các trigger/indexes
 ├── docker-compose.yml             # Tệp điều phối 3 containers: MySQL + Backend + Frontend
-├── docker-start-all.bat           # 1-Click khởi động toàn bộ hệ sinh thái Docker trên Windows
-├── docker-start-db.bat            # 1-Click chỉ khởi động MySQL container
-├── docker-stop.bat                # 1-Click dừng an toàn mọi containers
-├── .gitignore                     # Tệp loại bỏ rác/cache/môi trường phát triển trên Git
-├── .dockerignore                  # Tệp loại trừ cho Docker context
-├── package.json                   # Script điều phối nhanh tại thư mục gốc (npm run dev)
+├── docker-start-all.bat           # File click chạy toàn bộ hệ thống bằng Docker
+├── docker-start-db.bat            # File click chỉ chạy riêng MySQL Database
+├── docker-stop.bat                # File click dừng toàn bộ container an toàn
+├── scripts/                       # Các script tự động hóa thông minh (dev.js, gradle.js, setup.js)
+├── .env.example                   # File mẫu biến môi trường (Database, Mail, Ports)
+├── .gitattributes                 # Chuẩn hóa line-ending LF cho Gradle/Linux
+├── .gitignore                     # Loại trừ tệp rác, cache, node_modules
+├── package.json                   # Bộ lệnh điều phối 1 chạm tại thư mục gốc
 └── README.md                      # Tài liệu chính của dự án
 ```
 
 ---
 
-## 3. Công Nghệ & Thư Viện Sử Dụng (Giải Thích Chi Tiết)
+## 3. Thông Tin Kết Nối Cơ Sở Dữ Liệu (Database Info)
 
-### 3.1. Phía Backend (Máy chủ API)
+Hệ thống sử dụng cơ sở dữ liệu **MySQL 8.0** phục vụ môi trường kiểm thử và phát triển. Dưới đây là thông số kết nối chi tiết dành cho lập trình viên và các công cụ/AI:
 
-| Công nghệ / Thư viện | Vai trò & Giải thích dễ hiểu |
+| Thông số | Giá trị |
 | :--- | :--- |
-| **Java 21 (LTS)** | Phiên bản Java ổn định mới nhất với hiệu năng cao, hỗ trợ Virtual Threads, Pattern Matching giúp mã nguồn ngắn gọn và xử lý đồng thời nhanh chóng. |
-| **Spring Boot 3.4.5** | Framework Java số 1 thế giới để xây dựng ứng dụng web và REST API. Tự động cấu hình (Auto-configuration), nhúng sẵn Tomcat, giúp khởi chạy hệ thống chỉ bằng 1 dòng mã. |
-| **Spring Data JPA & Hibernate** | Tầng truy cập dữ liệu (ORM). Cho phép lập trình viên thao tác với bảng CSDL MySQL thông qua các đối tượng Java (Entities) thay vì phải viết các câu lệnh SQL dài dòng thủ công. |
-| **Spring Security** | Tầng phòng vệ và kiểm soát truy cập. Mã hóa mật khẩu an toàn với thuật toán `BCrypt`, phân quyền các đường dẫn (`/api/admin/**`, `/api/customer/**`, `/api/freelancer/**`), ngăn chặn các cuộc tấn công CSRF/XSS. |
-| **Gradle Kotlin DSL (`build.gradle.kts`)** | Hệ thống biên dịch và quản lý thư viện hiện đại thay thế cho Maven `pom.xml`. Viết bằng Kotlin nên có khả năng kiểm tra lỗi cú pháp (type-safe) ngay khi gõ và tốc độ build nhanh vượt trội nhờ cache thông minh. |
-| **MySQL Connector/J** | Thư viện Driver chính thức giúp Java kết nối và gửi/nhận dữ liệu trực tiếp với hệ quản trị CSDL MySQL. |
-| **Jakarta Validation** | Bộ kiểm tra tính hợp lệ của dữ liệu đầu vào (ví dụ `@NotBlank`, `@Email`, `@Min`, `@Size`), tự động trả về lỗi chi tiết nếu người dùng gửi dữ liệu sai định dạng. |
-| **Java Mail Sender** | Thư viện hỗ trợ kết nối SMTP máy chủ thư điện tử (như Google Gmail) để gửi email xác minh kích hoạt tài khoản và email khôi phục mật khẩu. |
-
-### 3.2. Phía Frontend (Giao diện người dùng)
-
-| Công nghệ / Thư viện | Vai trò & Giải thích dễ hiểu |
-| :--- | :--- |
-| **React 18 / 19** | Thư viện xây dựng giao diện dựa trên Component (khối mã tái sử dụng). Cập nhật màn hình tức thì qua Virtual DOM mà không cần tải lại toàn bộ trang web. |
-| **Vite** | Công cụ lập trình và đóng gói ứng dụng frontend thế hệ mới. Khởi động môi trường dev trong chưa đầy 1 giây và phản hồi thay đổi mã nguồn ngay lập tức (Hot Module Replacement - HMR). |
-| **TypeScript** | Siêu ngôn ngữ bổ sung kiểm soát kiểu dữ liệu tĩnh cho JavaScript. Bắt gọn tất cả các lỗi tiềm ẩn (như sai tên trường, thiếu dữ liệu API) ngay trong lúc viết mã trước khi chạy. |
-| **Tailwind CSS v3** | Framework định kiểu giao diện theo phong cách tiện ích (utility-first). Toàn bộ giao diện tuân thủ triệt để tiêu chuẩn **Clean Web UI**: màu sắc trang nhã, viền góc 6-10px, thông tin rõ ràng, không hiệu ứng loè loẹt gây rối mắt. |
-| **React Router DOM v7** | Bộ định tuyến trang phía Client (Client-Side Routing). Cho phép chuyển hướng mượt mà giữa các trang (Trang chủ, Tin tuyển dụng, Dashboard) mà không gây nhấp nháy màn hình. |
-| **Axios** | Thư viện thực hiện các cuộc gọi mạng HTTP (GET, POST, PUT, DELETE) đến Backend REST API. Cấu hình sẵn gửi kèm thông tin phiên đăng nhập (`withCredentials: true`) và tiền tố URL tự động. |
-| **Lucide React** | Bộ thư viện gồm hàng ngàn biểu tượng SVG hiện đại, đường nét thanh lịch, siêu nhẹ, đồng bộ hóa phong cách icon trên toàn bộ dự án. |
-
-### 3.3. Cơ Sở Dữ Liệu & Hạ Tầng Triển Khai
-
-| Công nghệ / Thư viện | Vai trò & Giải thích dễ hiểu |
-| :--- | :--- |
-| **MySQL 8.0** | Hệ quản trị cơ sở dữ liệu quan hệ mã nguồn mở phổ biến nhất. Lưu trữ an toàn, toàn vẹn dữ liệu với bảng mã `utf8mb4` hỗ trợ hoàn hảo tiếng Việt có dấu. |
-| **Docker & Docker Compose** | Nền tảng ảo hóa container. "Đóng gói" toàn bộ MySQL, Backend, Frontend thành các môi trường cô lập. Đảm bảo dự án **chạy chuẩn 100% trên mọi máy tính khác nhau** mà không lo thiếu môi trường hay xung đột phiên bản. |
+| **Hệ Quản Trị CSDL** | **MySQL 8.0** |
+| **Host (khi kết nối từ máy Host/DBeaver/Navicat/AI)** | `localhost` hoặc `127.0.0.1` |
+| **Host (khi kết nối nội bộ giữa các container Docker)** | `mysql` |
+| **Port kết nối** | `3306` |
+| **Database Name** | `talentmatch_pro` |
+| **Username** | `root` |
+| **Password** | `123456` |
+| **Mã hóa & Bảng mã** | `utf8mb4` / `utf8mb4_unicode_ci` |
+| **Múi giờ (Server Timezone)** | `Asia/Ho_Chi_Minh` |
+| **JDBC Connection URL** | `jdbc:mysql://localhost:3306/talentmatch_pro?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh` |
+| **Khởi tạo dữ liệu mẫu** | Tự động qua thư mục `docker-entrypoint-initdb.d/` và `APP_DEMO_SEED=true` |
 
 ---
 
-## 4. Hướng Dẫn Khởi Động Nhanh (1 Lệnh Duy Nhất)
+## 4. Công Nghệ & Thư Viện Sử Dụng
 
-Không cần cài đặt thủ công Java, Gradle hay Node.js trên máy, bạn chỉ cần có phần mềm **Docker Desktop**:
+### 4.1. Phía Backend (Máy chủ API)
+- **Java 21 (LTS)**: Hiệu năng cao, Virtual Threads, Pattern Matching.
+- **Spring Boot 3.4.5**: Tự động cấu hình (Auto-configuration), nhúng sẵn Tomcat.
+- **Spring Data JPA & Hibernate**: Quản lý truy cập dữ liệu ORM mạnh mẽ.
+- **Spring Security**: Mã hóa mật khẩu với `BCrypt`, phân quyền đường dẫn chặt chẽ.
+- **Gradle Kotlin DSL (`build.gradle.kts`)**: Hệ thống build hiện đại, type-safe, tốc độ cao.
+- **MySQL Connector/J**: Driver kết nối cơ sở dữ liệu.
+- **Jakarta Validation**: Kiểm tra tính hợp lệ dữ liệu đầu vào (`@NotBlank`, `@Email`, `@Min`, `@Size`).
+- **Java Mail Sender**: Hỗ trợ SMTP gửi email xác thực và khôi phục mật khẩu.
+
+### 4.2. Phía Frontend (Giao diện người dùng)
+- **React 18 / 19**: Xây dựng UI Component hiện đại, Virtual DOM phản hồi tức thì.
+- **Vite**: Công cụ lập trình và đóng gói thế hệ mới, HMR siêu tốc.
+- **TypeScript**: Kiểm soát kiểu tĩnh, phòng tránh lỗi cú pháp và kiểu dữ liệu.
+- **Tailwind CSS**: Định kiểu tiện ích, chuẩn Clean Web UI thanh lịch.
+- **React Router DOM v7**: Điều hướng trang phía Client không tải lại trang.
+- **Axios**: Gửi nhận request API với interceptors và credentials tự động.
+- **Lucide React**: Thư viện biểu tượng SVG hiện đại, đồng bộ phong cách.
+
+### 4.3. Hạ Tầng Triển Khai
+- **Docker & Docker Compose**: Đóng gói cô lập MySQL, Backend, Frontend; vận hành nhất quán 100% trên mọi máy tính.
+
+---
+
+## 5. Hướng Dẫn Khởi Động Nhanh (1 Lệnh Duy Nhất)
+
+Dành cho thành viên mới vừa clone/tải dự án về máy. Chỉ cần mở **Docker Desktop** lên và chạy:
 
 ### Bước 1: Mở Docker Desktop
-Đảm bảo biểu tượng cá voi Docker Desktop đang chạy trên máy tính của bạn.
+Đảm bảo biểu tượng Docker Desktop đang chạy trên máy tính.
 
-### Bước 2: Chạy hệ thống bằng 1 lệnh
-
-Tại thư mục gốc `TalentMatch/`:
-
-- **Cách 1: Sử dụng File Click sẵn (Dành cho Windows):**
-  Nhấp đúp chuột vào file:
-  ```text
-  docker-start-all.bat
-  ```
-
-- **Cách 2: Gõ lệnh qua Terminal (Windows PowerShell / CMD / macOS / Linux):**
-  ```bash
-  docker compose up -d --build
-  ```
-  *(hoặc nếu bạn có npm: `npm run dev`)*
-
-### Bước 3: Truy cập hệ thống
-Khi các container khởi động thành công:
-- 🌐 **Giao diện Web Khách hàng (Frontend):** [http://localhost:5173](http://localhost:5173)
-- 🔌 **Máy chủ REST API (Backend):** [http://localhost:8080](http://localhost:8080)
-- 🗄️ **Cơ sở dữ liệu MySQL:** `localhost:3306` (Tài khoản: `root` / Mật khẩu: `123456`)
-
-### Bước 4: Dừng hệ thống khi không sử dụng
-Nhấp đúp chuột vào file [`docker-stop.bat`](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/docker-stop.bat) hoặc gõ:
+### Bước 2: Chạy đúng 1 lệnh
+Tại thư mục gốc `TalentMatch/`, mở terminal và chạy:
 ```bash
-docker compose down
-```
-
----
-
-## 5. Hướng Dẫn Chạy Môi Trường Phát Triển (Local Dev)
-
-Dành cho lập trình viên muốn chỉnh sửa trực tiếp mã nguồn trên IDE (IntelliJ IDEA, VS Code):
-
-### Bước 1: Chỉ bật CSDL MySQL bằng Docker
-Nhấp đúp [`docker-start-db.bat`](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/docker-start-db.bat) hoặc gõ:
-```bash
-docker compose up -d mysql
-```
-
-### Bước 2: Chạy Backend (Spring Boot)
-Mở cửa sổ dòng lệnh tại thư mục `backend/`:
-```powershell
-cd backend
-.\gradlew.bat bootRun
-```
-> *(Trên macOS/Linux: `./gradlew bootRun`)*
-> Backend sẽ chạy tại cổng `8080` và tự động kết nối tới MySQL `localhost:3306`.
-
-### Bước 3: Chạy Frontend (React Vite)
-Mở cửa sổ dòng lệnh thứ hai tại thư mục `frontend/`:
-```powershell
-cd frontend
-npm install
 npm run dev
 ```
-> Frontend sẽ chạy tại `http://localhost:5173`. Mọi request gửi tới `/api/*` sẽ được Vite tự động chuyển hướng (proxy) sang Backend `http://localhost:8080`.
+*(Hoặc gõ `npm start`, hoặc nhấp đúp vào file `docker-start-all.bat` trên Windows).*
+
+> 💡 **Cơ chế tự động thông minh (Preflight Checks):**
+> Lệnh trên sẽ tự động:
+> 1. Kiểm tra và tự copy file `.env` từ `.env.example` nếu máy bạn chưa có.
+> 2. Kiểm tra tính toàn vẹn của Gradle Wrapper và mã nguồn Backend.
+> 3. Kiểm tra Docker Desktop đã bật chưa (nếu chưa bật hoặc chưa cài, hệ thống sẽ hiển thị thông báo hướng dẫn chi tiết).
+> 4. Kiểm tra xung đột cổng mạng (3306, 8080, 5173), cảnh báo nếu có MySQL local đang chiếm cổng.
+> 5. Kích hoạt Docker Compose build và khởi chạy toàn bộ 3 dịch vụ.
+
+### Bước 3: Truy cập hệ thống
+- 🌐 **Giao diện Web Frontend:** [http://localhost:5173](http://localhost:5173)
+- 🔌 **Máy chủ REST API Backend:** [http://localhost:8080](http://localhost:8080)
+- 🗄️ **Cơ sở dữ liệu MySQL:** `localhost:3306` (Tài khoản: `root` / `123456`)
+
+### Bước 4: Dừng hệ thống khi không sử dụng
+```bash
+npm run dev:down
+```
+*(Hoặc nhấp đúp vào file `docker-stop.bat`).*
 
 ---
 
-## 6. Tài Khoản Mẫu Trải Nghiệm Hệ Thống
+## 6. Hướng Dẫn Chạy Môi Trường Phát Triển (Local Dev)
+
+Dành cho lập trình viên muốn code và debug trực tiếp trên IDE (IntelliJ IDEA, VS Code):
+
+### Cách 1: Chạy song song cả Backend & Frontend chỉ với 1 lệnh (Khuyên dùng)
+1. **Khởi động MySQL qua Docker**:
+   ```bash
+   npm run db:up
+   ```
+   *(Hoặc nhấp đúp file `docker-start-db.bat`).*
+
+2. **Chạy đồng thời Backend + Frontend bằng 1 lệnh**:
+   ```bash
+   npm run dev:local
+   ```
+   *(Sử dụng `concurrently` hiển thị log màu của cả Spring Boot và Vite React song song trong 1 cửa sổ).*
+
+---
+
+### Cách 2: Chạy thủ công từng phần
+1. **Bật MySQL**:
+   ```bash
+   npm run db:up
+   ```
+2. **Chạy Backend (Spring Boot)**:
+   ```bash
+   npm run backend:run
+   ```
+   *(Script tự động nhận diện Windows/macOS/Linux để gọi `gradlew` chính xác, không lo lỗi cú pháp).*
+3. **Chạy Frontend (React Vite)**:
+   ```bash
+   npm run frontend:dev
+   ```
+
+---
+
+## 7. Tài Khoản Mẫu Trải Nghiệm Hệ Thống
 
 Khi hệ thống khởi chạy lần đầu, cơ chế `DataInitializer` sẽ tự động tạo dữ liệu mẫu phong phú (375+ công việc cùng các tài khoản demo sẵn có):
 
@@ -192,8 +207,28 @@ Khi hệ thống khởi chạy lần đầu, cơ chế `DataInitializer` sẽ t�
 
 ---
 
-## 7. Quy Chuẩn Git & Docker Ignore
+## 8. Bảng Lệnh Tiện Ích NPM
 
-Dự án đã được cấu hình chặt chẽ hệ thống tệp `.gitignore` và `.dockerignore` tại tất cả các cấp thư mục:
-- **Loại bỏ hoàn toàn tệp rác:** Các tệp `.idea/`, `*.iml`, `node_modules/`, `build/`, `.gradle/`, `.DS_Store` sẽ không bị đưa lên Git repository, đảm bảo dung lượng repo luôn nhẹ và an toàn.
-- **Giữ trọn vẹn tệp kịch bản thực thi:** Gradle Wrapper (`gradle/wrapper/gradle-wrapper.jar`) và các file mẫu `.env.example` được giữ lại đầy đủ để bất kỳ ai khi clone dự án về máy đều có thể chạy ngay lập tức mà không gặp bất kỳ lỗi thiếu file nào.
+| Lệnh | Ý nghĩa & Tác dụng |
+| :--- | :--- |
+| **`npm run dev`** hoặc **`npm start`** | **1 lệnh chạy toàn bộ** hệ sinh thái với Docker (Preflight check tự động) |
+| `npm run dev:d` | Chạy Docker ở chế độ ngầm (detached) |
+| `npm run dev:down` | Dừng và hạ toàn bộ container Docker an toàn |
+| `npm run dev:clean` | Dừng container và xóa volume database để reset dữ liệu sạch sẽ |
+| **`npm run dev:local`** | **1 lệnh chạy song song** cả Spring Boot & Vite Frontend local |
+| `npm run db:up` | Chỉ khởi động MySQL database trong Docker |
+| `npm run db:down` | Dừng MySQL database |
+| `npm run db:logs` | Xem log trực tiếp của MySQL database |
+| `npm run backend:run` | Chạy Spring Boot Backend (tự động nhận diện OS) |
+| `npm run backend:build` | Build Backend JAR qua Gradle |
+| `npm run backend:test` | Chạy bộ test tự động của Backend |
+| `npm run frontend:dev` | Chạy Vite dev server cho Frontend |
+| `npm run frontend:build` | Build đóng gói mã nguồn Frontend cho production |
+| `npm run frontend:preview`| Xem thử bản build Frontend tại local |
+
+---
+
+## 9. Quy Chuẩn Git & Docker Ignore
+
+- **Loại bỏ hoàn toàn tệp rác:** Các tệp `.idea/`, `*.iml`, `node_modules/`, `build/`, `.gradle/`, `.DS_Store` không được đưa lên Git repository, đảm bảo dung lượng repo luôn nhẹ và sạch sẽ.
+- **Giữ trọn vẹn tệp kịch bản thực thi:** Gradle Wrapper (`gradle/wrapper/gradle-wrapper.jar`), `.env.example`, `.gitattributes` được lưu giữ đầy đủ để bất kỳ ai khi clone dự án về máy đều có thể chạy ngay lập tức bằng 1 lệnh mà không gặp bất kỳ trở ngại nào.

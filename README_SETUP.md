@@ -31,40 +31,75 @@ TalentMatch/
 
 ---
 
-## 2. Cách Khởi Động Dự Án
+## 2. Thông Tin Kết Nối Cơ Sở Dữ Liệu (MySQL Test Database)
 
-### Cách A: Chạy TOÀN BỘ bằng Docker (Khuyên dùng)
-1. Bật **Docker Desktop**.
-2. Nhấp đúp vào file [`docker-start-all.bat`](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/docker-start-all.bat) (hoặc chạy lệnh: `docker compose up -d --build`).
-3. Truy cập ứng dụng:
-   - **Frontend (Giao diện Web)**: [http://localhost:5173](http://localhost:5173)
-   - **Backend (REST API)**: [http://localhost:8080](http://localhost:8080)
-   - **MySQL Database**: `localhost:3306` (`root` / `123456`)
-
-### Cách B: Chạy Thủ Công Từng Phần Để Lập Trình (Dev Mode)
-1. **Khởi động MySQL**:
-   Nhấp đúp [`docker-start-db.bat`](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/docker-start-db.bat) (hoặc `docker compose up -d mysql`).
-
-2. **Chạy Backend**:
-   ```powershell
-   cd backend
-   .\gradlew.bat bootRun
-   ```
-   Backend chạy tại `http://localhost:8080`.
-
-3. **Chạy Frontend**:
-   ```powershell
-   cd frontend
-   npm run dev
-   ```
-   Frontend chạy tại `http://localhost:5173`. Các request API (`/api/*`) được Vite proxy tự động sang `http://localhost:8080`.
+| Thông số | Giá trị |
+| :--- | :--- |
+| **Hệ Quản Trị CSDL** | **MySQL 8.0** |
+| **Host (từ máy ngoài / DBeaver / Navicat / AI kết nối)** | `localhost` hoặc `127.0.0.1` |
+| **Host (nội bộ trong mạng Docker)** | `mysql` |
+| **Cổng kết nối (Port)** | `3306` |
+| **Tên Cơ Sở Dữ Liệu (DB Name)** | `talentmatch_pro` |
+| **Tên Đăng Nhập (Username)** | `root` |
+| **Mật Khẩu (Password)** | `123456` |
+| **JDBC Connection URL** | `jdbc:mysql://localhost:3306/talentmatch_pro?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh` |
 
 ---
 
-## 3. Dừng Container
-- Nhấp đúp vào file [`docker-stop.bat`](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/docker-stop.bat) (hoặc lệnh `docker compose down`).
+## 3. Cách Khởi Động Dự Án (Chỉ Cần 1 Lệnh)
+
+### Bước 1: Chuẩn Bị & Cài Đặt (Chỉ 1 lệnh duy nhất)
+Khi mới clone dự án về, bạn chỉ cần mở terminal tại thư mục gốc và chạy:
+```bash
+npm install
+```
+*(Lệnh này tự động kích hoạt script `postinstall` để khởi tạo file `.env` từ `.env.example`, cấp quyền thực thi cho Gradle và cài đặt toàn bộ thư viện Frontend).*
 
 ---
+
+### Bước 2: Chạy Dự Án (Lựa chọn 1 trong 2 cách)
+
+#### Cách A: Chạy TOÀN BỘ bằng Docker (Khuyên dùng)
+```bash
+npm start
+# hoặc: npm run dev
+```
+- Tự động build và chạy cả 3 container: **MySQL (port 3306)**, **Backend (port 8080)**, **Frontend (port 5173)**.
+- Dừng hệ thống:
+  ```bash
+  npm run dev:down
+  ```
+
+#### Cách B: Chạy Lập Trình Local (Dev Mode)
+1. **Khởi động Database MySQL**:
+   ```bash
+   npm run db:up
+   ```
+2. **Chạy song song cả Backend & Frontend chỉ với 1 lệnh**:
+   ```bash
+   npm run dev:local
+   ```
+   *(Sử dụng `concurrently` hiển thị log màu đồng thời của cả Spring Boot và Vite React).*
+
+---
+
+### Danh Sách Các Lệnh Tiện Ích Trong `package.json`
+| Lệnh | Ý nghĩa |
+| :--- | :--- |
+| `npm install` hoặc `npm run setup` | Cài đặt toàn bộ dependencies, tự động tạo `.env` |
+| `npm start` hoặc `npm run dev` | Khởi động toàn bộ dự án với Docker |
+| `npm run dev:d` | Chạy Docker ở chế độ chạy ngầm (detached) |
+| `npm run dev:down` | Dừng toàn bộ Docker container |
+| `npm run dev:clean` | Dừng và dọn sạch volumes database Docker |
+| `npm run dev:local` | Chạy cùng lúc cả Spring Boot & Vite Frontend không qua Docker |
+| `npm run db:up` | Chỉ khởi động MySQL database qua Docker |
+| `npm run db:down` | Dừng MySQL database |
+| `npm run backend:run` | Chạy Spring Boot Backend (hỗ trợ cả Windows và Unix) |
+| `npm run backend:build` | Build Backend JAR qua Gradle |
+| `npm run backend:test` | Chạy test Backend |
+| `npm run frontend:dev` | Chạy Vite dev server cho Frontend |
+| `npm run frontend:build` | Build production cho Frontend |
+| `npm run frontend:preview` | Preview bản build Frontend |
 
 ## 4. Tài Khoản Demo Sẵn Có
 Khi khởi động lần đầu, hệ thống tự động sinh dữ liệu demo:

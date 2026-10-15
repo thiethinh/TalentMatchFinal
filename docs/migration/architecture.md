@@ -164,7 +164,7 @@ TalentMatch/
 
 ## 5. BẢO ĐẢM TIÊU CHUẨN GIAO DIỆN "CLEAN WEB UI"
 
-Tuân thủ nghiêm ngặt theo [.agents/rules/clean-web-ui.md](file:///c:/Users/HINH/Downloads/tmdt/TalentMatch/TalentMatch/.agents/rules/clean-web-ui.md):
+Tuân thủ nghiêm ngặt theo [.agents/rules/clean-web-ui.md](../../.agents/rules/clean-web-ui.md):
 - **Ngôn ngữ:** 100% tiếng Việt chuẩn xác cho nhãn, thông báo, tiêu đề, trạng thái, bộ lọc và nội dung giao diện.
 - **Không dùng gradient AI:** Nền trang dùng màu trung tính (`#f8fafc` hoặc `#ffffff`), bề mặt nội dung trắng sáng, chữ xám đậm tương phản cao.
 - **Không lồng thẻ (No nested cards):** Dùng layout phân chia theo dòng, cột, khoảng cách (spacing 8px, 12px, 16px, 24px) và typography rõ ràng.

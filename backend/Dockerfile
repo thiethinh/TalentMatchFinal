@@ -8,13 +8,14 @@ COPY gradle/ gradle/
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
 
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
+# Đảm bảo định dạng LF cho gradlew (tránh lỗi Windows CRLF) và cấp quyền thực thi
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew && ./gradlew dependencies --no-daemon || true
 
 # Copy toàn bộ mã nguồn
 COPY src/ src/
 
 # Build JAR
-RUN ./gradlew bootJar --no-daemon -x test
+RUN sed -i 's/\r$//' gradlew && ./gradlew bootJar --no-daemon -x test
 
 # --- STAGE 2: Runtime ---
 FROM eclipse-temurin:21-jre-jammy

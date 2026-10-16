@@ -14,7 +14,7 @@ export const WithdrawModal: React.FC = () => {
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [amount, setAmount] = useState<number>(1000000);
   const [step, setStep] = useState<'form' | 'confirm' | 'success'>('form');
-  const [otp, setOtp] = useState('123456');
+  const [otp, setOtp] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -58,7 +58,7 @@ export const WithdrawModal: React.FC = () => {
 
     setErrorMsg('');
     setStep('confirm');
-    setOtp('123456'); // Pre-fill mock OTP for easy demo
+    setOtp('');
   };
 
   const handleConfirmWithdraw = () => {
@@ -338,10 +338,10 @@ export const WithdrawModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Mock OTP verification */}
+                {/* OTP verification */}
                 <div className="space-y-2">
                   <label className="block font-bold text-slate-800">
-                    Mã xác thực giao dịch OTP (Mã mẫu: 123456):
+                    Mã xác thực giao dịch OTP:
                   </label>
                   <div className="relative">
                     <i className="fa-solid fa-lock text-slate-400 text-xs absolute left-3.5 top-3.5" />

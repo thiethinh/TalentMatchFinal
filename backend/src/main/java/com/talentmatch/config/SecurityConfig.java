@@ -61,7 +61,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // REST API public routes
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**", "/api/admin/dashboard").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/jobs").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")

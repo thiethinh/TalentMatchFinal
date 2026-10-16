@@ -28,7 +28,7 @@ public class MailService {
         this.fromAddress = fromAddress == null ? "" : fromAddress.trim();
     }
 
-    public String sendVerificationOtp(String email, String otp, String token) {
+    public boolean sendVerificationOtp(String email, String otp, String token) {
         String verifyLink = baseUrl + "/verify?token=" + token + "&email=" + email;
         String subject = "[TalentMatch] Mã xác thực tài khoản của bạn: " + otp;
         
@@ -68,11 +68,10 @@ public class MailService {
             </div>
             """.formatted(otp, verifyLink);
 
-        sendHtml(email, subject, html, otp);
-        return verifyLink;
+        return sendHtml(email, subject, html, otp);
     }
 
-    public String sendResetPasswordOtp(String email, String otp, String token) {
+    public boolean sendResetPasswordOtp(String email, String otp, String token) {
         String resetLink = baseUrl + "/reset-password?token=" + token + "&email=" + email;
         String subject = "[TalentMatch] Mã xác thực đặt lại mật khẩu: " + otp;
 
@@ -109,22 +108,21 @@ public class MailService {
             </div>
             """.formatted(email, otp, resetLink);
 
-        sendHtml(email, subject, html, otp);
-        return resetLink;
+        return sendHtml(email, subject, html, otp);
     }
 
-    private void sendHtml(String to, String subject, String htmlContent, String otp) {
-        log.info("📩 [MÃ OTP TEST] Gửi tới: {} | MÃ OTP: {} | Tiêu đề: {}", to, otp, subject);
+    private boolean sendHtml(String to, String subject, String htmlContent, String otp) {
+        log.info("📩 [MÃ OTP] Gửi tới: {} | MÃ OTP: {} | Tiêu đề: {}", to, otp, subject);
         
         if (!enabled || fromAddress.isBlank()) {
-            log.warn("⚠️ [MailService] Chưa bật gửi email hoặc chưa cấu hình MAIL_USERNAME. Bạn có thể dùng mã OTP hiển thị ở log trên.");
-            return;
+            log.warn("⚠️ [MailService] Chưa cấu hình spring.mail.username trong application-mail.properties. Mã OTP ({}) đã được lưu vào CSDL.", otp);
+            return false;
         }
 
         JavaMailSender sender = mailSenderProvider.getIfAvailable();
         if (sender == null) {
-            log.warn("⚠️ [MailService] JavaMailSender không khả dụng. Bạn có thể dùng mã OTP hiển thị ở log trên.");
-            return;
+            log.warn("⚠️ [MailService] JavaMailSender không khả dụng. Mã OTP ({}) đã được lưu vào CSDL.", otp);
+            return false;
         }
 
         try {
@@ -136,9 +134,11 @@ public class MailService {
             helper.setText(htmlContent, true);
             sender.send(message);
             log.info("✅ [MailService] Đã gửi email thành công tới {}", to);
+            return true;
         } catch (Exception e) {
-            log.error("❌ [MailService] Gửi email qua Gmail SMTP thất bại: {}. (Mã OTP vẫn có hiệu lực: {})", e.getMessage(), otp);
-            throw new IllegalStateException("Không thể gửi email qua Gmail: " + e.getMessage() + ". Vui lòng kiểm tra lại cấu hình 'Mật khẩu ứng dụng' (16 ký tự) trong application-mail.properties.");
+            log.warn("⚠️ [MailService] Gửi email qua Gmail SMTP thất bại ({}: {}). Dữ liệu người dùng và mã OTP ({}) vẫn được lưu vào MySQL an toàn.",
+                    e.getClass().getSimpleName(), e.getMessage(), otp);
+            return false;
         }
     }
 

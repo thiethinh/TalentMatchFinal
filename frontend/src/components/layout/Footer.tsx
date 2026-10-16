@@ -56,8 +56,7 @@ export const Footer: React.FC = () => {
               <div className="flex flex-col text-left">
                 <div className="flex items-center tracking-tight font-bold text-xl leading-none">
                   <span className="text-white">Talent</span>
-                  <span className="text-blue-500 font-bold">Match</span>
-                  <span className="text-[10px] font-semibold text-blue-400 ml-1.5 px-1.5 py-0.5 bg-blue-950/80 border border-blue-800 rounded leading-none">VN</span>
+                  <span className="text-[10px] font-bold text-slate-300 ml-1.5 px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 leading-none">VN</span>
                 </div>
                 <span className="text-[10px] font-semibold text-neutral-400 tracking-wider uppercase mt-0.5">Freelancer Marketplace</span>
               </div>

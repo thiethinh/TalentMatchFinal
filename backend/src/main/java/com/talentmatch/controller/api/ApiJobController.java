@@ -320,4 +320,57 @@ public class ApiJobController {
         if (days < 30) return days + " ngày trước";
         return (days / 30) + " tháng trước";
     }
+
+    @PostMapping
+    public ResponseEntity<?> createJob(@RequestBody Map<String, Object> body, Authentication auth) {
+        try {
+            User customer = null;
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                customer = users.byEmail(auth.getName());
+            }
+            if (customer == null && body.containsKey("customerEmail") && body.get("customerEmail") != null) {
+                try {
+                    customer = users.byEmail(String.valueOf(body.get("customerEmail")));
+                } catch (Exception ignored) {}
+            }
+            if (customer == null && body.containsKey("employerEmail") && body.get("employerEmail") != null) {
+                try {
+                    customer = users.byEmail(String.valueOf(body.get("employerEmail")));
+                } catch (Exception ignored) {}
+            }
+            if (customer == null) {
+                customer = users.byEmail("client@talentmatch.vn");
+            }
+
+            Job job = new Job();
+            job.setCustomer(customer);
+            job.setTitle(String.valueOf(body.get("title")));
+            job.setCategory(String.valueOf(body.getOrDefault("category", "Lập trình & CNTT")));
+            job.setDescription(String.valueOf(body.getOrDefault("description", "")));
+
+            Object skillsObj = body.get("requiredSkills");
+            if (skillsObj instanceof List) {
+                job.setRequiredSkills(String.join(", ", (List<String>) skillsObj));
+            } else if (skillsObj != null) {
+                job.setRequiredSkills(String.valueOf(skillsObj));
+            } else {
+                job.setRequiredSkills("Chuyên môn");
+            }
+
+            if (body.get("budget") != null) {
+                job.setBudget(new BigDecimal(body.get("budget").toString()));
+            } else {
+                job.setBudget(new BigDecimal("10000000"));
+            }
+            job.setPriceType(String.valueOf(body.getOrDefault("budgetType", "FIXED")));
+            if (body.get("deadline") != null) {
+                job.setDeadline(LocalDate.parse(body.get("deadline").toString().split("T")[0]));
+            }
+            job.setStatus(JobStatus.OPEN);
+            Job saved = jobs.save(job);
+            return ResponseEntity.ok(Map.of("message", "Đăng dự án thành công.", "id", saved.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

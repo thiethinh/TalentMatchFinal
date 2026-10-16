@@ -16,24 +16,25 @@ const CATEGORY_DATA: CategoryConfig[] = [
     subcategories: [
       { id: 'all_it', name: 'Tất cả IT & Lập trình', skills: [] },
       { id: 'web_frontend', name: 'Web Frontend (React, Vue, Next.js)', skills: ['ReactJS', 'Next.js', 'Tailwind CSS', 'Responsive UI', 'HTML/CSS'] },
-      { id: 'backend_api', name: 'Backend & Database (Node.js, Python, PostgreSQL)', skills: ['Node.js', 'REST API', 'PostgreSQL', 'MySQL', 'Docker'] },
+      { id: 'backend_api', name: 'Backend & Database (Node.js, Python, PostgreSQL)', skills: ['Node.js', 'REST API', 'PostgreSQL', 'MySQL', 'Docker', 'Java', 'Spring Boot'] },
       { id: 'mobile_app', name: 'Mobile App (Flutter, React Native, iOS/Android)', skills: ['Flutter', 'QR Code Scan', 'Mobile UI'] },
       { id: 'ai_chatbot', name: 'AI, LLM & Chatbot Tự Động', skills: ['Python', 'FastAPI', 'AI/LLM'] }
     ]
   },
   {
     id: 'Thiết kế & Đồ họa',
-    name: 'Thiết kế & Đồ họa',
+    name: 'Thiết kế & Đồ họa (UI/UX, 3D)',
     subcategories: [
       { id: 'all_design', name: 'Tất cả Thiết kế', skills: [] },
       { id: 'ui_ux', name: 'UI/UX Mobile App & Website', skills: ['UI/UX Design', 'Figma', 'Design System', 'Mobile UI'] },
       { id: 'branding_logo', name: 'Logo & Nhận Diện Thương Hiệu (Branding)', skills: ['Branding', 'Logo Design', 'Adobe Illustrator'] },
-      { id: 'banner_posm', name: 'Banner Quảng Cáo, Poster & POSM', skills: ['Photoshop', 'Banner Design', 'Adobe Illustrator'] }
+      { id: 'banner_posm', name: 'Banner Quảng Cáo, Poster & POSM', skills: ['Photoshop', 'Banner Design', 'Adobe Illustrator'] },
+      { id: 'design_3d', name: 'Thiết kế 3D, Phối cảnh & Animation', skills: ['3D Animation', 'Blender', '3Ds Max'] }
     ]
   },
   {
     id: 'Video & Animation',
-    name: 'Video & Animation',
+    name: 'Video & Animation (TikTok, Reels)',
     subcategories: [
       { id: 'all_video', name: 'Tất cả Video', skills: [] },
       { id: 'tiktok_reels', name: 'Video Ngắn TikTok Ads, Reels, Shorts', skills: ['TikTok Ads', 'Premiere Pro', 'Motion Graphics', 'Color Grading'] },
@@ -42,11 +43,62 @@ const CATEGORY_DATA: CategoryConfig[] = [
   },
   {
     id: 'Digital Marketing',
-    name: 'Digital Marketing & Content',
+    name: 'Digital Marketing & Bán hàng',
     subcategories: [
       { id: 'all_mkt', name: 'Tất cả Marketing', skills: [] },
-      { id: 'seo_content', name: 'SEO Google & Content Marketing', skills: ['SEO Google', 'Content Marketing', 'Google Analytics', 'Technical SEO'] },
-      { id: 'paid_ads', name: 'Quảng Cáo Paid Ads (Facebook, Google, TikTok)', skills: ['Facebook Ads', 'Google Ads', 'TikTok Ads'] }
+      { id: 'seo_content', name: 'SEO Google & Content Marketing', skills: ['SEO Google', 'Content Marketing', 'Google Analytics', 'Technical SEO', 'SEO'] },
+      { id: 'paid_ads', name: 'Quảng Cáo Paid Ads (Facebook, Google, TikTok)', skills: ['Facebook Ads', 'Google Ads', 'Meta Ads'] }
+    ]
+  },
+  {
+    id: 'Viết lách & Nội dung',
+    name: 'Viết lách & Dịch thuật',
+    subcategories: [
+      { id: 'all_writing', name: 'Tất cả Viết lách & Dịch thuật', skills: [] },
+      { id: 'seo_writing', name: 'Viết bài chuẩn SEO, PR báo chí', skills: ['Content', 'SEO Writing', 'Copywriting'] },
+      { id: 'translation', name: 'Biên dịch & Phiên dịch (Anh, Nhật, Trung)', skills: ['Translation', 'Localization'] }
+    ]
+  },
+  {
+    id: 'Kỹ thuật & Kiến trúc',
+    name: 'Kỹ thuật, Xây dựng & Kiến trúc',
+    subcategories: [
+      { id: 'all_engineering', name: 'Tất cả Kỹ thuật & Kiến trúc', skills: [] },
+      { id: 'interior_design', name: 'Thiết kế nội thất & Phối cảnh 3D', skills: ['AutoCAD', 'SketchUp', 'Interior Design'] },
+      { id: 'revit_bim', name: 'Hồ sơ kỹ thuật & Mô hình BIM Revit', skills: ['Revit', 'AutoCAD', 'BIM'] }
+    ]
+  },
+  {
+    id: 'Tài chính & Kế toán',
+    name: 'Tài chính, Thuế & Kế toán',
+    subcategories: [
+      { id: 'all_finance', name: 'Tất cả Tài chính & Kế toán', skills: [] },
+      { id: 'tax_accounting', name: 'Kế toán thuế & Soát xét sổ sách', skills: ['Kế toán thuế', 'Kế toán', 'Excel', 'Báo cáo'] },
+      { id: 'financial_analysis', name: 'Phân tích tài chính & Quản trị dòng tiền', skills: ['Finance', 'Dashboard', 'Cashflow'] }
+    ]
+  },
+  {
+    id: 'Đào tạo & Giáo dục',
+    name: 'Đào tạo & Giáo dục Trực tuyến',
+    subcategories: [
+      { id: 'all_education', name: 'Tất cả Đào tạo & Giáo dục', skills: [] },
+      { id: 'online_teaching', name: 'Dạy học online & Gia sư', skills: ['Teaching', 'Zoom', 'English Teaching'] }
+    ]
+  },
+  {
+    id: 'Hành chính & Nhân sự',
+    name: 'Hành chính & Tuyển dụng Nhân sự',
+    subcategories: [
+      { id: 'all_hr', name: 'Tất cả Hành chính & Nhân sự', skills: [] },
+      { id: 'recruitment', name: 'Tuyển dụng & Sàng lọc CV', skills: ['Recruitment', 'Excel', 'Communication'] }
+    ]
+  },
+  {
+    id: 'Luật & Pháp lý',
+    name: 'Luật & Tư vấn Hợp đồng',
+    subcategories: [
+      { id: 'all_legal', name: 'Tất cả Pháp lý', skills: [] },
+      { id: 'contract_review', name: 'Rà soát hợp đồng & Điều khoản dịch vụ', skills: ['Pháp lý', 'Hợp đồng', 'NDA'] }
     ]
   }
 ];
@@ -145,8 +197,21 @@ export const Projects: React.FC = () => {
       }
 
       // 2. Main Category Filter
-      if (selectedMainCategory !== 'ALL' && proj.category !== selectedMainCategory) {
-        return false;
+      if (selectedMainCategory !== 'ALL') {
+        const pCat = proj.category.toLowerCase();
+        const sCat = selectedMainCategory.toLowerCase();
+        const matches = pCat === sCat ||
+          (sCat.includes('lập trình') && (pCat.includes('lập trình') || pCat.includes('it') || pCat.includes('cntt'))) ||
+          (sCat.includes('thiết kế') && (pCat.includes('thiết kế') || pCat.includes('đồ họa') || pCat.includes('sáng tạo'))) ||
+          (sCat.includes('video') && (pCat.includes('video') || pCat.includes('animation') || pCat.includes('media'))) ||
+          (sCat.includes('marketing') && (pCat.includes('marketing') || pCat.includes('bán hàng'))) ||
+          (sCat.includes('viết lách') && (pCat.includes('viết lách') || pCat.includes('nội dung') || pCat.includes('dịch thuật'))) ||
+          (sCat.includes('kiến trúc') && (pCat.includes('kiến trúc') || pCat.includes('kỹ thuật'))) ||
+          (sCat.includes('tài chính') && (pCat.includes('tài chính') || pCat.includes('kế toán'))) ||
+          (sCat.includes('giáo dục') && (pCat.includes('giáo dục') || pCat.includes('đào tạo'))) ||
+          (sCat.includes('nhân sự') && (pCat.includes('nhân sự') || pCat.includes('hành chính'))) ||
+          (sCat.includes('pháp lý') && (pCat.includes('luật') || pCat.includes('pháp lý')));
+        if (!matches) return false;
       }
 
       // 3. Subcategory Filter
@@ -264,14 +329,14 @@ export const Projects: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. Header Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-10 text-white shadow-sm relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-blue-950/80 border border-blue-700/50 px-3.5 py-1 rounded-md text-xs font-semibold text-blue-300">
-            <i className="fa-solid fa-shield-halved text-blue-400 text-xs" />
+          <div className="inline-flex items-center gap-2 bg-slate-800 text-slate-200 border border-slate-700 px-3 py-1 rounded-md text-xs font-medium">
+            <i className="fa-solid fa-shield-halved text-emerald-400 text-xs" />
             <span>Thị Trường Dự Án Dịch Vụ Số Chuẩn Escrow VNPAY</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Tìm Kiếm Dự Án & Cơ Hội Việc Làm Freelance
           </h1>
 

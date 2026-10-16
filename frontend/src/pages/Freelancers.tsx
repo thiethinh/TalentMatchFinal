@@ -15,7 +15,7 @@ const CATEGORY_DATA: CategoryConfig[] = [
     subcategories: [
       { id: 'all_it', name: 'Tất cả IT & Lập trình', skills: [] },
       { id: 'web_frontend', name: 'Web Frontend (React, Vue, Next.js)', skills: ['ReactJS', 'Next.js', 'Tailwind CSS', 'TypeScript'] },
-      { id: 'backend_api', name: 'Backend & API (Node.js, Python, MySQL)', skills: ['Node.js', 'REST API', 'MySQL', 'PostgreSQL'] },
+      { id: 'backend_api', name: 'Backend & API (Node.js, Python, MySQL)', skills: ['Node.js', 'REST API', 'MySQL', 'PostgreSQL', 'Java', 'Spring Boot'] },
       { id: 'mobile_app', name: 'Mobile App (Flutter, React Native)', skills: ['Flutter', 'Mobile UI'] },
       { id: 'ai_data', name: 'AI, LLM & Backend Python', skills: ['Python', 'FastAPI', 'AI/LLM'] }
     ]
@@ -26,12 +26,13 @@ const CATEGORY_DATA: CategoryConfig[] = [
     subcategories: [
       { id: 'all_design', name: 'Tất cả Thiết kế', skills: [] },
       { id: 'ui_ux', name: 'UI/UX App & Web Design (Figma)', skills: ['UI/UX Design', 'Figma', 'Design System'] },
-      { id: 'branding_logo', name: 'Branding & Logo Design', skills: ['Branding', 'Logo Design', 'Adobe Illustrator'] }
+      { id: 'branding_logo', name: 'Branding & Logo Design', skills: ['Branding', 'Logo Design', 'Adobe Illustrator'] },
+      { id: 'design_3d', name: '3D Game & Hoạt Họa Animation', skills: ['Blender', '3Ds Max', 'Unreal Engine 5'] }
     ]
   },
   {
     id: 'Video & Animation',
-    name: 'Video & Animation',
+    name: 'Video & Media Animation',
     subcategories: [
       { id: 'all_video', name: 'Tất cả Video', skills: [] },
       { id: 'tiktok_ads', name: 'Video Ngắn TikTok Ads & Reels', skills: ['TikTok Ads', 'Premiere Pro', 'Color Grading'] },
@@ -44,7 +45,32 @@ const CATEGORY_DATA: CategoryConfig[] = [
     subcategories: [
       { id: 'all_mkt', name: 'Tất cả Marketing', skills: [] },
       { id: 'seo_content', name: 'SEO Google & Content Marketing', skills: ['SEO Google', 'Content Marketing', 'Copywriting'] },
-      { id: 'performance_ads', name: 'Chạy Ads Facebook/Google', skills: ['Facebook Ads', 'Google Ads'] }
+      { id: 'performance_ads', name: 'Chạy Ads Facebook/Google', skills: ['Facebook Ads', 'Google Ads', 'Meta Ads'] }
+    ]
+  },
+  {
+    id: 'Viết lách & Nội dung',
+    name: 'Viết lách & Dịch thuật',
+    subcategories: [
+      { id: 'all_writing', name: 'Tất cả Viết lách & Dịch thuật', skills: [] },
+      { id: 'content_writing', name: 'Content Marketing & Copywriting', skills: ['Content Strategy', 'SEO Writing', 'Copywriting'] },
+      { id: 'translation', name: 'Biên phiên dịch Anh - Nhật - Trung', skills: ['Dịch thuật Anh - Việt', 'Nhật - Việt', 'Localization'] }
+    ]
+  },
+  {
+    id: 'Kỹ thuật & Kiến trúc',
+    name: 'Kỹ thuật & Kiến trúc 3D',
+    subcategories: [
+      { id: 'all_arch', name: 'Tất cả Kỹ thuật & Kiến trúc', skills: [] },
+      { id: 'revit_bim', name: 'Thiết kế 3D & Mô hình BIM Revit', skills: ['AutoCAD', 'Revit BIM', '3Ds Max', 'SketchUp'] }
+    ]
+  },
+  {
+    id: 'Tài chính & Kế toán',
+    name: 'Tài chính & Kế toán Thuế',
+    subcategories: [
+      { id: 'all_fin', name: 'Tất cả Tài chính & Kế toán', skills: [] },
+      { id: 'tax_accounting', name: 'Kế toán trưởng & Tư vấn thuế SME', skills: ['Kế toán tài chính', 'Báo cáo tài chính', 'Quyết toán thuế'] }
     ]
   }
 ];
@@ -275,14 +301,14 @@ export const Freelancers: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. Header Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-10 text-white shadow-sm relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-indigo-950/80 border border-indigo-700/50 px-3.5 py-1 rounded-md text-xs font-semibold text-indigo-300">
-            <i className="fa-solid fa-certificate text-indigo-400 text-xs" />
+          <div className="inline-flex items-center gap-2 bg-slate-800 text-slate-200 border border-slate-700 px-3 py-1 rounded-md text-xs font-medium">
+            <i className="fa-solid fa-circle-check text-blue-400 text-xs" />
             <span>Đội Ngũ Freelancer Đã Xác Thực Danh Tính eKYC & Năng Lực Thực Tế</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Khám Phá Hồ Sơ Freelancer Chuyên Nghiệp
           </h1>
 

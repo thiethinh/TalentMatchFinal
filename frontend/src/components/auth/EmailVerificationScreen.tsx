@@ -83,14 +83,9 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       const data = await response.json().catch(() => ({}));
       setSuccessNotice(data.message || 'Đã gửi lại mã OTP mới về email của bạn!');
     } catch {
-      setSuccessNotice('Đã yêu cầu gửi lại mã (chế độ dự phòng)!');
+      setSuccessNotice('Đã gửi yêu cầu tạo mã xác thực mới.');
     }
     resendVerificationEmail(currentUser.email);
-  };
-
-  const handleVerifyNow = () => {
-    verifyEmail(currentUser.id);
-    if (onSuccess) onSuccess();
   };
 
   const handleSaveEmail = (e: React.FormEvent) => {
@@ -217,8 +212,8 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         </button>
       </form>
 
-      {/* Action Gửi lại & Nút phụ */}
-      <div className="space-y-2 mb-5">
+      {/* Action Gửi lại mã */}
+      <div className="mb-5">
         <button
           type="button"
           onClick={handleResend}
@@ -232,26 +227,18 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           <i className={`fa-solid fa-rotate-right text-xs ${cooldown > 0 ? 'animate-spin' : ''}`} />
           <span>{cooldown > 0 ? `Gửi lại mã sau ${cooldown}s` : 'Gửi lại mã OTP'}</span>
         </button>
-
-        <button
-          type="button"
-          onClick={handleVerifyNow}
-          className="w-full py-1.5 text-slate-500 hover:text-slate-800 font-medium text-[11px] hover:underline cursor-pointer"
-        >
-          ⚡ Kích hoạt nhanh ngay (Chế độ Demo)
-        </button>
       </div>
 
-      {/* Hướng dẫn khắc phục */}
+      {/* Hướng dẫn lưu ý */}
       <div className="bg-slate-50 rounded-md p-3 border border-slate-200 text-left text-xs text-slate-600 space-y-1.5">
         <div className="font-bold text-slate-800 flex items-center gap-1.5">
           <i className="fa-solid fa-circle-info text-blue-500 text-xs" />
           <span>Lưu ý khi xác thực email:</span>
         </div>
         <ul className="list-disc list-inside space-y-1 text-slate-500 text-[11px] leading-relaxed">
-          <li>Kiểm tra cả thư mục <strong>Spam / Thư rác</strong> hoặc tab Quảng cáo.</li>
-          <li>Mã OTP có hiệu lực trong <strong>15 phút</strong>.</li>
-          <li>Nếu đang chạy test local chưa bật SMTP: Bạn có thể xem mã OTP được log trực tiếp tại terminal Backend hoặc nhập <strong>123456</strong>.</li>
+          <li>Kiểm tra cả thư mục <strong>Spam / Thư rác</strong> hoặc tab Quảng cáo trong Gmail.</li>
+          <li>Mã OTP có hiệu lực trong <strong>15 phút</strong> kể từ khi gửi.</li>
+          <li>Nếu chưa nhận được mã sau vài phút, vui lòng nhấn nút <strong>Gửi lại mã OTP</strong>.</li>
         </ul>
       </div>
     </div>

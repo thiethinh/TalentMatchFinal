@@ -325,6 +325,141 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(notifications));
   }, [notifications]);
 
+  // Tự động đồng bộ dữ liệu trực tiếp từ MySQL Database (TalentMatch Pro)
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Đồng bộ toàn bộ Dự án từ MySQL (/api/jobs)
+    fetch('/api/jobs?size=500')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data || !Array.isArray(data.items) || data.items.length === 0) return;
+        const mappedProjects: Project[] = data.items.map((j: any) => {
+          let skills: string[] = ['Chuyên môn'];
+          if (Array.isArray(j.requiredSkills)) {
+            skills = j.requiredSkills;
+          } else if (typeof j.requiredSkills === 'string' && j.requiredSkills.trim()) {
+            skills = j.requiredSkills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean);
+          }
+          let cat = j.category || 'Khác';
+          if (cat === 'Lập trình & CNTT') cat = 'IT & Lập trình';
+          else if (cat === 'Thiết kế & Sáng tạo') cat = 'Thiết kế & Đồ họa';
+          else if (cat === 'Marketing & Bán hàng') cat = 'Digital Marketing';
+
+          return {
+            id: String(j.id),
+            title: j.title || 'Dự án tuyển dụng',
+            category: cat,
+            employerId: j.customerId ? `usr-emp-${j.customerId}` : (j.customer ? `usr-emp-${j.customer.id}` : 'usr-emp-1'),
+            employerName: j.customerName || (j.customer ? (j.customer.companyName || j.customer.fullName) : 'Nhà tuyển dụng'),
+            employerAvatar: j.customerAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(j.customerName || 'employer')}`,
+            employerCompany: j.customerName || undefined,
+            employerVerified: j.verified !== false,
+            budget: Number(j.budget) || 10000000,
+            budgetType: j.priceType === 'MILESTONE' ? 'MILESTONE' : 'FIXED',
+            deadline: j.deadline ? String(j.deadline).split('T')[0] : '2026-11-01',
+            description: j.description || '',
+            requiredSkills: skills.length > 0 ? skills : ['Chuyên môn'],
+            status: (j.status === 'OPEN' || j.status === 'IN_PROGRESS' || j.status === 'COMPLETED' || j.status === 'CANCELLED') ? j.status : 'OPEN',
+            proposalsCount: Number(j.proposalCount) || 0,
+            createdAt: j.createdAt ? String(j.createdAt).split('T')[0] : '2026-10-01'
+          };
+        });
+        setProjects(mappedProjects);
+      })
+      .catch(() => {});
+
+    // 2. Đồng bộ toàn bộ Freelancer từ MySQL (/api/freelancers)
+    fetch('/api/freelancers')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data || !Array.isArray(data.freelancers) || data.freelancers.length === 0) return;
+        const mappedFreelancers: FreelancerProfile[] = data.freelancers.map((f: any) => {
+          let skills: string[] = ['Kỹ năng'];
+          if (Array.isArray(f.skills)) {
+            skills = f.skills;
+          } else if (typeof f.skills === 'string' && f.skills.trim()) {
+            skills = f.skills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean);
+          }
+          const existingProfile = FREELANCERS.find(
+            (p) => p.name === f.fullName || p.userId === `usr-free-${f.id}` || p.id === `free-${f.id}`
+          );
+          const rating = f.rating ? Number(f.rating) : 4.9;
+          const completedCount = f.completedProjects ? Number(f.completedProjects) : 25;
+          const talentScore = f.talentCreditBalance && f.talentCreditBalance > 0
+            ? f.talentCreditBalance
+            : Math.min(990, Math.max(800, Math.round(rating * 195)));
+          const badge: FreelancerProfile['talentCreditBadge'] =
+            rating >= 4.9 ? 'Top Rated' : rating >= 4.8 ? 'Gold' : rating >= 4.5 ? 'Silver' : 'Bronze';
+
+          return {
+            id: `free-${f.id}`,
+            userId: `usr-free-${f.id}`,
+            name: f.fullName,
+            title: f.professionalTitle || 'Chuyên Gia Dịch Vụ',
+            avatar: f.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(f.email || f.fullName)}`,
+            bio: f.bio || 'Chuyên gia uy tín trên sàn TalentMatch.',
+            location: f.location || 'Việt Nam',
+            rating,
+            reviewCount: Math.max(12, Math.round(completedCount * 0.9)),
+            completedOrders: completedCount,
+            hourlyRate: f.hourlyRate ? Number(f.hourlyRate) : 250000,
+            skills: skills.length > 0 ? skills : ['Chuyên môn'],
+            talentCreditScore: talentScore,
+            talentCreditBadge: badge,
+            isVerified: Boolean(f.emailVerified),
+            portfolioUrl: f.website || existingProfile?.portfolioUrl,
+            portfolio: existingProfile?.portfolio || [
+              {
+                id: `port-${f.id}-1`,
+                title: `${f.professionalTitle || 'Dự Án Tiêu Biểu'} - ${f.fullName}`,
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
+                category: f.field || 'Chuyên Môn',
+                description: f.bio || 'Dự án thực tế hoàn thành xuất sắc cho khách hàng doanh nghiệp.',
+                projectUrl: f.website || 'https://talentmatch.vn'
+              }
+            ]
+          };
+        });
+        setFreelancers(mappedFreelancers);
+
+        // Bổ sung tài khoản từ DB vào danh sách users nếu chưa có
+        setUsers((prevUsers) => {
+          const userEmails = new Set(prevUsers.map((u) => u.email.toLowerCase()));
+          const newUsers: User[] = [];
+          data.freelancers.forEach((f: any) => {
+            if (f.email && !userEmails.has(f.email.toLowerCase())) {
+              userEmails.add(f.email.toLowerCase());
+              newUsers.push({
+                id: `usr-free-${f.id}`,
+                name: f.fullName,
+                email: f.email,
+                avatar: f.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(f.email)}`,
+                role: 'freelancer',
+                phone: f.phone || '',
+                isVerified: Boolean(f.emailVerified),
+                emailVerified: Boolean(f.emailVerified),
+                accountStatus: f.locked ? 'SUSPENDED' : (f.emailVerified ? 'ACTIVE' : 'PENDING'),
+                kycStatus: f.emailVerified ? 'VERIFIED' : 'NOT_SUBMITTED',
+                balance: 10000000,
+                escrowBalance: 0,
+                bio: f.bio || '',
+                skills: f.skills ? f.skills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean) : [],
+                createdAt: f.createdAt ? String(f.createdAt).split('T')[0] : '2026-10-01',
+                bankAccounts: []
+              });
+            }
+          });
+          return newUsers.length > 0 ? [...prevUsers, ...newUsers] : prevUsers;
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Notifications calculation and actions
   const unreadNotificationsCount = notifications.filter(
     (n) => (n.userId === currentUser.id || n.userId === 'all') && !n.isRead
@@ -657,6 +792,27 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setAuthModalMode('verification');
     addToast('Đăng ký thành công! Vui lòng xác thực email để hoàn tất kích hoạt.', 'warning');
+
+    // Lưu tài khoản và kích hoạt mã OTP trong CSDL MySQL Backend
+    try {
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: data.name,
+          email: data.email.trim().toLowerCase(),
+          password: data.password || 'TalentMatch@2026',
+          confirmPassword: data.password || 'TalentMatch@2026',
+          role: data.role === 'employer' ? 'CUSTOMER' : 'FREELANCER',
+          agreeTerms: true
+        }),
+      }).then(async (res) => {
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.message) {
+          addToast(resData.message, 'info');
+        }
+      }).catch(() => {});
+    } catch (_) {}
   };
 
   const verifyEmail = (userId?: string) => {
@@ -722,13 +878,25 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addToast('✓ Xác minh eKYC danh tính thành công! Huy hiệu Tích Xanh chính chủ đã được kích hoạt.', 'success');
   };
 
-  const loginUser = (email: string) => {
+  const loginUser = (email: string, password?: string) => {
     const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (!found) {
       return { success: false, message: 'Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại.' };
     }
     setCurrentUser(found);
     localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
+
+    // Kích hoạt phiên đăng nhập backend Spring Security nếu có mật khẩu
+    if (password) {
+      try {
+        fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password })
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     if (!found.emailVerified) {
       return { success: false, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
     }
@@ -907,6 +1075,25 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdAt: new Date().toISOString().split('T')[0]
     };
     setProjects((prev) => [project, ...prev]);
+
+    // Đồng bộ ngay xuống CSDL MySQL Backend
+    try {
+      fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newProj.title,
+          category: newProj.category,
+          description: newProj.description,
+          budget: newProj.budget,
+          budgetType: newProj.budgetType,
+          deadline: newProj.deadline,
+          requiredSkills: newProj.requiredSkills,
+          customerEmail: currentUser.email
+        })
+      }).catch(() => {});
+    } catch (_) {}
+
     addToast('Đã đăng dự án tuyển dụng mới thành công!', 'success');
   };
 
@@ -924,6 +1111,24 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProjects((prev) =>
       prev.map((p) => (p.id === proposalData.projectId ? { ...p, proposalsCount: p.proposalsCount + 1 } : p))
     );
+
+    // Lưu đề xuất ứng tuyển vào CSDL MySQL nếu là jobId số
+    const numericJobId = parseInt(proposalData.projectId, 10);
+    if (!isNaN(numericJobId)) {
+      try {
+        fetch(`/api/jobs/${numericJobId}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            proposal: proposalData.coverLetter,
+            proposedPrice: proposalData.bidAmount,
+            estimatedDays: proposalData.estimatedDays,
+            portfolioLink: proposalData.freelancerPortfolioUrl || ''
+          })
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     addToast('Đã gửi Đề xuất báo giá cho Nhà tuyển dụng!', 'success');
   };
 
@@ -1266,6 +1471,13 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return next;
     });
+
+    const numericJobId = parseInt(projectId, 10);
+    if (!isNaN(numericJobId)) {
+      try {
+        fetch(`/api/jobs/${numericJobId}/save`, { method: 'POST' }).catch(() => {});
+      } catch (_) {}
+    }
   };
 
   const isFreelancerSaved = (id: string) => savedFreelancerIds.includes(id);

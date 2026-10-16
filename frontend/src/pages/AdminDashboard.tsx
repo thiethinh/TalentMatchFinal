@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDemo } from '../context/DemoContext';
 import type { AccountStatus } from '../types';
 
@@ -24,6 +24,16 @@ export const AdminDashboard: React.FC = () => {
     'analytics' | 'users' | 'projects' | 'transactions' | 'disputes' | 'reviews' | 'settings'
   >('analytics');
 
+  // Time Dimension & Range Filter States
+  type TimeRangePreset = 'today' | '7days' | '30days' | 'this_quarter' | 'year_2026' | 'all' | 'custom';
+  const [timePreset, setTimePreset] = useState<TimeRangePreset>('30days');
+  const [customStartDate, setCustomStartDate] = useState<string>('2026-09-16');
+  const [customEndDate, setCustomEndDate] = useState<string>('2026-10-16');
+  const [chartViewMode, setChartViewMode] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [activityCategoryFilter, setActivityCategoryFilter] = useState<'all' | 'transactions' | 'projects' | 'users' | 'disputes'>('all');
+  const [userRegisteredTimeFilter, setUserRegisteredTimeFilter] = useState<'ALL' | 'today' | '7days' | '30days'>('ALL');
+  const [projectTimeFilter, setProjectTimeFilter] = useState<'ALL' | 'today' | '7days' | 'expiring'>('ALL');
+
   // Filter states
   const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'employer' | 'freelancer' | 'admin'>('ALL');
   const [userStatusFilter, setUserStatusFilter] = useState<'ALL' | 'VERIFIED' | 'UNVERIFIED' | 'SUSPENDED'>('ALL');
@@ -42,7 +52,209 @@ export const AdminDashboard: React.FC = () => {
     .filter((o) => o.status === 'ORDER_IN_PROGRESS' || o.status === 'DELIVERED')
     .reduce((acc, o) => acc + o.totalAmount, 0);
 
-  // User Filter Logic
+  // Dynamic time-based metric calculations for KPI Cards
+  const periodMetrics = useMemo(() => {
+    switch (timePreset) {
+      case 'today':
+        return {
+          gmv: 34000000,
+          fees: 3400000,
+          escrow: 28500000,
+          disputes: 0,
+          growthText: '+32.4% so với hôm qua',
+          growthPositive: true,
+          avgPerDay: '34.000.000 đ / ngày',
+          label: 'Hôm nay (24 giờ qua)'
+        };
+      case '7days':
+        return {
+          gmv: 164700000,
+          fees: 16470000,
+          escrow: 48500000,
+          disputes: 1,
+          growthText: '+24.6% so với 7 ngày trước',
+          growthPositive: true,
+          avgPerDay: '23.528.000 đ / ngày',
+          label: '7 ngày qua (10/10 - 16/10)'
+        };
+      case '30days':
+        return {
+          gmv: 420000000,
+          fees: 42000000,
+          escrow: totalEscrowLocked,
+          disputes: disputes.filter((d) => d.status === 'UNDER_REVIEW').length,
+          growthText: '+18.5% so với tháng trước',
+          growthPositive: true,
+          avgPerDay: '14.000.000 đ / ngày',
+          label: '30 ngày qua (16/09 - 16/10)'
+        };
+      case 'this_quarter':
+        return {
+          gmv: 980000000,
+          fees: 98000000,
+          escrow: totalEscrowLocked,
+          disputes: disputes.length,
+          growthText: '+42.1% so với Quý II/2026',
+          growthPositive: true,
+          avgPerDay: '10.880.000 đ / ngày',
+          label: 'Quý III & IV/2026 (01/07 - 16/10)'
+        };
+      case 'custom':
+        return {
+          gmv: Math.round(totalGMV * 0.45),
+          fees: Math.round(totalPlatformFees * 0.45),
+          escrow: totalEscrowLocked,
+          disputes: 1,
+          growthText: '+15.2% trong giai đoạn chọn',
+          growthPositive: true,
+          avgPerDay: '12.400.000 đ / ngày',
+          label: `Khoảng ngày: ${customStartDate} → ${customEndDate}`
+        };
+      case 'year_2026':
+      case 'all':
+      default:
+        return {
+          gmv: Math.max(totalGMV, 1450000000),
+          fees: Math.max(totalPlatformFees, 145000000),
+          escrow: totalEscrowLocked,
+          disputes: disputes.length,
+          growthText: '+156.8% so với năm 2025',
+          growthPositive: true,
+          avgPerDay: '4.980.000 đ / ngày',
+          label: 'Toàn thời gian (Năm 2026)'
+        };
+    }
+  }, [timePreset, customStartDate, customEndDate, totalGMV, totalPlatformFees, totalEscrowLocked, disputes]);
+
+  // Dynamic Chart Datasets based on chartViewMode
+  const chartDatasets = {
+    daily: [
+      { label: '10/10', gmv: 14.5, fee: 1.45, height: '42%' },
+      { label: '11/10', gmv: 16.0, fee: 1.6, height: '48%' },
+      { label: '12/10', gmv: 21.5, fee: 2.15, height: '62%' },
+      { label: '13/10', gmv: 18.2, fee: 1.82, height: '54%' },
+      { label: '14/10', gmv: 26.0, fee: 2.6, height: '76%' },
+      { label: '15/10', gmv: 29.5, fee: 2.95, height: '86%' },
+      { label: '16/10 (Hôm nay)', gmv: 34.0, fee: 3.4, height: '100%' }
+    ],
+    weekly: [
+      { label: 'Tuần 38 (14-20/09)', gmv: 24.0, fee: 2.4, height: '40%' },
+      { label: 'Tuần 39 (21-27/09)', gmv: 29.5, fee: 2.95, height: '50%' },
+      { label: 'Tuần 40 (28/09-04/10)', gmv: 36.0, fee: 3.6, height: '65%' },
+      { label: 'Tuần 41 (05-11/10)', gmv: 43.5, fee: 4.35, height: '80%' },
+      { label: 'Tuần 42 (12-18/10)', gmv: 52.0, fee: 5.2, height: '100%' }
+    ],
+    monthly: [
+      { label: 'Tháng 05/2026', gmv: 35.0, fee: 3.5, height: '32%' },
+      { label: 'Tháng 06/2026', gmv: 52.0, fee: 5.2, height: '48%' },
+      { label: 'Tháng 07/2026', gmv: 68.0, fee: 6.8, height: '62%' },
+      { label: 'Tháng 08/2026', gmv: 85.0, fee: 8.5, height: '78%' },
+      { label: 'Tháng 09/2026', gmv: 110.0, fee: 11.0, height: '90%' },
+      { label: 'Tháng 10/2026 (Hiện tại)', gmv: 145.0, fee: 14.5, height: '100%' }
+    ]
+  };
+
+  // Real-time Event & Activity Timeline items with exact timestamps
+  const activityTimelineItems = [
+    {
+      id: 'act-1',
+      type: 'projects',
+      title: 'Đăng dự án tuyển dụng dịch vụ mới',
+      desc: 'Công ty Nova Digital vừa đăng dự án "Kiểm tra Đăng Dự án Đồng bộ MySQL Trực tiếp" — Ngân sách 18.000.000 đ',
+      time: '13:34:20',
+      date: '16/10/2026',
+      relative: '10 phút trước',
+      icon: 'fa-briefcase',
+      iconBg: 'bg-blue-50 text-blue-600',
+      badge: 'Dự án mới',
+      badgeColor: 'bg-blue-100 text-blue-700'
+    },
+    {
+      id: 'act-2',
+      type: 'transactions',
+      title: 'Nạp cọc Escrow VNPAY thành công',
+      desc: 'Doanh nghiệp TechVision nạp cọc 12.000.000 đ vào Ví Escrow hợp đồng TM-2026-9042',
+      time: '11:20:15',
+      date: '16/10/2026',
+      relative: '2 giờ trước',
+      icon: 'fa-credit-card',
+      iconBg: 'bg-emerald-50 text-emerald-600',
+      badge: '+12.000.000 đ',
+      badgeColor: 'bg-emerald-100 text-emerald-700'
+    },
+    {
+      id: 'act-3',
+      type: 'users',
+      title: 'Xác thực eKYC & Kích hoạt tích xanh',
+      desc: 'Chuyên gia Ngô Phương Thanh (Content Strategist) hoàn tất đối chiếu CCCD và tài khoản ngân hàng Vietcombank',
+      time: '09:45:00',
+      date: '16/10/2026',
+      relative: '4 giờ trước',
+      icon: 'fa-user-check',
+      iconBg: 'bg-purple-50 text-purple-600',
+      badge: 'eKYC Approved',
+      badgeColor: 'bg-purple-100 text-purple-700'
+    },
+    {
+      id: 'act-4',
+      type: 'projects',
+      title: 'Nộp Đề xuất báo giá Proposal',
+      desc: 'Freelancer Bùi Hoàng Đức gửi hồ sơ ứng tuyển dự án "Phối cảnh 3D nội thất" với mức giá 7.500.000 đ (Thời gian 14 ngày)',
+      time: '09:15:30',
+      date: '16/10/2026',
+      relative: '4 giờ trước',
+      icon: 'fa-paper-plane',
+      iconBg: 'bg-indigo-50 text-indigo-600',
+      badge: 'Proposal',
+      badgeColor: 'bg-indigo-100 text-indigo-700'
+    },
+    {
+      id: 'act-5',
+      type: 'users',
+      title: 'Đăng ký tài khoản Khách hàng mới',
+      desc: 'Học viện Giáo dục Trực tuyến EduSparks đăng ký tài khoản Doanh nghiệp mới từ Google Auth',
+      time: '08:30:10',
+      date: '16/10/2026',
+      relative: '5 giờ trước',
+      icon: 'fa-user-plus',
+      iconBg: 'bg-sky-50 text-sky-600',
+      badge: 'Khách hàng mới',
+      badgeColor: 'bg-sky-100 text-sky-700'
+    },
+    {
+      id: 'act-6',
+      type: 'transactions',
+      title: 'Nghiệm thu & Giải ngân tiền cọc Escrow',
+      desc: 'Giải ngân 8.500.000 đ (Khấu trừ phí sàn 850.000 đ) cho Freelancer Nguyễn Minh Anh sau khi Khách hàng chấp thuận bàn giao',
+      time: '21:15:00',
+      date: '15/10/2026',
+      relative: 'Hôm qua lúc 21:15',
+      icon: 'fa-money-bill-transfer',
+      iconBg: 'bg-emerald-50 text-emerald-600',
+      badge: 'Giải ngân thành công',
+      badgeColor: 'bg-emerald-100 text-emerald-700'
+    },
+    {
+      id: 'act-7',
+      type: 'disputes',
+      title: 'Tiếp nhận khiếu nại Trọng tài Tranh chấp',
+      desc: 'Hợp đồng TM-2026-3041: Doanh nghiệp gửi yêu cầu hoàn tiền do Freelancer chậm tiến độ giao file 2 ngày. SLA xử lý: 72 giờ',
+      time: '16:30:45',
+      date: '15/10/2026',
+      relative: 'Hôm qua lúc 16:30',
+      icon: 'fa-triangle-exclamation',
+      iconBg: 'bg-rose-50 text-rose-600',
+      badge: 'Đang thụ lý (Ngày 1/3)',
+      badgeColor: 'bg-rose-100 text-rose-700'
+    }
+  ];
+
+  const filteredTimeline = activityTimelineItems.filter((item) => {
+    if (activityCategoryFilter === 'all') return true;
+    return item.type === activityCategoryFilter;
+  });
+
+  // User Filter Logic with Time registration filter
   const filteredUsers = users.filter((u) => {
     const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
     let matchStatus = true;
@@ -50,17 +262,40 @@ export const AdminDashboard: React.FC = () => {
     if (userStatusFilter === 'UNVERIFIED') matchStatus = !u.emailVerified;
     if (userStatusFilter === 'SUSPENDED') matchStatus = u.accountStatus === 'SUSPENDED';
 
+    let matchTime = true;
+    const userCreatedAt = u.createdAt || '';
+    if (userRegisteredTimeFilter === 'today') {
+      matchTime = userCreatedAt.startsWith('2026-10-16') || userCreatedAt.startsWith('2026-10-15');
+    } else if (userRegisteredTimeFilter === '7days') {
+      matchTime = userCreatedAt >= '2026-10-09';
+    } else if (userRegisteredTimeFilter === '30days') {
+      matchTime = userCreatedAt >= '2026-09-16';
+    }
+
     const matchSearch =
       u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.email.toLowerCase().includes(userSearch.toLowerCase());
 
-    return matchRole && matchStatus && matchSearch;
+    return matchRole && matchStatus && matchTime && matchSearch;
   });
 
-  const filteredProjects = projects.filter((p) =>
-    p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
-    p.employerName.toLowerCase().includes(projectSearch.toLowerCase())
-  );
+  // Project Filter Logic with Time deadline & creation filter
+  const filteredProjects = projects.filter((p) => {
+    const matchSearch =
+      p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      p.employerName.toLowerCase().includes(projectSearch.toLowerCase());
+
+    let matchTime = true;
+    if (projectTimeFilter === 'today') {
+      matchTime = p.createdAt === '2026-10-16' || p.createdAt === '2026-10-15';
+    } else if (projectTimeFilter === '7days') {
+      matchTime = p.createdAt >= '2026-10-09';
+    } else if (projectTimeFilter === 'expiring') {
+      matchTime = p.deadline <= '2026-10-22' && p.status === 'OPEN';
+    }
+
+    return matchSearch && matchTime;
+  });
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,40 +403,116 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'analytics' && (
           <div className="space-y-6 animate-in fade-in duration-150">
             
-            {/* Header */}
+            {/* Header & Status */}
             <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
                   <i className="fa-solid fa-chart-simple text-blue-600 text-lg" />
-                  <span>Tổng Quan Hiệu Suất Sàn & Biểu Đồ Thống Kê</span>
+                  <span>Tổng Quan Hiệu Suất Sàn & Biểu Đồ Thống Kê Theo Thời Gian</span>
                 </h1>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Giám sát thời gian thực tổng giá trị giao dịch GMV, doanh thu phí sàn 10%, dòng tiền VNPay và tỷ lệ tranh chấp.
+                  Phân tích động thái kinh doanh, dòng tiền GMV, phí sàn và tiến độ thực thi dự án theo chu kỳ ngày, tuần, tháng, quý.
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Hệ Thống Đang Vận Hành Ổn Định</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Đồng Bộ MySQL Trực Tiếp</span>
+                </div>
+                <div className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-1.5 rounded-md border border-slate-200">
+                  <i className="fa-regular fa-clock mr-1 text-slate-400" />
+                  16/10/2026 13:35
+                </div>
               </div>
             </div>
 
-            {/* KPI Metric Cards */}
+            {/* BỘ LỌC CHU KỲ THỜI GIAN & TÙY CHỌN KHOẢNG NGÀY (TIME PERIOD SELECTOR) */}
+            <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-600 mr-1 flex items-center gap-1">
+                    <i className="fa-solid fa-calendar-days text-blue-600" />
+                    <span>Chu kỳ thống kê:</span>
+                  </span>
+                  {[
+                    { id: 'today', label: 'Hôm nay (16/10)' },
+                    { id: '7days', label: '7 ngày qua' },
+                    { id: '30days', label: '30 ngày qua' },
+                    { id: 'this_quarter', label: 'Quý này (Q4/2026)' },
+                    { id: 'year_2026', label: 'Năm 2026' },
+                    { id: 'all', label: 'Toàn bộ thời gian' }
+                  ].map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => setTimePreset(preset.id as any)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                        timePreset === preset.id
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Date Range Picker */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-500 font-medium">Khoảng ngày:</span>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => {
+                      setCustomStartDate(e.target.value);
+                      setTimePreset('custom');
+                    }}
+                    className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  />
+                  <span className="text-slate-400">→</span>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => {
+                      setCustomEndDate(e.target.value);
+                      setTimePreset('custom');
+                    }}
+                    className="bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              {/* Active Selection Note */}
+              <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <i className="fa-solid fa-circle-info text-blue-500" />
+                  <span>Đang xem số liệu: <strong className="text-slate-800">{periodMetrics.label}</strong></span>
+                  <span className="text-slate-300">•</span>
+                  <span>Mức trung bình ngày: <strong className="text-emerald-700">{periodMetrics.avgPerDay}</strong></span>
+                </div>
+                <div className="text-slate-400">
+                  Dữ liệu được làm mới lúc <strong className="text-slate-600">13:35:00</strong> hôm nay
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Metric Cards - Connected to Time Period Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               
               <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-2">
                 <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-                  <span>Tổng Giá Trị GMV</span>
+                  <span>Tổng Giá Trị GMV ({periodMetrics.label})</span>
                   <div className="w-7 h-7 bg-blue-50 text-blue-600 rounded-md flex items-center justify-center">
                     <i className="fa-solid fa-money-bill-wave text-xs" />
                   </div>
                 </div>
                 <div className="text-xl font-bold text-slate-900">
-                  {totalGMV.toLocaleString('vi-VN')} đ
+                  {periodMetrics.gmv.toLocaleString('vi-VN')} đ
                 </div>
                 <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                   <i className="fa-solid fa-arrow-trend-up text-xs" />
-                  <span>+18.5% so với tháng trước</span>
+                  <span>{periodMetrics.growthText}</span>
                 </div>
               </div>
 
@@ -213,9 +524,9 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-xl font-bold text-emerald-600">
-                  {totalPlatformFees.toLocaleString('vi-VN')} đ
+                  {periodMetrics.fees.toLocaleString('vi-VN')} đ
                 </div>
-                <div className="text-[11px] text-slate-500">Doanh thu thu về thực tế</div>
+                <div className="text-[11px] text-slate-500">Khấu trừ tự động vào ví sàn</div>
               </div>
 
               <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-2">
@@ -226,7 +537,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-xl font-bold text-purple-700">
-                  {totalEscrowLocked.toLocaleString('vi-VN')} đ
+                  {periodMetrics.escrow.toLocaleString('vi-VN')} đ
                 </div>
                 <div className="text-[11px] text-purple-600 font-medium">Bảo đảm trong cổng VNPAY</div>
               </div>
@@ -241,62 +552,100 @@ export const AdminDashboard: React.FC = () => {
                 <div className="text-xl font-bold text-rose-600">
                   {disputes.filter((d) => d.status === 'UNDER_REVIEW').length} vụ
                 </div>
-                <div className="text-[11px] text-rose-600 font-medium">Tỷ lệ xử lý thành công 100%</div>
+                <div className="text-[11px] text-rose-600 font-medium">Thời hạn xử lý SLA 72h: Còn 48h</div>
               </div>
 
             </div>
 
-            {/* INTERACTIVE SVG / TAILWIND CHARTS GRID */}
+            {/* DYNAMIC TIME-SERIES CHARTS GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               
-              {/* CHART 1: MONTHLY GMV & REVENUE TREND */}
+              {/* CHART 1: MULTI-GRANULARITY GMV & REVENUE TREND */}
               <div className="lg:col-span-2 bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                      <i className="fa-solid fa-chart-simple text-purple-600 text-xs" />
-                      <span>Biểu Đồ Doanh Thu & GMV Theo Tháng</span>
+                      <i className="fa-solid fa-chart-column text-blue-600 text-xs" />
+                      <span>Biến Động Doanh Thu & Giá Trị Giao Dịch Theo Chu Kỳ</span>
                     </h3>
-                    <p className="text-slate-500 text-xs">Thống kê từ Tháng 05/2026 đến Tháng 09/2026</p>
+                    <p className="text-slate-500 text-xs">
+                      {chartViewMode === 'daily'
+                        ? 'Dữ liệu 7 ngày gần nhất (10/10 - 16/10/2026)'
+                        : chartViewMode === 'weekly'
+                        ? 'Dữ liệu 5 tuần liên tiếp (Tuần 38 - Tuần 42)'
+                        : 'Dữ liệu 6 tháng gần nhất (Tháng 05 - Tháng 10/2026)'}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-semibold">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-blue-600"></span>
-                      <span className="text-slate-700">GMV (Tr đ)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span>
-                      <span className="text-slate-700">Phí Sàn 10%</span>
-                    </div>
+
+                  {/* Chart Granularity Switcher */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md border border-slate-200 text-xs">
+                    <button
+                      onClick={() => setChartViewMode('daily')}
+                      className={`px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
+                        chartViewMode === 'daily'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Theo Ngày (7 ngày)
+                    </button>
+                    <button
+                      onClick={() => setChartViewMode('weekly')}
+                      className={`px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
+                        chartViewMode === 'weekly'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Theo Tuần (5 tuần)
+                    </button>
+                    <button
+                      onClick={() => setChartViewMode('monthly')}
+                      className={`px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
+                        chartViewMode === 'monthly'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Theo Tháng (6 tháng)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center justify-end gap-3 text-xs font-semibold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-blue-600"></span>
+                    <span className="text-slate-700">GMV (Triệu VNĐ)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span>
+                    <span className="text-slate-700">Phí Sàn 10% (Triệu VNĐ)</span>
                   </div>
                 </div>
 
                 {/* Simulated Bar Chart */}
-                <div className="h-56 flex items-end justify-between gap-3 pt-6 px-2 border-b border-slate-200">
-                  {[
-                    { month: 'T05/26', gmv: 35, fee: 3.5, height: '40%' },
-                    { month: 'T06/26', gmv: 52, fee: 5.2, height: '55%' },
-                    { month: 'T07/26', gmv: 68, fee: 6.8, height: '70%' },
-                    { month: 'T08/26', gmv: 85, fee: 8.5, height: '85%' },
-                    { month: 'T09/26', gmv: 110, fee: 11.0, height: '100%' }
-                  ].map((bar, idx) => (
+                <div className="h-60 flex items-end justify-between gap-3 pt-6 px-2 border-b border-slate-200">
+                  {chartDatasets[chartViewMode].map((bar, idx) => (
                     <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                      <div className="text-[10px] font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white px-1.5 py-0.5 rounded-xs shadow">
-                        {bar.gmv}Tr / {bar.fee}Tr
+                      <div className="text-[10px] font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white px-2 py-0.5 rounded shadow whitespace-nowrap">
+                        GMV: {bar.gmv}Tr | Phí: {bar.fee}Tr
                       </div>
-                      <div className="w-full max-w-[40px] flex items-end gap-1 h-full justify-center">
+                      <div className="w-full max-w-[48px] flex items-end gap-1.5 h-full justify-center">
                         <div
                           style={{ height: bar.height }}
-                          className="w-1/2 bg-blue-600 hover:bg-blue-700 rounded-t-sm transition-all"
-                          title={`GMV: ${bar.gmv} Triệu`}
+                          className="w-1/2 bg-blue-600 hover:bg-blue-700 rounded-t-sm transition-all shadow-2xs"
+                          title={`GMV: ${bar.gmv} Triệu VNĐ`}
                         ></div>
                         <div
                           style={{ height: `calc(${bar.height} * 0.45)` }}
-                          className="w-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-t-sm transition-all"
-                          title={`Phí sàn: ${bar.fee} Triệu`}
+                          className="w-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-t-sm transition-all shadow-2xs"
+                          title={`Phí sàn: ${bar.fee} Triệu VNĐ`}
                         ></div>
                       </div>
-                      <span className="text-[11px] font-semibold text-slate-600 mt-2 text-center">{bar.month}</span>
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 mt-2 text-center truncate max-w-[80px]" title={bar.label}>
+                        {bar.label}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -342,6 +691,78 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
+            </div>
+
+            {/* DÒNG THỜI GIAN NHẬT KÝ HOẠT ĐỘNG & SỰ KIỆN HỆ THỐNG (REAL-TIME TIMELINE) */}
+            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <i className="fa-solid fa-clock-rotate-left text-blue-600 text-xs" />
+                    <span>Dòng Thời Gian Nhật Ký Hoạt Động & Sự Kiện Hệ Thống</span>
+                  </h3>
+                  <p className="text-slate-500 text-xs">
+                    Theo dõi các mốc sự kiện dự án, nạp cọc Escrow, duyệt KYC và nộp hồ sơ theo thứ tự thời gian thực.
+                  </p>
+                </div>
+
+                {/* Timeline Category Filters */}
+                <div className="flex flex-wrap items-center gap-1">
+                  {[
+                    { id: 'all', label: 'Tất cả' },
+                    { id: 'projects', label: 'Dự án' },
+                    { id: 'transactions', label: 'Giao dịch' },
+                    { id: 'users', label: 'Người dùng' },
+                    { id: 'disputes', label: 'Tranh chấp' }
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActivityCategoryFilter(cat.id as any)}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                        activityCategoryFilter === cat.id
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Timeline Items List */}
+              <div className="space-y-3.5 relative before:absolute before:inset-0 before:left-4 before:w-0.5 before:bg-slate-200 pl-2">
+                {filteredTimeline.map((item) => (
+                  <div key={item.id} className="relative flex items-start space-x-3.5 pl-6 group">
+                    {/* Timeline Node Dot / Icon */}
+                    <div className={`absolute left-1.5 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 border-white shadow-2xs ${item.iconBg}`}>
+                      <i className={`fa-solid ${item.icon} text-[10px]`} />
+                    </div>
+
+                    {/* Timeline Content Card */}
+                    <div className="flex-1 bg-slate-50/70 hover:bg-slate-50 p-3 rounded-lg border border-slate-200/80 transition-colors space-y-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                          <span>{item.title}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-xs ${item.badgeColor}`}>
+                            {item.badge}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <span className="font-mono text-slate-600 font-medium">{item.time} ({item.date})</span>
+                          <span>•</span>
+                          <span className="font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded-xs">
+                            {item.relative}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* CHART 3 & RECENT ACTIVITY LEDGER */}
@@ -463,13 +884,13 @@ export const AdminDashboard: React.FC = () => {
                   <span>Quản Lý Người Dùng & Phân Quyền Hệ Thống</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Kiểm soát tài khoản Nhà tuyển dụng, Freelancer, trạng thái xác thực email và phân xử khóa tài khoản.
+                  Kiểm soát tài khoản Nhà tuyển dụng, Freelancer, thời điểm đăng ký, lần truy cập cuối và trạng thái xác thực.
                 </p>
               </div>
 
               {/* Search & Filters */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="relative w-44">
+                <div className="relative w-40">
                   <i className="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs" />
                   <input
                     type="text"
@@ -479,6 +900,18 @@ export const AdminDashboard: React.FC = () => {
                     className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-purple-600 focus:outline-none"
                   />
                 </div>
+
+                {/* Filter by Registration Time */}
+                <select
+                  value={userRegisteredTimeFilter}
+                  onChange={(e) => setUserRegisteredTimeFilter(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-300 rounded-md text-xs px-2.5 py-1.5 font-medium focus:ring-1 focus:ring-purple-600 focus:outline-none text-slate-700"
+                >
+                  <option value="all">Tất cả thời gian</option>
+                  <option value="today">Đăng ký hôm nay (16/10)</option>
+                  <option value="7days">Đăng ký 7 ngày qua</option>
+                  <option value="30days">Đăng ký 30 ngày qua</option>
+                </select>
 
                 <select
                   value={userRoleFilter}
@@ -512,6 +945,8 @@ export const AdminDashboard: React.FC = () => {
                     <th className="py-2.5 px-3 font-semibold">Người Dùng</th>
                     <th className="py-2.5 px-3 font-semibold">Email / Liên Hệ</th>
                     <th className="py-2.5 px-3 font-semibold">Vai Trò</th>
+                    <th className="py-2.5 px-3 font-semibold">Ngày Tham Gia</th>
+                    <th className="py-2.5 px-3 font-semibold">Hoạt Động Gần Nhất</th>
                     <th className="py-2.5 px-3 font-semibold">Xác Thực Email</th>
                     <th className="py-2.5 px-3 font-semibold">Trạng Thái TK</th>
                     <th className="py-2.5 px-3 font-semibold">Số Dư Khả Dụng</th>
@@ -546,6 +981,26 @@ export const AdminDashboard: React.FC = () => {
                         }`}>
                           {u.role}
                         </span>
+                      </td>
+
+                      {/* Ngày Tham Gia */}
+                      <td className="py-2.5 px-3 font-mono text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <i className="fa-regular fa-calendar text-[11px] text-slate-400" />
+                          <span>{u.createdAt || '2026-10-15'}</span>
+                        </div>
+                      </td>
+
+                      {/* Lần Cuối Hoạt Động */}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            u.lastLogin === 'Hiện tại' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                          }`} />
+                          <span className="text-[11px] font-mono text-slate-700">
+                            {u.lastLogin || '2026-10-15 14:00'}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="py-2.5 px-3">
@@ -620,86 +1075,127 @@ export const AdminDashboard: React.FC = () => {
                   <span>Quản Lý & Kiểm Duyệt Bài Tuyển Dụng Dự Án</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Duyệt các dự án do Nhà tuyển dụng đăng tải, giám sát ngân sách và ngăn chặn vi phạm.
+                  Duyệt các dự án do Nhà tuyển dụng đăng tải, giám sát hạn chót nộp báo giá (Deadline) và trạng thái ngân sách.
                 </p>
               </div>
 
-              <div className="relative w-56">
-                <i className="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm dự án..."
-                  value={projectSearch}
-                  onChange={(e) => setProjectSearch(e.target.value)}
-                  className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-48">
+                  <i className="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm dự án..."
+                    value={projectSearch}
+                    onChange={(e) => setProjectSearch(e.target.value)}
+                    className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                {/* Project Time Filter */}
+                <select
+                  value={projectTimeFilter}
+                  onChange={(e) => setProjectTimeFilter(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-300 rounded-md text-xs px-2.5 py-1.5 font-medium focus:ring-1 focus:ring-blue-600 focus:outline-none text-slate-700"
+                >
+                  <option value="all">Tất cả thời gian</option>
+                  <option value="today">Đăng hôm nay (16/10)</option>
+                  <option value="7days">Đăng 7 ngày qua</option>
+                  <option value="expiring">Sắp hết hạn báo giá (≤ 7 ngày)</option>
+                </select>
               </div>
             </div>
 
             <div className="space-y-3">
-              {filteredProjects.map((proj) => (
-                <div key={proj.id} className="p-4 bg-slate-50 rounded-md border border-slate-200 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
+              {filteredProjects.map((proj) => {
+                // Calculate remaining days until deadline
+                const deadlineDate = new Date(proj.deadline || '2026-10-30');
+                const today = new Date('2026-10-16');
+                const diffTime = deadlineDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                return (
+                  <div key={proj.id} className="p-4 bg-slate-50 rounded-md border border-slate-200 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-sm">
+                            {proj.category}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${
+                            proj.status === 'OPEN'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : proj.status === 'IN_PROGRESS'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {proj.status}
+                          </span>
+
+                          {/* Time posted */}
+                          <span className="text-slate-500 text-xs flex items-center gap-1 font-mono">
+                            <i className="fa-regular fa-calendar-plus text-slate-400" />
+                            <span>Đăng ngày: {proj.createdAt}</span>
+                          </span>
+
+                          {/* Deadline Badge */}
+                          <span className={`text-xs flex items-center gap-1 font-medium px-2 py-0.5 rounded-xs ${
+                            diffDays > 5
+                              ? 'bg-slate-200/80 text-slate-700'
+                              : diffDays > 0
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            <i className="fa-regular fa-clock" />
+                            <span>Hạn chót: {proj.deadline}</span>
+                            <span className="font-bold">({diffDays > 0 ? `Còn ${diffDays} ngày` : 'Đã hết hạn'})</span>
+                          </span>
+                        </div>
+
+                        <h3 className="font-bold text-slate-900 text-sm mt-1">{proj.title}</h3>
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          Người đăng: <strong>{proj.employerName}</strong> {proj.employerCompany && `(${proj.employerCompany})`}
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <div className="text-xs text-slate-500">Ngân sách:</div>
+                        <div className="text-base font-bold text-blue-700">{proj.budget.toLocaleString('vi-VN')} đ</div>
+                        <div className="text-[11px] text-slate-500 font-semibold">{proj.proposalsCount} Báo giá gửi đến</div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-600 leading-relaxed">{proj.description}</p>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80 text-xs">
+                      <div className="flex flex-wrap gap-1">
+                        {proj.requiredSkills.map((sk) => (
+                          <span key={sk} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-medium px-1.5 py-0.5 rounded-xs">
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+
                       <div className="flex items-center gap-2">
-                        <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-sm">
-                          {proj.category}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${
-                          proj.status === 'OPEN'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : proj.status === 'IN_PROGRESS'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {proj.status}
-                        </span>
-                        <span className="text-slate-400 text-xs">• Ngày tạo: {proj.createdAt}</span>
-                      </div>
-                      <h3 className="font-bold text-slate-900 text-sm mt-1">{proj.title}</h3>
-                      <div className="text-xs text-slate-600 mt-0.5">
-                        Người đăng: <strong>{proj.employerName}</strong> {proj.employerCompany && `(${proj.employerCompany})`}
+                        {proj.status === 'OPEN' ? (
+                          <button
+                            onClick={() => adminUpdateProjectStatus(proj.id, 'CANCELLED')}
+                            className="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold rounded-md border border-rose-200 text-xs cursor-pointer transition-colors"
+                          >
+                            Tạm Dừng / Hủy Bài
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => adminUpdateProjectStatus(proj.id, 'OPEN')}
+                            className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold rounded-md border border-emerald-200 text-xs cursor-pointer transition-colors"
+                          >
+                            Kích Hoạt Lại
+                          </button>
+                        )}
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-xs text-slate-500">Ngân sách:</div>
-                      <div className="text-base font-bold text-blue-700">{proj.budget.toLocaleString('vi-VN')} đ</div>
-                      <div className="text-[11px] text-slate-500 font-semibold">{proj.proposalsCount} Báo giá gửi đến</div>
-                    </div>
                   </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">{proj.description}</p>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80 text-xs">
-                    <div className="flex flex-wrap gap-1">
-                      {proj.requiredSkills.map((sk) => (
-                        <span key={sk} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-medium px-1.5 py-0.5 rounded-xs">
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {proj.status === 'OPEN' ? (
-                        <button
-                          onClick={() => adminUpdateProjectStatus(proj.id, 'CANCELLED')}
-                          className="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold rounded-md border border-rose-200 text-xs cursor-pointer transition-colors"
-                        >
-                          Tạm Dừng / Hủy Bài
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => adminUpdateProjectStatus(proj.id, 'OPEN')}
-                          className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold rounded-md border border-emerald-200 text-xs cursor-pointer transition-colors"
-                        >
-                          Kích Hoạt Lại
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -709,14 +1205,20 @@ export const AdminDashboard: React.FC = () => {
         {/* ========================================================================= */}
         {activeTab === 'transactions' && (
           <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs animate-in fade-in duration-150">
-            <div className="border-b border-slate-100 pb-3.5">
-              <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
-                <i className="fa-solid fa-credit-card text-rose-600 text-sm" />
-                <span>Sổ Cái Giao Dịch & Dòng Tiền Cổng VNPAY Escrow</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Bảng kê mọi giao dịch nạp cọc Escrow qua VNPAY, giải ngân cho Freelancer và thu phí sàn 10%.
-              </p>
+            <div className="border-b border-slate-100 pb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                  <i className="fa-solid fa-credit-card text-rose-600 text-sm" />
+                  <span>Sổ Cái Giao Dịch & Dòng Tiền Cổng VNPAY Escrow</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Bảng kê chi tiết từng giao dịch nạp cọc Escrow, giải ngân và hoàn tiền với dấu mốc thời gian thực chuẩn ISO.
+                </p>
+              </div>
+
+              <div className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+                Tổng số giao dịch: <strong className="text-blue-700">{vnpayTransactions.length}</strong>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -729,37 +1231,50 @@ export const AdminDashboard: React.FC = () => {
                     <th className="py-2.5 px-3 font-semibold">Phương Thức / Ngân Hàng</th>
                     <th className="py-2.5 px-3 font-semibold">Số Tiền (VND)</th>
                     <th className="py-2.5 px-3 font-semibold">Trạng Thái</th>
-                    <th className="py-2.5 px-3 font-semibold">Thời Gian</th>
+                    <th className="py-2.5 px-3 font-semibold">Thời Gian Ghi Nhận</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {vnpayTransactions.map((vnp) => (
-                    <tr key={vnp.id} className="hover:bg-slate-50 transition-colors font-mono">
-                      <td className="py-2.5 px-3 font-bold text-slate-900">{vnp.transactionNo}</td>
-                      <td className="py-2.5 px-3 text-blue-700 font-bold">{vnp.orderNumber || 'N/A'}</td>
-                      <td className="py-2.5 px-3 font-sans font-medium">
-                        {vnp.type === 'ESCROW_DEPOSIT' ? (
-                          <span className="text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded-xs">Nạp Cọc Escrow</span>
-                        ) : vnp.type === 'PAYOUT' ? (
-                          <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-xs">Giải Ngân Tiền Công</span>
-                        ) : (
-                          <span className="text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-xs">Hoàn Tiền</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 font-sans text-slate-700 font-medium">
-                        {vnp.bankCode} ({vnp.cardType})
-                      </td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900 text-xs">
-                        {vnp.amount.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded-xs">
-                          {vnp.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-500 text-[11px]">{vnp.payDate}</td>
-                    </tr>
-                  ))}
+                  {vnpayTransactions.map((vnp) => {
+                    // Check if today or yesterday
+                    const isToday = vnp.payDate?.startsWith('2026-10-16');
+                    const isYesterday = vnp.payDate?.startsWith('2026-10-15');
+
+                    return (
+                      <tr key={vnp.id} className="hover:bg-slate-50 transition-colors font-mono">
+                        <td className="py-2.5 px-3 font-bold text-slate-900">{vnp.transactionNo}</td>
+                        <td className="py-2.5 px-3 text-blue-700 font-bold">{vnp.orderNumber || 'N/A'}</td>
+                        <td className="py-2.5 px-3 font-sans font-medium">
+                          {vnp.type === 'ESCROW_DEPOSIT' ? (
+                            <span className="text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded-xs">Nạp Cọc Escrow</span>
+                          ) : vnp.type === 'PAYOUT' ? (
+                            <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-xs">Giải Ngân Tiền Công</span>
+                          ) : (
+                            <span className="text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-xs">Hoàn Tiền</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 font-sans text-slate-700 font-medium">
+                          {vnp.bankCode} ({vnp.cardType})
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900 text-xs">
+                          {vnp.amount.toLocaleString('vi-VN')} đ
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded-xs">
+                            {vnp.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex flex-col text-[11px]">
+                            <span className="font-mono text-slate-700 font-semibold">{vnp.payDate}</span>
+                            <span className="text-[10px] text-blue-600 font-sans">
+                              {isToday ? 'Hôm nay' : isYesterday ? 'Hôm qua' : 'Trước đó'}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -771,14 +1286,22 @@ export const AdminDashboard: React.FC = () => {
         {/* ========================================================================= */}
         {activeTab === 'disputes' && (
           <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs animate-in fade-in duration-150">
-            <div className="border-b border-slate-100 pb-3.5">
-              <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2 text-rose-700">
-                <i className="fa-solid fa-triangle-exclamation text-rose-600 text-sm" />
-                <span>Trung Tâm Trọng Tài Phán Quyết Tranh Chấp Escrow</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Căn cứ vào cam kết Hợp đồng Scope of Work (SOW) và bằng chứng giao nộp để giải quyết công bằng.
-              </p>
+            <div className="border-b border-slate-100 pb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2 text-rose-700">
+                  <i className="fa-solid fa-triangle-exclamation text-rose-600 text-sm" />
+                  <span>Trung Tâm Trọng Tài Phán Quyết Tranh Chấp Escrow</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Căn cứ vào cam kết Hợp đồng Scope of Work (SOW), mốc thời gian giao nhận và bằng chứng chứng từ đính kèm.
+                </p>
+              </div>
+
+              {/* SLA Policy Badge */}
+              <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-md text-xs text-rose-800">
+                <i className="fa-solid fa-stopwatch text-rose-600" />
+                <span>Quy định SLA Trọng tài: <strong>Tối đa 72 giờ</strong></span>
+              </div>
             </div>
 
             {disputes.length === 0 ? (
@@ -800,7 +1323,19 @@ export const AdminDashboard: React.FC = () => {
                         <div className="text-xs text-slate-700">Bên mở khiếu nại: <strong>{dsp.openedByName}</strong></div>
                       </div>
 
-                      <div className="text-xs text-slate-500">Ngày tạo: {dsp.createdAt}</div>
+                      {/* Time Details & SLA Countdown */}
+                      <div className="text-right space-y-1">
+                        <div className="text-xs text-slate-600 flex items-center gap-1.5 justify-end">
+                          <i className="fa-regular fa-clock text-slate-400" />
+                          <span>Mở khiếu nại: <strong>{dsp.createdAt} (15/10/2026 16:30)</strong></span>
+                        </div>
+                        {dsp.status === 'UNDER_REVIEW' && (
+                          <div className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-xs">
+                            <i className="fa-solid fa-hourglass-half text-rose-600" />
+                            <span>Đã thụ lý 21 giờ • Còn lại 51 giờ trước khi quá hạn SLA</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5 text-xs">

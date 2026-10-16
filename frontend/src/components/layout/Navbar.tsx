@@ -125,18 +125,18 @@ export const Navbar: React.FC = () => {
                 <div className="flex items-center tracking-tight font-bold text-lg sm:text-xl leading-none">
                   <span className="text-white">Talent</span>
                   <span className="text-blue-500 font-bold">Match</span>
-                  <span className="text-[10px] font-semibold text-blue-400 ml-1.5 px-1.5 py-0.5 bg-blue-950/80 border border-blue-800 rounded leading-none">VN</span>
+                  <span className="text-[10px] font-bold text-slate-300 ml-1.5 px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 leading-none">VN</span>
                 </div>
                 <span className="text-[9px] font-semibold text-neutral-400 tracking-wider uppercase mt-0.5">Freelancer Market</span>
               </div>
             </Link>
 
             {/* Main Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-2 text-xs font-semibold">
+            <nav className="hidden lg:flex items-center space-x-2 text-xs">
               <Link
                 to="/projects"
-                className={`px-3 py-1.5 rounded-md transition-all ${isActive('/projects')
-                  ? 'text-blue-400 bg-blue-950/90 border border-blue-600/60 font-semibold'
+                className={`px-3.5 py-1.5 rounded-md transition-all font-medium ${isActive('/projects')
+                  ? 'text-white bg-slate-800 border border-slate-700 shadow-xs'
                   : 'text-neutral-300 hover:text-white hover:bg-neutral-900 border border-transparent'
                   }`}
               >
@@ -145,8 +145,8 @@ export const Navbar: React.FC = () => {
 
               <Link
                 to="/freelancers"
-                className={`px-3 py-1.5 rounded-md transition-all ${isActive('/freelancers')
-                  ? 'text-blue-400 bg-blue-950/90 border border-blue-600/60 font-semibold'
+                className={`px-3.5 py-1.5 rounded-md transition-all font-medium ${isActive('/freelancers')
+                  ? 'text-white bg-slate-800 border border-slate-700 shadow-xs'
                   : 'text-neutral-300 hover:text-white hover:bg-neutral-900 border border-transparent'
                   }`}
               >
@@ -162,10 +162,10 @@ export const Navbar: React.FC = () => {
                     onPaymentComplete: () => { }
                   })
                 }
-                className="text-emerald-400 text-xs bg-emerald-950/90 hover:bg-emerald-900/90 px-3 py-1.5 rounded-md border border-emerald-500/50 transition-all font-bold cursor-pointer"
+                className="text-white text-xs bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-md border border-emerald-500 transition-all font-semibold cursor-pointer shadow-xs inline-flex items-center gap-1.5"
               >
-                <i className="fa-solid fa-shield-halved mr-1 text-[11px]" />
-                Cổng VNPAY Escrow
+                <i className="fa-solid fa-shield-halved text-[11px]" />
+                <span>Cổng VNPAY Escrow</span>
               </button>
             </nav>
           </div>
@@ -367,7 +367,7 @@ export const Navbar: React.FC = () => {
                         <div className="text-neutral-400 text-xs truncate">{currentUser.email || 'Chưa có email'}</div>
                         <div className="flex items-center gap-1 mt-1">
                           {currentUser.emailVerified ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded font-bold border border-emerald-800/60">
+                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-semibold border border-emerald-500/20">
                               <i className="fa-solid fa-circle-check text-emerald-400 text-[10px]" />
                               <span>Đã xác thực</span>
                             </span>
@@ -377,7 +377,7 @@ export const Navbar: React.FC = () => {
                                 setUserDropdownOpen(false);
                                 openAuthModal('verification');
                               }}
-                              className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-950/60 hover:bg-amber-900/60 px-2 py-0.5 rounded font-bold border border-amber-800/60 cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded font-semibold border border-amber-500/20 cursor-pointer"
                             >
                               <i className="fa-solid fa-circle-exclamation text-amber-400 text-[10px]" />
                               <span>Xác thực ngay</span>
@@ -438,11 +438,11 @@ export const Navbar: React.FC = () => {
                           <span>Xác Minh eKYC Danh Tính</span>
                         </div>
                         {currentUser.isVerified ? (
-                          <span className="text-[10px] text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded font-bold border border-emerald-800/60">
+                          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-semibold border border-emerald-500/20">
                             ✓ Đã xác thực
                           </span>
                         ) : (
-                          <span className="text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded font-bold border border-amber-800/60 animate-pulse">
+                          <span className="text-[10px] text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded font-semibold border border-amber-500/20">
                             ! Cần eKYC
                           </span>
                         )}
@@ -462,7 +462,7 @@ export const Navbar: React.FC = () => {
                           <Link
                             to="/create-project"
                             onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center space-x-2.5 px-3 py-2 rounded-md hover:bg-blue-950/60 text-blue-400 hover:text-blue-300 transition-all font-bold"
+                            className="flex items-center space-x-2.5 px-3 py-2 rounded-md hover:bg-neutral-800 text-blue-400 hover:text-blue-300 transition-all font-semibold"
                           >
                             <i className="fa-solid fa-circle-plus text-xs text-blue-400" />
                             <span>+ Đăng Dự Án Mới</span>

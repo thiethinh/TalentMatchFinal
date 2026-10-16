@@ -226,7 +226,7 @@ export const UserProfileModal: React.FC = () => {
               <div className="flex items-center space-x-2 text-slate-700">
                 <i className="fa-solid fa-phone text-slate-400 w-4 text-center shrink-0" />
                 <span className="font-medium text-slate-500">Số điện thoại:</span>
-                <span className="font-semibold text-slate-900">{currentUser.phone || '0901234567 (Mặc định)'}</span>
+                <span className="font-semibold text-slate-900">{currentUser.phone || 'Chưa cập nhật'}</span>
               </div>
 
               <div className="flex items-center space-x-2 text-slate-700">

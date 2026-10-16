@@ -16,6 +16,7 @@
     "db:up": "docker compose up -d mysql",
     "db:down": "docker compose stop mysql",
     "db:logs": "docker compose logs -f mysql",
+    "db:seed": "node scripts/db-seed.js",
     "backend:run": "node scripts/gradle.js bootRun",
     "backend:build": "node scripts/gradle.js build",
     "backend:test": "node scripts/gradle.js test",

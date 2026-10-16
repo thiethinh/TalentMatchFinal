@@ -30,4 +30,4 @@ COPY --from=builder /workspace/build/libs/*.jar /app/app.jar
 ENV SERVER_PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dfile.encoding=UTF-8", "-jar", "/app/app.jar"]

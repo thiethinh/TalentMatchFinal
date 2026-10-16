@@ -180,6 +180,9 @@ CALL tm_add_column_if_absent('users', 'talent_credit_badge', 'VARCHAR(30) NOT NU
 -- JOBS
 CALL tm_add_column_if_absent('jobs', 'budget_type', 'VARCHAR(30) NOT NULL DEFAULT \'FIXED\'');
 CALL tm_add_column_if_absent('jobs', 'proposals_count', 'INT NOT NULL DEFAULT 0');
+UPDATE jobs SET title = 'Xây dựng Website Thương mại điện tử B2B Nông sản (Next.js + Tailwind + Node.js)' WHERE id = 1;
+UPDATE jobs SET title = 'Thiết kế Bộ Nhận Diện Thương Hiệu & Logo Cho Chuỗi Nhà Hàng Chay' WHERE id = 2;
+UPDATE jobs SET title = 'Thiết Kế UI/UX Ứng Dụng Đặt Lịch Chăm Sóc Sức Khỏe Tại Nhà' WHERE id = 3;
 
 -- PROJECTS
 CALL tm_add_column_if_absent('projects', 'agreement_terms', 'TEXT NULL');
@@ -249,7 +252,7 @@ INSERT INTO users (
     'Tài khoản Quản trị cấp cao phụ trách hệ thống và vận hành sàn TalentMatch.',
     b'1', b'0', b'1', b'1', 'ACTIVE', 'VERIFIED',
     95000000.00, 13550000.00, 1000, 'Top Rated', NOW(6), NOW(6)
-) ON DUPLICATE KEY UPDATE 
+) ON DUPLICATE KEY UPDATE
     is_verified = b'1', email_verified = b'1', account_status = 'ACTIVE', kyc_status = 'VERIFIED',
     balance = 95000000.00, escrow_balance = 13550000.00;
 
@@ -594,6 +597,17 @@ INSERT INTO users (
     0.00, 0.00, 600, 'Bronze', NOW(6), NOW(6)
 ) ON DUPLICATE KEY UPDATE 
     account_status = 'SUSPENDED', locked = b'1';
+
+UPDATE users SET full_name = 'Lê Thu Hà', company_name = 'Công ty Cổ phần TechStartup Việt Nam', field = 'Công nghệ & Thương mại điện tử', location = 'Hà Nội', bio = 'Doanh nghiệp công nghệ phát triển giải pháp E-Commerce và AI cho SME.' WHERE email = 'ha.le@techstartup.vn';
+UPDATE users SET full_name = 'Phạm Tuấn Anh', company_name = 'Invest Growth Vietnam', field = 'Tài chính & Đầu tư', location = 'TP. Hồ Chí Minh', bio = 'Quỹ đầu tư và vườn ươm khởi nghiệp công nghệ Việt Nam.' WHERE email = 'tuan.pham@invest.vn';
+UPDATE users SET full_name = 'Nguyễn Minh Anh', professional_title = 'Senior Full-Stack Web & Mobile App Developer', field = 'IT & Lập trình', location = 'Hà Nội, Việt Nam', bio = 'Chuyên gia Full-Stack Web & Mobile App với hơn 6 năm kinh nghiệm thực chiến phát triển các giải pháp thương mại điện tử, ReactJS, Next.js, Node.js và Flutter.' WHERE email = 'minhanh.dev@gmail.com';
+UPDATE users SET full_name = 'Trần Hoàng Nam', professional_title = 'Senior UI/UX & Brand Identity Designer', field = 'Thiết kế & Đồ họa', location = 'TP. Hồ Chí Minh, Việt Nam', bio = 'Designer sáng tạo có 5 năm thiết kế Bộ nhận diện thương hiệu, UI/UX Web/Mobile App hiện đại cho hơn 80 startup và doanh nghiệp Việt Nam.' WHERE email = 'hoangnam.design@gmail.com';
+UPDATE users SET full_name = 'Phạm Quốc Huy', professional_title = 'Video Editor & Motion Graphic Designer', field = 'Video & Animation', location = 'Đà Nẵng, Việt Nam', bio = 'Video Editor chuyên sản xuất video quảng cáo ngắn TikTok Ads, Reels, Shorts và YouTube.' WHERE email = 'huy.media@gmail.com';
+UPDATE users SET full_name = 'Vũ Linh Đan', professional_title = 'Senior Performance Marketer & SEO Specialist', field = 'Marketing & Bán hàng', location = 'Hà Nội, Việt Nam', bio = 'Tối ưu chiến dịch Facebook Ads, Google Ads và xây dựng chiến lược Content chuyển đổi cao.' WHERE email = 'linhdan.marketing@gmail.com';
+UPDATE users SET full_name = 'Đỗ Bảo Long', professional_title = 'Senior Python & AI Engineer', field = 'IT & Lập trình', location = 'TP. Hồ Chí Minh, Việt Nam', bio = 'Xây dựng hệ thống dữ liệu lớn, tích hợp OpenAI/Gemini API, OCR tiếng Việt và phát triển backend FastAPI.' WHERE email = 'baolong.ai@gmail.com';
+UPDATE users SET full_name = 'Hoàng Thị Yến (Chưa xác thực)', company_name = 'Công ty TNHH Yến Fashion', field = 'Thời trang & May mặc', location = 'Hà Nội', bio = 'Thương hiệu thời trang nữ thiết kế cao cấp với 3 chi nhánh tại Hà Nội.' WHERE email = 'yen.hoang.demo@gmail.com';
+UPDATE users SET full_name = 'Phạm Đức Minh (Chưa xác thực)', professional_title = 'Frontend Developer mới tốt nghiệp', bio = 'Lập trình viên Frontend mới tốt nghiệp, đam mê công nghệ React và Tailwind CSS.' WHERE email = 'ducminh.demo@gmail.com';
+
 
 -- ----------------------------------------------------------------------------
 -- 6. SEED TÀI KHOẢN NGÂN HÀNG LIÊN KẾT (USER_BANK_ACCOUNTS)

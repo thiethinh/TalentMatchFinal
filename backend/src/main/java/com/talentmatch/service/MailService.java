@@ -138,6 +138,7 @@ public class MailService {
             log.info("✅ [MailService] Đã gửi email thành công tới {}", to);
         } catch (Exception e) {
             log.error("❌ [MailService] Gửi email qua Gmail SMTP thất bại: {}. (Mã OTP vẫn có hiệu lực: {})", e.getMessage(), otp);
+            throw new IllegalStateException("Không thể gửi email qua Gmail: " + e.getMessage() + ". Vui lòng kiểm tra lại cấu hình 'Mật khẩu ứng dụng' (16 ký tự) trong application-mail.properties.");
         }
     }
 

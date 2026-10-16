@@ -166,6 +166,34 @@ public class ApiAuthController {
         }
     }
 
+    @PostMapping("/send-verification-otp")
+    public ResponseEntity<?> sendVerificationOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String fullName = body.get("fullName");
+        String roleStr = body.get("role");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng cung cấp địa chỉ email."));
+        }
+
+        Role role = Role.FREELANCER;
+        if (roleStr != null && !roleStr.isBlank()) {
+            try {
+                role = Role.valueOf(roleStr.trim().toUpperCase());
+            } catch (Exception ignored) {}
+        }
+
+        try {
+            userService.sendVerificationOtpForEmail(email, fullName, role);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Mã xác thực OTP 6 số đã được gửi tới email " + email + ". Vui lòng kiểm tra hộp thư (inbox hoặc spam)!"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/verify")
     public ResponseEntity<?> verifyByLink(@RequestParam String token) {
         try {

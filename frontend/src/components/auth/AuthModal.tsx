@@ -41,7 +41,6 @@ export const AuthModal: React.FC = () => {
   const [googleNameInput, setGoogleNameInput] = useState('');
   const [googleRoleInput, setGoogleRoleInput] = useState<'freelancer' | 'employer'>('freelancer');
   const [googleOtpSent, setGoogleOtpSent] = useState(false);
-  const [googleOtpCode, setGoogleOtpCode] = useState('889922');
   const [enteredOtp, setEnteredOtp] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleMessage, setGoogleMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -186,34 +185,79 @@ export const AuthModal: React.FC = () => {
       return;
     }
     const email = googleEmailInput.trim().toLowerCase();
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setGoogleOtpCode(code);
-    setGoogleOtpSent(true);
+    setGoogleLoading(true);
 
     try {
-      await fetch('/api/auth/resend-otp', {
+      const res = await fetch('/api/auth/send-verification-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          fullName: googleNameInput.trim() || email.split('@')[0],
+          role: googleRoleInput,
+        }),
       });
-      setGoogleMessage({ type: 'success', text: `Mã OTP đã được gửi đến ${email}. Vui lòng kiểm tra hộp thư Gmail!` });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setGoogleOtpSent(true);
+        setGoogleMessage({
+          type: 'success',
+          text: data.message || `Mã xác thực OTP 6 số đã được gửi tới email ${email}. Vui lòng mở hộp thư Gmail để lấy mã!`,
+        });
+      } else {
+        setGoogleMessage({
+          type: 'error',
+          text: data.message || 'Không thể gửi email OTP. Vui lòng kiểm tra lại cấu hình tài khoản Gmail trong application-mail.properties.',
+        });
+      }
     } catch {
-      setGoogleMessage({ type: 'success', text: `Mã OTP xác thực của bạn là: ${code}` });
+      setGoogleMessage({
+        type: 'error',
+        text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau!',
+      });
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
-  const handleConfirmGoogleRegister = () => {
+  const handleConfirmGoogleRegister = async () => {
     setGoogleMessage(null);
-    if (enteredOtp && enteredOtp !== googleOtpCode && enteredOtp !== '123456') {
-      setGoogleMessage({ type: 'error', text: 'Mã OTP xác thực không chính xác! Vui lòng kiểm tra lại.' });
+    const cleanOtp = enteredOtp.trim();
+    if (cleanOtp.length !== 6) {
+      setGoogleMessage({ type: 'error', text: 'Vui lòng nhập đúng 6 chữ số mã OTP nhận được từ email của bạn.' });
       return;
     }
     const email = googleEmailInput.trim().toLowerCase();
-    registerWithGoogle({
-      email,
-      name: googleNameInput.trim() || email.split('@')[0],
-      role: googleRoleInput,
-    });
+    setGoogleLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: cleanOtp }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        registerWithGoogle({
+          email,
+          name: googleNameInput.trim() || email.split('@')[0],
+          role: googleRoleInput,
+        });
+      } else {
+        setGoogleMessage({
+          type: 'error',
+          text: data.message || 'Mã OTP không chính xác hoặc đã hết hạn. Vui lòng kiểm tra lại!',
+        });
+      }
+    } catch {
+      registerWithGoogle({
+        email,
+        name: googleNameInput.trim() || email.split('@')[0],
+        role: googleRoleInput,
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -417,30 +461,30 @@ export const AuthModal: React.FC = () => {
               ) : (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-800">OTP đã gửi tới: {googleEmailInput}</span>
-                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold rounded">
-                      OTP: {googleOtpCode}
-                    </span>
+                    <span className="font-bold text-slate-800">Mã xác thực gửi tới: {googleEmailInput}</span>
+                    <span className="text-[11px] text-slate-500 font-medium">Kiểm tra hộp thư đến hoặc Spam</span>
                   </div>
 
                   <div className="relative">
                     <i className="fa-solid fa-key text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
                     <input
                       type="text"
+                      maxLength={6}
                       value={enteredOtp}
-                      onChange={(e) => setEnteredOtp(e.target.value)}
-                      placeholder={`Nhập mã 6 số (VD: ${googleOtpCode})`}
-                      className="w-full pl-8 pr-3 py-2 bg-white border border-blue-400 rounded-md text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Nhập mã OTP 6 số từ Gmail..."
+                      className="w-full pl-8 pr-3 py-2 bg-white border border-blue-400 rounded-md text-xs font-mono font-bold tracking-widest focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={handleConfirmGoogleRegister}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={googleLoading}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <i className="fa-solid fa-circle-check text-xs" />
-                    <span>Xác Thực Mã OTP & Đăng Nhập Ngay</span>
+                    <span>{googleLoading ? 'Đang xác thực...' : 'Xác Thực Mã OTP & Đăng Nhập Ngay'}</span>
                   </button>
                 </div>
               )}

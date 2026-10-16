@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -143,6 +144,42 @@ public class UserService implements UserDetailsService {
         User user = byEmail(email);
         if (Boolean.TRUE.equals(user.getEmailVerified())) {
             throw new IllegalArgumentException("Tài khoản của bạn đã được xác thực trước đó.");
+        }
+
+        verificationTokens.deleteByUser(user);
+        String otp = generateOtp();
+        String tokenVal = UUID.randomUUID().toString();
+
+        VerificationToken token = new VerificationToken();
+        token.setToken(tokenVal);
+        token.setOtp(otp);
+        token.setUser(user);
+        token.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+        verificationTokens.save(token);
+
+        mailService.sendVerificationOtp(email, otp, tokenVal);
+        return otp;
+    }
+
+    @Transactional
+    public String sendVerificationOtpForEmail(String email, String fullName, Role role) {
+        email = safe(email).toLowerCase();
+        Optional<User> opt = users.findByEmailIgnoreCase(email);
+        User user;
+        if (opt.isPresent()) {
+            user = opt.get();
+            if (Boolean.TRUE.equals(user.getEmailVerified())) {
+                throw new IllegalArgumentException("Email này đã được đăng ký và xác thực trước đó. Vui lòng đăng nhập.");
+            }
+        } else {
+            user = new User();
+            user.setEmail(email);
+            user.setFullName(fullName != null && !fullName.isBlank() ? fullName.trim() : email.split("@")[0]);
+            user.setRole(role != null ? role : Role.FREELANCER);
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setEmailVerified(false);
+            user.setEnabled(true);
+            user = users.save(user);
         }
 
         verificationTokens.deleteByUser(user);

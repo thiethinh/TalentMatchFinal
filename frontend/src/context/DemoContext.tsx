@@ -738,12 +738,33 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithGoogle = (targetEmail?: string) => {
     if (targetEmail) {
-      const found = users.find((u) => u.email.toLowerCase() === targetEmail.toLowerCase());
+      const email = targetEmail.trim().toLowerCase();
+      try {
+        fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            fullName: email.split('@')[0],
+            role: 'FREELANCER',
+          }),
+        }).catch(() => {});
+      } catch (_) {}
+
+      const found = users.find((u) => u.email.toLowerCase() === email);
       if (found) {
-        setCurrentUser(found);
+        const verifiedUser = { ...found, emailVerified: true };
+        setCurrentUser(verifiedUser);
         localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
         setIsAuthModalOpen(false);
         addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
+        return;
+      } else {
+        registerWithGoogle({
+          email: email,
+          name: email.split('@')[0],
+          role: 'freelancer',
+        });
         return;
       }
     }
@@ -757,9 +778,23 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     role: 'freelancer' | 'employer';
     phone?: string;
   }) => {
+    try {
+      fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email.trim().toLowerCase(),
+          fullName: data.name,
+          role: data.role === 'employer' ? 'CUSTOMER' : 'FREELANCER',
+          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.email)}`,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
+
     const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
     if (existing) {
-      setCurrentUser(existing);
+      const verified = { ...existing, emailVerified: true };
+      setCurrentUser(verified);
       localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, existing.id);
       setIsAuthModalOpen(false);
       addToast(`Đã tìm thấy tài khoản! Đăng nhập thành công: ${existing.name}`, 'success');

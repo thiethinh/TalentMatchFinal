@@ -44,8 +44,9 @@ public class User {
     private Double rating = 5.0;
     private Integer completedProjects = 0;
     @Column(name="talent_credit_balance") private Integer talentCreditBalance=0;
-    private Boolean enabled = false;
+    private Boolean enabled = true;
     private Boolean locked = false;
+    private Boolean emailVerified = false;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -57,10 +58,14 @@ public class User {
         if (available == null) available = true;
         if (rating == null) rating = 5.0;
         if (completedProjects == null) completedProjects = 0;
-        if (enabled == null) enabled = false;
+        if (enabled == null) enabled = true;
         if (locked == null) locked = false;
+        if (emailVerified == null) emailVerified = false;
     }
     @PreUpdate void preUpdate() { updatedAt = LocalDateTime.now(); }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public Integer getTalentCreditBalance(){return talentCreditBalance==null?0:talentCreditBalance;}
     public void setTalentCreditBalance(Integer v){talentCreditBalance=v;}

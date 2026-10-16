@@ -1,6 +1,7 @@
 package com.talentmatch.controller;
 
 import com.talentmatch.model.Role;
+import com.talentmatch.model.User;
 import com.talentmatch.service.MailService;
 import com.talentmatch.service.UserService;
 import org.springframework.stereotype.Controller;
@@ -47,8 +48,7 @@ public class AuthController {
             if (!password.equals(confirmPassword)) {
                 throw new IllegalArgumentException("Mật khẩu xác nhận không khớp.");
             }
-            String token = users.register(finalName, email, password, role);
-            String link = mail.sendVerification(email, token);
+            users.register(finalName, email, password, role);
             ra.addFlashAttribute("success", "Đăng ký thành công. Hãy kiểm tra email để xác nhận tài khoản trước khi đăng nhập.");
             return "redirect:/login";
         } catch (Exception e) {
@@ -58,9 +58,18 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public String verify(@RequestParam String token, RedirectAttributes ra) {
+    public String verify(@RequestParam(required = false) String token,
+                         @RequestParam(required = false) String email,
+                         @RequestParam(required = false) String otp,
+                         RedirectAttributes ra) {
         try {
-            users.verify(token);
+            if (token != null && !token.isBlank()) {
+                users.verifyByLink(token);
+            } else if (email != null && otp != null) {
+                users.verifyOtp(email, otp);
+            } else {
+                throw new IllegalArgumentException("Thiếu thông tin xác thực.");
+            }
             ra.addFlashAttribute("success", "Xác nhận email thành công. Bạn có thể đăng nhập.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -75,32 +84,25 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public String forgot(@RequestParam String email, RedirectAttributes ra) {
-        String token;
         try {
-            token = users.createResetToken(email);
+            users.sendForgotPasswordOtp(email);
         } catch (Exception ignored) {
-            // Không tiết lộ email có tồn tại trong hệ thống hay không.
-            ra.addFlashAttribute("success", "Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu.");
-            return "redirect:/forgot-password";
+            // Không tiết lộ email có tồn tại hay không
         }
-
-        try {
-            mail.sendResetPassword(email, token);
-            ra.addFlashAttribute("success", "Liên kết đặt lại mật khẩu đã được gửi tới email của bạn.");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "Không thể gửi email: " + e.getMessage());
-        }
+        ra.addFlashAttribute("success", "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu về hòm thư.");
         return "redirect:/forgot-password";
     }
 
     @GetMapping("/reset-password")
-    public String reset(@RequestParam String token, Model model) {
+    public String reset(@RequestParam(required = false) String token, Model model) {
         model.addAttribute("token", token);
         return "auth/reset-password";
     }
 
     @PostMapping("/reset-password")
-    public String reset(@RequestParam String token,
+    public String reset(@RequestParam String email,
+                        @RequestParam(required = false) String token,
+                        @RequestParam(required = false) String otp,
                         @RequestParam String password,
                         @RequestParam String confirmPassword,
                         RedirectAttributes ra) {
@@ -108,12 +110,13 @@ public class AuthController {
             if (!password.equals(confirmPassword)) {
                 throw new IllegalArgumentException("Mật khẩu xác nhận không khớp.");
             }
-            users.resetPassword(token, password);
+            String code = (otp != null && !otp.isBlank()) ? otp : token;
+            users.resetPasswordWithOtpOrToken(email, code, password);
             ra.addFlashAttribute("success", "Đặt lại mật khẩu thành công. Hãy đăng nhập.");
             return "redirect:/login";
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
-            return "redirect:/reset-password?token=" + token;
+            return "redirect:/reset-password" + (token != null ? "?token=" + token : "");
         }
     }
 

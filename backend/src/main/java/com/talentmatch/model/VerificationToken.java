@@ -1,14 +1,39 @@
 package com.talentmatch.model;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-@Entity @Table(name="verification_tokens")
+
+@Entity
+@Table(name = "verification_tokens")
 public class VerificationToken {
- @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
- @Column(nullable=false,unique=true,length=100) private String token;
- @OneToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="user_id",unique=true) private User user;
- private LocalDateTime expiresAt;
- public Long getId(){return id;} public void setId(Long id){this.id=id;}
- public String getToken(){return token;} public void setToken(String token){this.token=token;}
- public User getUser(){return user;} public void setUser(User user){this.user=user;}
- public LocalDateTime getExpiresAt(){return expiresAt;} public void setExpiresAt(LocalDateTime expiresAt){this.expiresAt=expiresAt;}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String token;
+
+    @Column(length = 10)
+    private String otp;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", unique = true)
+    private User user;
+
+    private LocalDateTime expiresAt;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
+
+    public String getOtp() { return otp; }
+    public void setOtp(String otp) { this.otp = otp; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public LocalDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
 }

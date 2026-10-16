@@ -2,10 +2,8 @@ package com.talentmatch.controller.api;
 
 import com.talentmatch.model.Role;
 import com.talentmatch.model.User;
-import com.talentmatch.service.MailService;
 import com.talentmatch.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,12 +23,10 @@ public class ApiAuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
-    private final MailService mailService;
 
-    public ApiAuthController(AuthenticationManager authenticationManager, UserService userService, MailService mailService) {
+    public ApiAuthController(AuthenticationManager authenticationManager, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
-        this.mailService = mailService;
     }
 
     @PostMapping("/login")
@@ -38,8 +34,8 @@ public class ApiAuthController {
         String email = body.get("email");
         String password = body.get("password");
 
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập email và mật khẩu."));
+        if (email == null || password == null || email.isBlank() || password.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập đầy đủ email và mật khẩu."));
         }
 
         try {
@@ -52,9 +48,169 @@ public class ApiAuthController {
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
 
             User user = userService.byEmail(auth.getName());
-            return ResponseEntity.ok(userDto(user));
+            Map<String, Object> response = userDto(user);
+            response.put("authenticated", true);
+            if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+                response.put("notice", "Tài khoản của bạn chưa được xác thực email. Vui lòng nhập mã OTP để mở khóa toàn bộ tính năng.");
+            }
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("message", "Email hoặc mật khẩu không chính xác hoặc tài khoản chưa kích hoạt."));
+            return ResponseEntity.status(401).body(Map.of("message", "Email hoặc mật khẩu không chính xác hoặc tài khoản đã bị khóa."));
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleAuth(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        String email = (String) body.get("email");
+        String fullName = (String) body.get("fullName");
+        String roleStr = (String) body.get("role");
+        String avatar = (String) body.get("avatar");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Thiếu thông tin email từ Google."));
+        }
+
+        try {
+            User user = userService.loginOrRegisterGoogle(email.trim().toLowerCase(), fullName, roleStr, avatar);
+
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(), null,
+                    java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+            );
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            HttpSession session = request.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+
+            Map<String, Object> response = userDto(user);
+            response.put("authenticated", true);
+            response.put("message", "Đăng nhập Google thành công! Chào mừng " + user.getFullName() + ".");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        try {
+            String fullName = (String) body.get("fullName");
+            String email = (String) body.get("email");
+            String password = (String) body.get("password");
+            String confirmPassword = (String) body.get("confirmPassword");
+            String roleStr = (String) body.get("role");
+            Boolean agreeTerms = (Boolean) body.get("agreeTerms");
+
+            if (!Boolean.TRUE.equals(agreeTerms)) {
+                throw new IllegalArgumentException("Bạn cần đồng ý với điều khoản sử dụng trước khi đăng ký.");
+            }
+            if (password == null || !password.equals(confirmPassword)) {
+                throw new IllegalArgumentException("Mật khẩu xác nhận không khớp.");
+            }
+            Role role = Role.valueOf(roleStr);
+
+            // Đăng ký (hoặc tái tạo mã xác thực nếu email chưa verify)
+            User user = userService.register(fullName, email, password, role);
+
+            // Soft-login: Tự động đăng nhập người dùng ngay sau khi tạo tài khoản
+            try {
+                Authentication auth = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(email.trim().toLowerCase(), password)
+                );
+                SecurityContext sc = SecurityContextHolder.getContext();
+                sc.setAuthentication(auth);
+                HttpSession session = request.getSession(true);
+                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+            } catch (Exception ignored) {}
+
+            Map<String, Object> response = userDto(user);
+            response.put("authenticated", true);
+            response.put("message", "Đăng ký thành công! Hệ thống đã gửi mã OTP 6 số đến email " + email + ". Vui lòng kiểm tra hộp thư để xác thực.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String otp = body.get("otp");
+
+        if (email == null || otp == null || email.isBlank() || otp.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập đầy đủ email và mã OTP."));
+        }
+
+        try {
+            User user = userService.verifyOtp(email, otp);
+            Map<String, Object> response = userDto(user);
+            response.put("message", "Xác thực email thành công! Toàn bộ tính năng tuyển dụng và nhận việc đã được mở khóa.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng cung cấp địa chỉ email."));
+        }
+
+        try {
+            userService.resendVerificationOtp(email);
+            return ResponseEntity.ok(Map.of("message", "Mã xác thực OTP mới đã được gửi tới email " + email + ". Vui lòng kiểm tra hộp thư!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyByLink(@RequestParam String token) {
+        try {
+            User user = userService.verifyByLink(token);
+            Map<String, Object> response = userDto(user);
+            response.put("message", "Xác thực email thành công! Bạn có thể tiếp tục sử dụng hệ thống.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email != null && !email.isBlank()) {
+            try {
+                userService.sendForgotPasswordOtp(email);
+            } catch (Exception ignored) {}
+        }
+        return ResponseEntity.ok(Map.of("message", "Nếu email tồn tại trong hệ thống, mã xác thực đặt lại mật khẩu đã được gửi đến hòm thư của bạn."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String otp = body.get("otp");
+        String token = body.get("token");
+        String password = body.get("password");
+        String confirmPassword = body.get("confirmPassword");
+
+        if (password == null || !password.equals(confirmPassword)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Mật khẩu xác nhận không khớp."));
+        }
+
+        String code = (otp != null && !otp.isBlank()) ? otp : token;
+        if (email == null || code == null || email.isBlank() || code.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập đầy đủ email và mã xác thực OTP."));
+        }
+
+        try {
+            userService.resetPasswordWithOtpOrToken(email, code, password);
+            return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay với mật khẩu mới."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -83,72 +239,6 @@ public class ApiAuthController {
         }
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
-        try {
-            String fullName = (String) body.get("fullName");
-            String email = (String) body.get("email");
-            String password = (String) body.get("password");
-            String confirmPassword = (String) body.get("confirmPassword");
-            String roleStr = (String) body.get("role");
-            Boolean agreeTerms = (Boolean) body.get("agreeTerms");
-
-            if (!Boolean.TRUE.equals(agreeTerms)) {
-                throw new IllegalArgumentException("Bạn cần đồng ý điều khoản trước khi đăng ký.");
-            }
-            if (password == null || !password.equals(confirmPassword)) {
-                throw new IllegalArgumentException("Mật khẩu xác nhận không khớp.");
-            }
-            Role role = Role.valueOf(roleStr);
-
-            String token = userService.register(fullName, email, password, role);
-            mailService.sendVerification(email, token);
-
-            return ResponseEntity.ok(Map.of("message", "Đăng ký thành công. Hãy kiểm tra email để xác nhận tài khoản trước khi đăng nhập."));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/verify")
-    public ResponseEntity<?> verify(@RequestParam String token) {
-        try {
-            userService.verify(token);
-            return ResponseEntity.ok(Map.of("message", "Xác nhận email thành công. Bạn có thể đăng nhập."));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        try {
-            String token = userService.createResetToken(email);
-            mailService.sendResetPassword(email, token);
-        } catch (Exception ignored) {
-            // Không để lộ thông tin email tồn tại hay không
-        }
-        return ResponseEntity.ok(Map.of("message", "Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu."));
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
-        String token = body.get("token");
-        String password = body.get("password");
-        String confirmPassword = body.get("confirmPassword");
-
-        if (password == null || !password.equals(confirmPassword)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Mật khẩu xác nhận không khớp."));
-        }
-        try {
-            userService.resetPassword(token, password);
-            return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công. Hãy đăng nhập."));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
     private Map<String, Object> userDto(User user) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", user.getId());
@@ -167,6 +257,8 @@ public class ApiAuthController {
         dto.put("companySize", user.getCompanySize());
         dto.put("talentCreditBalance", user.getTalentCreditBalance());
         dto.put("rating", user.getRating());
+        dto.put("emailVerified", Boolean.TRUE.equals(user.getEmailVerified()));
+        dto.put("enabled", Boolean.TRUE.equals(user.getEnabled()));
         return dto;
     }
 }

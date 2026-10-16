@@ -1,13 +1,18 @@
 package com.talentmatch.service;
 
+import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MailService {
+    private static final Logger log = LoggerFactory.getLogger(MailService.class);
+
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final boolean enabled;
     private final String baseUrl;
@@ -15,7 +20,7 @@ public class MailService {
 
     public MailService(ObjectProvider<JavaMailSender> mailSenderProvider,
                        @Value("${app.mail.enabled:true}") boolean enabled,
-                       @Value("${app.base-url:http://localhost:8080}") String baseUrl,
+                       @Value("${app.base-url:http://localhost:5173}") String baseUrl,
                        @Value("${spring.mail.username:}") String fromAddress) {
         this.mailSenderProvider = mailSenderProvider;
         this.enabled = enabled;
@@ -23,48 +28,117 @@ public class MailService {
         this.fromAddress = fromAddress == null ? "" : fromAddress.trim();
     }
 
-    public String sendVerification(String email, String token) {
-        String link = baseUrl + "/verify?token=" + token;
-        String body = "Xin chào,\n\n"
-                + "Bạn vừa đăng ký tài khoản TalentMatch. Nhấn liên kết dưới đây để xác thực email:\n"
-                + link + "\n\n"
-                + "Liên kết có hiệu lực trong 24 giờ. Nếu bạn không thực hiện đăng ký này, hãy bỏ qua email.\n\n"
-                + "TalentMatch";
-        send(email, "Xác nhận tài khoản TalentMatch", body);
-        return link;
+    public String sendVerificationOtp(String email, String otp, String token) {
+        String verifyLink = baseUrl + "/verify?token=" + token + "&email=" + email;
+        String subject = "[TalentMatch] Mã xác thực tài khoản của bạn: " + otp;
+        
+        String html = """
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <div style="background: #2563eb; padding: 24px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">TalentMatch Platform</h1>
+                    <p style="color: #bfdbfe; margin: 6px 0 0 0; font-size: 14px;">Xác thực tài khoản & Kích hoạt trải nghiệm</p>
+                </div>
+                <div style="padding: 32px 28px;">
+                    <p style="font-size: 16px; color: #1e293b; margin: 0 0 16px 0;">Xin chào,</p>
+                    <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0 0 24px 0;">
+                        Bạn vừa đăng ký tài khoản tại <strong>TalentMatch</strong>. Dưới đây là mã xác thực OTP 6 số của bạn:
+                    </p>
+                    <div style="text-align: center; margin: 28px 0;">
+                        <div style="display: inline-block; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1d4ed8; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd;">
+                            %s
+                        </div>
+                        <p style="font-size: 13px; color: #64748b; margin-top: 10px;">(Mã có hiệu lực trong vòng <strong>15 phút</strong>)</p>
+                    </div>
+                    <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 24px 0 16px 0;">
+                        Hoặc bạn có thể bấm trực tiếp vào liên kết bên dưới để xác thực nhanh:
+                    </p>
+                    <div style="text-align: center; margin-bottom: 28px;">
+                        <a href="%s" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: bold;">
+                            Xác thực tài khoản ngay &rarr;
+                        </a>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
+                        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tài khoản chưa xác thực sẽ không thể thực hiện các giao dịch trên sàn.
+                    </p>
+                </div>
+                <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+                    &copy; 2026 TalentMatch. Mọi quyền được bảo lưu.
+                </div>
+            </div>
+            """.formatted(otp, verifyLink);
+
+        sendHtml(email, subject, html, otp);
+        return verifyLink;
     }
 
-    public String sendResetPassword(String email, String token) {
-        String link = baseUrl + "/reset-password?token=" + token;
-        String body = "Xin chào,\n\n"
-                + "TalentMatch nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Nhấn liên kết dưới đây:\n"
-                + link + "\n\n"
-                + "Liên kết có hiệu lực trong 30 phút và chỉ sử dụng được một lần.\n"
-                + "Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.\n\n"
-                + "TalentMatch";
-        send(email, "Đặt lại mật khẩu TalentMatch", body);
-        return link;
+    public String sendResetPasswordOtp(String email, String otp, String token) {
+        String resetLink = baseUrl + "/reset-password?token=" + token + "&email=" + email;
+        String subject = "[TalentMatch] Mã xác thực đặt lại mật khẩu: " + otp;
+
+        String html = """
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <div style="background: #dc2626; padding: 24px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">TalentMatch Platform</h1>
+                    <p style="color: #fecaca; margin: 6px 0 0 0; font-size: 14px;">Yêu cầu đặt lại mật khẩu</p>
+                </div>
+                <div style="padding: 32px 28px;">
+                    <p style="font-size: 16px; color: #1e293b; margin: 0 0 16px 0;">Xin chào,</p>
+                    <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0 0 24px 0;">
+                        Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>%s</strong>. Dưới đây là mã OTP xác thực:
+                    </p>
+                    <div style="text-align: center; margin: 28px 0;">
+                        <div style="display: inline-block; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #b91c1c; background: #fef2f2; padding: 14px 28px; border-radius: 10px; border: 2px dashed #fca5a5;">
+                            %s
+                        </div>
+                        <p style="font-size: 13px; color: #64748b; margin-top: 10px;">(Mã có hiệu lực trong vòng <strong>15 phút</strong>)</p>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 28px;">
+                        <a href="%s" style="display: inline-block; background: #dc2626; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: bold;">
+                            Đặt lại mật khẩu &rarr;
+                        </a>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
+                        Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này. Mật khẩu hiện tại của bạn vẫn được giữ an toàn tuyệt đối.
+                    </p>
+                </div>
+                <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+                    &copy; 2026 TalentMatch. Mọi quyền được bảo lưu.
+                </div>
+            </div>
+            """.formatted(email, otp, resetLink);
+
+        sendHtml(email, subject, html, otp);
+        return resetLink;
     }
 
-    private void send(String to, String subject, String body) {
-        if (!enabled) {
-            throw new IllegalStateException("Gửi email đang bị tắt. Hãy bật APP_MAIL_ENABLED=true và cấu hình SMTP.");
-        }
-        if (fromAddress.isBlank()) {
-            throw new IllegalStateException("Chưa cấu hình MAIL_USERNAME. Hãy nhập email SMTP thật trước khi đăng ký hoặc quên mật khẩu.");
+    private void sendHtml(String to, String subject, String htmlContent, String otp) {
+        log.info("📩 [MÃ OTP TEST] Gửi tới: {} | MÃ OTP: {} | Tiêu đề: {}", to, otp, subject);
+        
+        if (!enabled || fromAddress.isBlank()) {
+            log.warn("⚠️ [MailService] Chưa bật gửi email hoặc chưa cấu hình MAIL_USERNAME. Bạn có thể dùng mã OTP hiển thị ở log trên.");
+            return;
         }
 
         JavaMailSender sender = mailSenderProvider.getIfAvailable();
         if (sender == null) {
-            throw new IllegalStateException("SMTP chưa được cấu hình.");
+            log.warn("⚠️ [MailService] JavaMailSender không khả dụng. Bạn có thể dùng mã OTP hiển thị ở log trên.");
+            return;
         }
 
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(fromAddress);
-        msg.setTo(to);
-        msg.setSubject(subject);
-        msg.setText(body);
-        sender.send(msg);
+        try {
+            MimeMessage message = sender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            sender.send(message);
+            log.info("✅ [MailService] Đã gửi email thành công tới {}", to);
+        } catch (Exception e) {
+            log.error("❌ [MailService] Gửi email qua Gmail SMTP thất bại: {}. (Mã OTP vẫn có hiệu lực: {})", e.getMessage(), otp);
+        }
     }
 
     public boolean isEnabled() {

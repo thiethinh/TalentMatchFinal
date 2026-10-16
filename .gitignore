@@ -22,6 +22,8 @@ desktop.ini
 .env
 !.env.example
 *.local
+backend/src/main/resources/application-mail.properties
+!backend/src/main/resources/application-mail.properties.example
 
 # Backend (Gradle & Java)
 .gradle/

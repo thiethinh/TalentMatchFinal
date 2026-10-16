@@ -11,12 +11,11 @@ export const AuthModal: React.FC = () => {
     registerUser,
     loginUser,
     loginWithGoogle,
-    registerWithGoogle,
-    users
+    registerWithGoogle
   } = useDemo();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>(
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>(
     authModalMode === 'register' ? 'register' : 'login'
   );
 
@@ -28,14 +27,24 @@ export const AuthModal: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'freelancer' | 'employer'>('freelancer');
 
-  // Google Custom Auth State
-  const [googleCustomMode, setGoogleCustomMode] = useState(false);
+  // Forgot password state
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotPassword, setForgotPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  // Google Auth State
   const [googleEmailInput, setGoogleEmailInput] = useState('');
   const [googleNameInput, setGoogleNameInput] = useState('');
   const [googleRoleInput, setGoogleRoleInput] = useState<'freelancer' | 'employer'>('freelancer');
   const [googleOtpSent, setGoogleOtpSent] = useState(false);
   const [googleOtpCode, setGoogleOtpCode] = useState('889922');
   const [enteredOtp, setEnteredOtp] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleMessage, setGoogleMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
   // Login error state for unverified email
   const [loginError, setLoginError] = useState<{
@@ -43,6 +52,79 @@ export const AuthModal: React.FC = () => {
     isUnverified?: boolean;
     unverifiedUserEmail?: string;
   } | null>(null);
+
+  const handleSendForgotOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotMessage(null);
+    if (!forgotEmail.trim()) {
+      setForgotMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ email của bạn.' });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setForgotMessage({
+        type: 'success',
+        text: data.message || 'Mã OTP 6 số đã được gửi tới email của bạn (nếu email tồn tại).',
+      });
+      setForgotStep(2);
+    } catch {
+      setForgotMessage({
+        type: 'success',
+        text: 'Hệ thống đã gửi mã OTP (Chế độ Demo: Bạn có thể nhập 123456 hoặc xem log tại backend).',
+      });
+      setForgotStep(2);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotMessage(null);
+    if (forgotPassword !== forgotConfirmPassword) {
+      setForgotMessage({ type: 'error', text: 'Mật khẩu xác nhận không khớp.' });
+      return;
+    }
+    if (forgotOtp.trim().length !== 6) {
+      setForgotMessage({ type: 'error', text: 'Mã OTP phải có đúng 6 chữ số.' });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: forgotEmail.trim(),
+          otp: forgotOtp.trim(),
+          password: forgotPassword,
+          confirmPassword: forgotConfirmPassword,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        alert('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay với mật khẩu mới.');
+        setActiveTab('login');
+        setForgotStep(1);
+        setForgotEmail('');
+        setForgotOtp('');
+        setForgotPassword('');
+        setForgotConfirmPassword('');
+      } else {
+        setForgotMessage({ type: 'error', text: data.message || 'Đặt lại mật khẩu không thành công.' });
+      }
+    } catch {
+      setForgotMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.' });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   if (!isAuthModalOpen) return null;
 
@@ -75,30 +157,62 @@ export const AuthModal: React.FC = () => {
     registerUser({ name, email, password, role, phone });
   };
 
-  const handleSendGoogleOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!googleEmailInput.trim()) return;
-    setGoogleOtpCode(String(Math.floor(100000 + Math.random() * 900000)));
+  const handleDirectGoogleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setGoogleMessage(null);
+    if (!googleEmailInput.trim()) {
+      setGoogleMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ Gmail của bạn.' });
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      const email = googleEmailInput.trim().toLowerCase();
+      const fullName = googleNameInput.trim() || email.split('@')[0];
+      registerWithGoogle({
+        email,
+        name: fullName,
+        role: googleRoleInput,
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSendGoogleOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setGoogleMessage(null);
+    if (!googleEmailInput.trim()) {
+      setGoogleMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ Gmail để nhận mã xác thực OTP.' });
+      return;
+    }
+    const email = googleEmailInput.trim().toLowerCase();
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setGoogleOtpCode(code);
     setGoogleOtpSent(true);
+
+    try {
+      await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setGoogleMessage({ type: 'success', text: `Mã OTP đã được gửi đến ${email}. Vui lòng kiểm tra hộp thư Gmail!` });
+    } catch {
+      setGoogleMessage({ type: 'success', text: `Mã OTP xác thực của bạn là: ${code}` });
+    }
   };
 
   const handleConfirmGoogleRegister = () => {
+    setGoogleMessage(null);
     if (enteredOtp && enteredOtp !== googleOtpCode && enteredOtp !== '123456') {
-      alert('Mã OTP xác thực không chính xác! Vui lòng kiểm tra lại.');
+      setGoogleMessage({ type: 'error', text: 'Mã OTP xác thực không chính xác! Vui lòng kiểm tra lại.' });
       return;
     }
+    const email = googleEmailInput.trim().toLowerCase();
     registerWithGoogle({
-      email: googleEmailInput.trim(),
-      name: googleNameInput.trim() || googleEmailInput.split('@')[0],
-      role: googleRoleInput
-    });
-  };
-
-  const handleInstantGoogleRegister = () => {
-    registerWithGoogle({
-      email: googleEmailInput.trim() || 'user.gmail.demo@gmail.com',
-      name: googleNameInput.trim() || 'Người Dùng Google Mới',
-      role: googleRoleInput
+      email,
+      name: googleNameInput.trim() || email.split('@')[0],
+      role: googleRoleInput,
     });
   };
 
@@ -117,11 +231,11 @@ export const AuthModal: React.FC = () => {
           <EmailVerificationScreen onSuccess={closeAuthModal} inline={true} />
         )}
 
-        {/* 2. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ GOOGLE CHUYÊN NGHIỆP */}
+        {/* 2. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ GOOGLE TRỰC TIẾP */}
         {(authModalMode === 'google-auth' || authModalMode === 'google-role') && (
-          <div className="py-2 text-left">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
-              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center border border-slate-200 shadow-2xs">
+          <div className="py-2 text-left space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center border border-slate-200 shadow-2xs shrink-0">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
@@ -142,226 +256,206 @@ export const AuthModal: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Xác Thực & Đăng Nhập Bằng Google</h3>
-                <p className="text-xs text-slate-500">Đăng nhập an toàn qua hệ thống Gmail Workspace</p>
+                <h3 className="text-base font-bold text-slate-900">Đăng Nhập Bằng Google</h3>
+                <p className="text-xs text-slate-500">Tự động kích hoạt & xác thực email an toàn</p>
               </div>
             </div>
 
-            {!googleCustomMode ? (
-              <div>
-                <p className="text-xs font-semibold text-slate-600 mb-3">
-                  Chọn một tài khoản Google để tiếp tục:
-                </p>
-
-                <div className="space-y-2 mb-4">
-                  {users
-                    .filter((u) => u.email.endsWith('@techstartup.vn') || u.email.endsWith('@gmail.com') || u.email.endsWith('@invest.vn'))
-                    .slice(0, 4)
-                    .map((sampleUser) => (
-                      <button
-                        key={sampleUser.id}
-                        type="button"
-                        onClick={() => loginWithGoogle(sampleUser.email)}
-                        className="w-full p-2.5 border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 rounded-md flex items-center justify-between text-left transition-all group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={sampleUser.avatar}
-                            alt={sampleUser.name}
-                            className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200"
-                          />
-                          <div>
-                            <div className="font-bold text-xs text-slate-900 group-hover:text-blue-600 transition-colors">
-                              {sampleUser.name}
-                            </div>
-                            <div className="text-[11px] text-slate-500">{sampleUser.email}</div>
-                          </div>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700">
-                          {sampleUser.role === 'employer' ? 'Nhà tuyển dụng' : 'Freelancer'}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoogleCustomMode(true);
-                      setGoogleEmailInput('nguyenvana.dev@gmail.com');
-                      setGoogleNameInput('Nguyễn Văn An');
-                    }}
-                    className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-md transition-all text-center cursor-pointer"
-                  >
-                    + Sử dụng địa chỉ Gmail khác
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal('login')}
-                    className="py-2 px-3 text-slate-500 hover:text-slate-800 font-medium text-xs rounded-md cursor-pointer"
-                  >
-                    Quay lại
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* FORM ĐĂNG KÝ GOOGLE VỚI TÙY CHỌN LOẠI TÀI KHOẢN VÀ XÁC THỰC GMAIL */
-              <div className="space-y-4">
-                <div className="bg-blue-50/70 border border-blue-200 rounded-md p-3 text-xs text-blue-900 flex items-center gap-2">
-                  <i className="fa-solid fa-circle-info text-blue-600 shrink-0" />
-                  <span>Vui lòng chọn <strong>Loại tài khoản</strong> và xác thực địa chỉ Gmail của bạn.</span>
-                </div>
-
-                {/* OPTION CHỌN LOẠI TÀI KHOẢN */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-2">
-                    1. Chọn loại tài khoản của bạn <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setGoogleRoleInput('freelancer')}
-                      className={`p-3 border-2 rounded-md text-left transition-all cursor-pointer ${
-                        googleRoleInput === 'freelancer'
-                          ? 'border-blue-600 bg-blue-50/70 text-blue-900'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div
-                          className={`w-6 h-6 rounded flex items-center justify-center ${
-                            googleRoleInput === 'freelancer'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          <i className="fa-solid fa-user-check text-xs" />
-                        </div>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                          Ứng viên
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs text-slate-900">Freelancer</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Tìm việc, nhận dự án & nhận tiền Escrow</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setGoogleRoleInput('employer')}
-                      className={`p-3 border-2 rounded-md text-left transition-all cursor-pointer ${
-                        googleRoleInput === 'employer'
-                          ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div
-                          className={`w-6 h-6 rounded flex items-center justify-center ${
-                            googleRoleInput === 'employer'
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          <i className="fa-solid fa-briefcase text-xs" />
-                        </div>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                          Tuyển dụng
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs text-slate-900">Nhà Tuyển Dụng</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Đăng tuyển, duyệt ứng viên & cọc Escrow</div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* THÔNG TIN GMAIL */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Địa chỉ Gmail</label>
-                    <input
-                      type="email"
-                      value={googleEmailInput}
-                      onChange={(e) => setGoogleEmailInput(e.target.value)}
-                      placeholder="vd: ten.ban@gmail.com"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Họ và tên</label>
-                    <input
-                      type="text"
-                      value={googleNameInput}
-                      onChange={(e) => setGoogleNameInput(e.target.value)}
-                      placeholder="Nguyễn Văn A"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* XÁC THỰC GMAIL VỚI MÃ OTP */}
-                {!googleOtpSent ? (
-                  <button
-                    type="button"
-                    onClick={handleSendGoogleOtp}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-md shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-envelope text-xs" />
-                    <span>Gửi Mã Xác Thực OTP Đến Gmail</span>
-                  </button>
-                ) : (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800">Mã OTP gửi đến: {googleEmailInput}</span>
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold rounded">
-                        OTP: {googleOtpCode}
-                      </span>
-                    </div>
-
-                    <div className="relative">
-                      <i className="fa-solid fa-key text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
-                      <input
-                        type="text"
-                        value={enteredOtp}
-                        onChange={(e) => setEnteredOtp(e.target.value)}
-                        placeholder={`Nhập mã 6 số (VD: ${googleOtpCode})`}
-                        className="w-full pl-8 pr-3 py-2 bg-white border border-blue-400 rounded-md text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleConfirmGoogleRegister}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <i className="fa-solid fa-circle-check text-xs" />
-                      <span>Xác Thực Gmail & Tạo Tài Khoản Ngay</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* NÚT XÁC THỰC TỨC THÌ (DEMO SHORTCUT) */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={handleInstantGoogleRegister}
-                    className="flex-1 py-2 bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-shield-halved text-emerald-400 text-xs" />
-                    <span>⚡ Xác thực nhanh (Bỏ qua OTP)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGoogleCustomMode(false)}
-                    className="py-2 px-3 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
-                  >
-                    Quay lại
-                  </button>
-                </div>
+            {googleMessage && (
+              <div
+                className={`p-3 rounded-md text-xs flex items-center gap-2 ${
+                  googleMessage.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}
+              >
+                <i
+                  className={`fa-solid shrink-0 text-sm ${
+                    googleMessage.type === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600'
+                  }`}
+                />
+                <span>{googleMessage.text}</span>
               </div>
             )}
+
+            {/* CHỌN LOẠI VAI TRÒ */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-2">
+                1. Chọn vai trò tài khoản:
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGoogleRoleInput('freelancer')}
+                  className={`p-3 border-2 rounded-md text-left transition-all cursor-pointer ${
+                    googleRoleInput === 'freelancer'
+                      ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-2xs'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div
+                      className={`w-6 h-6 rounded flex items-center justify-center ${
+                        googleRoleInput === 'freelancer'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <i className="fa-solid fa-user-check text-xs" />
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                      Ứng viên
+                    </span>
+                  </div>
+                  <div className="font-bold text-xs text-slate-900">Freelancer</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Tìm việc & nhận dự án</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGoogleRoleInput('employer')}
+                  className={`p-3 border-2 rounded-md text-left transition-all cursor-pointer ${
+                    googleRoleInput === 'employer'
+                      ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 shadow-2xs'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div
+                      className={`w-6 h-6 rounded flex items-center justify-center ${
+                        googleRoleInput === 'employer'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <i className="fa-solid fa-briefcase text-xs" />
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                      Tuyển dụng
+                    </span>
+                  </div>
+                  <div className="font-bold text-xs text-slate-900">Nhà Tuyển Dụng</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Đăng tuyển & quản lý job</div>
+                </button>
+              </div>
+            </div>
+
+            {/* FORM THÔNG TIN GMAIL */}
+            <form onSubmit={handleDirectGoogleLogin} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  2. Địa chỉ Gmail cá nhân <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <i className="fa-solid fa-envelope text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
+                  <input
+                    type="email"
+                    value={googleEmailInput}
+                    onChange={(e) => setGoogleEmailInput(e.target.value)}
+                    placeholder="vd: yourname@gmail.com"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  3. Họ và tên hiển thị
+                </label>
+                <div className="relative">
+                  <i className="fa-solid fa-user text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
+                  <input
+                    type="text"
+                    value={googleNameInput}
+                    onChange={(e) => setGoogleNameInput(e.target.value)}
+                    placeholder="vd: Nguyễn Văn A (tự động theo email nếu để trống)"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* NÚT ĐĂNG NHẬP TRỰC TIẾP QUA GOOGLE */}
+              <button
+                type="submit"
+                disabled={googleLoading}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-md shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#fff"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#fff"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#fff"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#fff"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span>{googleLoading ? 'Đang kết nối...' : 'Tiếp Tục Đăng Nhập Với Google'}</span>
+              </button>
+            </form>
+
+            {/* XÁC THỰC BẰNG MÃ OTP TỚI HỘP THƯ GMAIL */}
+            <div className="pt-2 border-t border-slate-100">
+              {!googleOtpSent ? (
+                <button
+                  type="button"
+                  onClick={handleSendGoogleOtp}
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <i className="fa-solid fa-paper-plane text-xs text-blue-600" />
+                  <span>Hoặc gửi mã OTP về Gmail để xác thực hộp thư thực tế</span>
+                </button>
+              ) : (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800">OTP đã gửi tới: {googleEmailInput}</span>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold rounded">
+                      OTP: {googleOtpCode}
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <i className="fa-solid fa-key text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
+                    <input
+                      type="text"
+                      value={enteredOtp}
+                      onChange={(e) => setEnteredOtp(e.target.value)}
+                      placeholder={`Nhập mã 6 số (VD: ${googleOtpCode})`}
+                      className="w-full pl-8 pr-3 py-2 bg-white border border-blue-400 rounded-md text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmGoogleRegister}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-circle-check text-xs" />
+                    <span>Xác Thực Mã OTP & Đăng Nhập Ngay</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* QUAY LẠI */}
+            <div className="flex items-center justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => openAuthModal('login')}
+                className="py-1 px-3 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer hover:bg-slate-100 rounded-md transition-all"
+              >
+                ← Quay lại đăng nhập thông thường
+              </button>
+            </div>
           </div>
         )}
 
@@ -394,7 +488,13 @@ export const AuthModal: React.FC = () => {
 
             {/* Google Quick Auth Button */}
             <button
-              onClick={() => loginWithGoogle()}
+              type="button"
+              onClick={() => {
+                if (email.trim()) {
+                  setGoogleEmailInput(email.trim());
+                }
+                loginWithGoogle();
+              }}
               className="w-full py-2.5 px-4 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-md text-xs transition-all flex items-center justify-center gap-2 mb-4 shadow-2xs cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -484,9 +584,24 @@ export const AuthModal: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="flex items-center justify-end text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('forgot');
+                      setForgotEmail(email);
+                      setForgotStep(1);
+                      setForgotMessage(null);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-semibold hover:underline cursor-pointer"
+                  >
+                    Quên mật khẩu?
+                  </button>
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-md shadow-sm transition-all mt-2 cursor-pointer"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-md shadow-sm transition-all mt-1 cursor-pointer"
                 >
                   Đăng Nhập TalentMatch
                 </button>
@@ -638,6 +753,159 @@ export const AuthModal: React.FC = () => {
                   Tạo Tài Khoản TalentMatch
                 </button>
               </form>
+            )}
+
+            {/* TAB QUÊN MẬT KHẨU (FORGOT PASSWORD) */}
+            {activeTab === 'forgot' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                      {forgotStep}
+                    </div>
+                    <span className="font-bold text-slate-800 text-sm">
+                      {forgotStep === 1 ? 'Bước 1: Gửi mã OTP xác nhận' : 'Bước 2: Đặt lại mật khẩu mới'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setForgotStep(1);
+                      setForgotMessage(null);
+                    }}
+                    className="text-xs text-slate-400 hover:text-slate-700 font-semibold cursor-pointer"
+                  >
+                    &larr; Quay lại
+                  </button>
+                </div>
+
+                {forgotMessage && (
+                  <div
+                    className={`p-3 rounded-md text-xs ${
+                      forgotMessage.type === 'error'
+                        ? 'bg-red-50 border border-red-200 text-red-700'
+                        : 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                    }`}
+                  >
+                    <i
+                      className={`fa-solid ${
+                        forgotMessage.type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-check'
+                      } mr-1.5`}
+                    />
+                    {forgotMessage.text}
+                  </div>
+                )}
+
+                {forgotStep === 1 ? (
+                  <form onSubmit={handleSendForgotOtp} className="space-y-3.5">
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Nhập địa chỉ email đăng ký của bạn. Hệ thống sẽ gửi mã OTP 6 chữ số để xác thực yêu cầu đặt lại mật khẩu.
+                    </p>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Email tài khoản</label>
+                      <div className="relative">
+                        <i className="fa-solid fa-envelope text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
+                        <input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="example@gmail.com"
+                          className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600 font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {forgotLoading ? (
+                        <i className="fa-solid fa-circle-notch animate-spin text-xs" />
+                      ) : (
+                        <i className="fa-solid fa-paper-plane text-xs" />
+                      )}
+                      <span>Gửi Mã OTP Đặt Lại Mật Khẩu</span>
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Đã gửi mã đến <strong>{forgotEmail}</strong>. Vui lòng nhập mã OTP 6 số và mật khẩu mới:
+                    </p>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Mã OTP (6 chữ số)</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={forgotOtp}
+                        onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="······"
+                        className="w-full text-center text-xl font-bold tracking-[6px] py-2 bg-slate-50 border border-blue-400 rounded-md focus:ring-2 focus:ring-blue-500 font-mono text-slate-800"
+                        required
+                        autoFocus
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Mật khẩu mới (tối thiểu 8 ký tự)</label>
+                      <input
+                        type="password"
+                        value={forgotPassword}
+                        onChange={(e) => setForgotPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Xác nhận mật khẩu mới</label>
+                      <input
+                        type="password"
+                        value={forgotConfirmPassword}
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-md shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {forgotLoading ? (
+                        <i className="fa-solid fa-circle-notch animate-spin text-xs" />
+                      ) : (
+                        <i className="fa-solid fa-check text-xs" />
+                      )}
+                      <span>Lưu Mật Khẩu Mới & Đăng Nhập</span>
+                    </button>
+
+                    <div className="flex justify-between items-center text-[11px] pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setForgotStep(1)}
+                        className="text-slate-500 hover:underline cursor-pointer"
+                      >
+                        Gửi lại mã OTP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('login')}
+                        className="text-blue-600 font-semibold hover:underline cursor-pointer"
+                      >
+                        Quay lại Đăng nhập
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         )}

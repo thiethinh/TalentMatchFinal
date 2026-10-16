@@ -88,8 +88,27 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="bg-black/95 backdrop-blur-xl border-b border-neutral-800 sticky top-0 z-40 shadow-xl text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {currentUser.role !== 'guest' && !currentUser.emailVerified && (
+        <div className="bg-amber-500 text-amber-950 px-4 py-2 text-xs font-medium sticky top-0 z-50 border-b border-amber-600/30 shadow-xs">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 truncate">
+              <i className="fa-solid fa-triangle-exclamation text-amber-950 shrink-0 text-sm" />
+              <span className="truncate">
+                Tài khoản (<strong className="font-bold">{currentUser.email}</strong>) chưa xác thực email. Chức năng đăng dự án và ứng tuyển bị giới hạn.
+              </span>
+            </div>
+            <button
+              onClick={() => openAuthModal('verification')}
+              className="px-3 py-1 bg-amber-950 text-white font-bold rounded-md hover:bg-black transition-all cursor-pointer whitespace-nowrap text-[11px] shrink-0"
+            >
+              Nhập mã OTP xác thực
+            </button>
+          </div>
+        </div>
+      )}
+      <header className="bg-black/95 backdrop-blur-xl border-b border-neutral-800 sticky top-0 z-40 shadow-xl text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
 
           {/* 1. Logo Brand & Main Links */}
@@ -638,5 +657,6 @@ export const Navbar: React.FC = () => {
         </div>
       )}
     </header>
+    </>
   );
 };

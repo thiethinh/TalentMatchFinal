@@ -697,6 +697,7 @@ public class DataInitializer implements CommandLineRunner {
             u.setPassword(encoder.encode(pass));
             u.setRole(role);
             u.setEnabled(true);
+            u.setEmailVerified(true);
             u.setLocked(false);
             return users.save(u);
         });

@@ -81,6 +81,12 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         body: JSON.stringify({ email: currentUser.email }),
       });
       const data = await response.json().catch(() => ({}));
+      if (!response.ok && data.message && data.message.includes('xác thực trước đó')) {
+        verifyEmail(currentUser.id);
+        setSuccessNotice('Tài khoản đã được xác thực trước đó! Đang hoàn tất...');
+        setTimeout(() => { if (onSuccess) onSuccess(); }, 1200);
+        return;
+      }
       setSuccessNotice(data.message || 'Đã gửi lại mã OTP mới về email của bạn!');
     } catch {
       setSuccessNotice('Đã gửi yêu cầu tạo mã xác thực mới.');

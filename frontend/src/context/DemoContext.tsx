@@ -178,6 +178,7 @@ interface DemoContextType {
   loginUser: (email: string, password?: string) => { success: boolean; isUnverified?: boolean; message?: string };
   loginWithGoogle: (targetEmail?: string) => void;
   registerWithGoogle: (data: { email: string; name: string; role: 'freelancer' | 'employer'; phone?: string }) => void;
+  handleGoogleAuthSuccess: (googleUser: { email: string; name: string; avatar?: string; role?: 'freelancer' | 'employer' }) => Promise<void>;
   completeGoogleRegister: (role: 'freelancer' | 'employer') => void;
   logout: () => void;
 
@@ -451,6 +452,51 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           });
           return newUsers.length > 0 ? [...prevUsers, ...newUsers] : prevUsers;
+        });
+      })
+      .catch(() => {});
+
+    // 3. Đồng bộ phiên đăng nhập thực tế từ backend (/api/auth/me)
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((meData) => {
+        if (!isMounted || !meData || !meData.authenticated) return;
+        const isVerified = Boolean(meData.emailVerified);
+        const status: AccountStatus = meData.enabled ? 'ACTIVE' : 'PENDING';
+        setUsers((prevUsers) => {
+          const exists = prevUsers.find((u) => u.email.toLowerCase() === meData.email.toLowerCase());
+          if (exists) {
+            const updated = {
+              ...exists,
+              name: meData.fullName || exists.name,
+              emailVerified: isVerified,
+              isVerified: isVerified,
+              accountStatus: status,
+              avatar: meData.avatar || exists.avatar,
+            };
+            setCurrentUser(updated);
+            return prevUsers.map((u) => (u.id === exists.id ? updated : u));
+          } else {
+            const role = meData.role === 'ADMIN' ? 'admin' : (meData.role === 'CUSTOMER' ? 'employer' : 'freelancer');
+            const newUser: User = {
+              id: `usr-db-${meData.id}`,
+              name: meData.fullName || meData.email.split('@')[0],
+              email: meData.email,
+              avatar: meData.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(meData.email)}`,
+              role: role,
+              phone: meData.phone || '',
+              isVerified: isVerified,
+              emailVerified: isVerified,
+              accountStatus: status,
+              kycStatus: isVerified ? 'VERIFIED' : 'NOT_SUBMITTED',
+              balance: 10000000,
+              escrowBalance: 0,
+              createdAt: '2026-10-01',
+              lastLogin: 'Vừa đăng nhập'
+            };
+            setCurrentUser(newUser);
+            return [...prevUsers, newUser];
+          }
         });
       })
       .catch(() => {});
@@ -997,6 +1043,64 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }).`,
       'success'
     );
+  };
+
+  const handleGoogleAuthSuccess = async (googleUser: {
+    email: string;
+    name: string;
+    avatar?: string;
+    role?: 'freelancer' | 'employer';
+  }) => {
+    const email = googleUser.email.trim().toLowerCase();
+    const role = googleUser.role === 'employer' ? 'CUSTOMER' : 'FREELANCER';
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          fullName: googleUser.name,
+          role: role,
+          avatar: googleUser.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        let found = users.find((u) => u.email.toLowerCase() === email);
+        if (!found) {
+          const newUser: User = {
+            id: data.id ? `usr-${data.id}` : `usr-gg-${Date.now()}`,
+            name: data.fullName || googleUser.name,
+            email: email,
+            avatar: data.avatar || googleUser.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
+            role: data.role === 'CUSTOMER' ? 'employer' : 'freelancer',
+            phone: data.phone || '0901234567',
+            isVerified: true,
+            emailVerified: true,
+            accountStatus: 'ACTIVE',
+            kycStatus: 'NOT_SUBMITTED',
+            balance: data.role === 'CUSTOMER' ? 30000000 : 10000000,
+            escrowBalance: 0,
+            createdAt: new Date().toISOString().split('T')[0],
+            lastLogin: 'Vừa đăng nhập Google'
+          };
+          setUsers((prev) => [...prev, newUser]);
+          setCurrentUser(newUser);
+          localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);
+        } else {
+          const verified = { ...found, emailVerified: true, accountStatus: 'ACTIVE' as const };
+          setUsers((prev) => prev.map((u) => (u.id === found!.id ? verified : u)));
+          setCurrentUser(verified);
+          localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, verified.id);
+        }
+        setIsAuthModalOpen(false);
+        addToast(`Đăng nhập Google thành công! Chào mừng ${googleUser.name}.`, 'success');
+      } else {
+        addToast(data.message || 'Đăng nhập Google thất bại.', 'error');
+      }
+    } catch {
+      addToast('Không thể kết nối đến máy chủ đăng nhập Google.', 'error');
+    }
   };
 
   const completeGoogleRegister = (role: 'freelancer' | 'employer') => {
@@ -1661,6 +1765,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loginUser,
         loginWithGoogle,
         registerWithGoogle,
+        handleGoogleAuthSuccess,
         completeGoogleRegister,
         logout,
         adminUpdateUserStatus,

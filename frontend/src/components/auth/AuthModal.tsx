@@ -12,8 +12,11 @@ export const AuthModal: React.FC = () => {
     loginUser,
     loginWithGoogle,
     registerWithGoogle,
+    handleGoogleAuthSuccess,
     users
   } = useDemo();
+
+  const GOOGLE_CLIENT_ID = '303653553354-nmq6vgnsug7j0ca43927603pipiaaalk.apps.googleusercontent.com';
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>(
@@ -63,6 +66,82 @@ export const AuthModal: React.FC = () => {
       setGoogleMode('login');
     }
   }, [authModalMode]);
+
+  // Khởi tạo Google Identity Services (GIS) để bật popup chọn tài khoản Google thật
+  useEffect(() => {
+    if (!isAuthModalOpen) return;
+
+    const renderGis = () => {
+      // @ts-ignore
+      const google = window.google;
+      if (google?.accounts?.id) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response: any) => {
+            if (!response?.credential) return;
+            try {
+              const base64Url = response.credential.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64)
+                  .split('')
+                  .map((c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                  .join('')
+              );
+              const payload = JSON.parse(jsonPayload);
+              if (payload?.email) {
+                handleGoogleAuthSuccess({
+                  email: payload.email,
+                  name: payload.name || payload.email.split('@')[0],
+                  avatar: payload.picture,
+                  role: activeTab === 'register' ? role : undefined,
+                });
+              }
+            } catch (err) {
+              console.error('Lỗi phân tích Google Token:', err);
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        const btnLogin = document.getElementById('google-btn-login');
+        if (btnLogin) {
+          btnLogin.innerHTML = '';
+          google.accounts.id.renderButton(btnLogin, {
+            theme: 'outline',
+            size: 'large',
+            width: 380,
+            text: activeTab === 'register' ? 'signup_with' : 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+          });
+        }
+
+        const btnModal = document.getElementById('google-btn-modal');
+        if (btnModal) {
+          btnModal.innerHTML = '';
+          google.accounts.id.renderButton(btnModal, {
+            theme: 'outline',
+            size: 'large',
+            width: 380,
+            text: googleMode === 'register' ? 'signup_with' : 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+          });
+        }
+      }
+    };
+
+    const t1 = setTimeout(renderGis, 150);
+    const t2 = setTimeout(renderGis, 600);
+    const t3 = setTimeout(renderGis, 1500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isAuthModalOpen, activeTab, role, googleMode]);
 
   // Login error state for unverified email
   const [loginError, setLoginError] = useState<{
@@ -498,6 +577,20 @@ export const AuthModal: React.FC = () => {
               </div>
             )}
 
+            {/* NÚT CHỌN TÀI KHOẢN GOOGLE QUA POPUP CHÍNH THỨC */}
+            <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-md text-center space-y-2">
+              <span className="text-xs font-semibold text-slate-700 block">
+                Bấm nút bên dưới để chọn tài khoản Google từ popup máy tính:
+              </span>
+              <div id="google-btn-modal" className="flex justify-center w-full min-h-[44px]"></div>
+            </div>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-3 text-[11px] text-slate-400 font-medium">hoặc nhập Gmail thủ công</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+
             {/* FORM THÔNG TIN GMAIL */}
             <form onSubmit={handleDirectGoogleLogin} className="space-y-3">
               <div>
@@ -713,46 +806,10 @@ export const AuthModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Google Quick Auth Button (Tùy biến theo Tab Đăng Nhập / Đăng Ký) */}
-            <button
-              type="button"
-              onClick={() => {
-                const targetMode = activeTab === 'register' ? 'register' : 'login';
-                setGoogleMode(targetMode);
-                setGoogleMessage(null);
-                setGoogleOtpSent(false);
-                setEnteredOtp('');
-                if (email.trim()) {
-                  setGoogleEmailInput(email.trim());
-                }
-                if (targetMode === 'register') {
-                  if (name.trim()) setGoogleNameInput(name.trim());
-                  setGoogleRoleInput(role);
-                }
-                loginWithGoogle();
-              }}
-              className="w-full py-2.5 px-4 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-md text-xs transition-all flex items-center justify-center gap-2 mb-4 shadow-2xs cursor-pointer"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>{activeTab === 'login' ? 'Đăng nhập với Google' : 'Đăng ký với Google'}</span>
-            </button>
+            {/* Google Quick Auth Button (Nút đăng nhập Google chính hãng bật popup chọn tài khoản) */}
+            <div className="mb-4">
+              <div id="google-btn-login" className="flex justify-center w-full min-h-[44px]"></div>
+            </div>
 
             <div className="relative flex py-2 items-center mb-4">
               <div className="flex-grow border-t border-slate-200"></div>

@@ -46,18 +46,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationSuccessHandler successHandler() {
-        return (req, res, auth) -> {
-            boolean admin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-            res.sendRedirect(admin ? "/admin/dashboard" : "/");
-        };
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(c -> c.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // REST API public routes
                 .requestMatchers("/api/auth/**").permitAll()
@@ -67,40 +59,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
                 .requestMatchers("/api/projects/**", "/api/payment/**", "/api/notifications/**").authenticated()
-
-                // Legacy Thymeleaf routes (kept during transition)
-                .requestMatchers("/", "/login", "/register", "/verify", "/forgot-password", "/reset-password",
-                        "/css/**", "/js/**", "/images/**", "/error").permitAll()
-                .requestMatchers(HttpMethod.GET, "/jobs/**", "/freelancers/**", "/hire", "/projects").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/customer/**").hasRole("CUSTOMER")
-                .requestMatchers("/freelancer/**").hasRole("FREELANCER")
-                .requestMatchers("/projects/**", "/payment/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
-                .defaultAuthenticationEntryPointFor(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
-                    request -> request.getRequestURI().startsWith("/api/")
-                )
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .usernameParameter("email")
-                .passwordParameter("password")
-                .successHandler(successHandler)
-                .failureUrl("/login?error")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/?logout")
-                .permitAll()
-            )
-            .rememberMe(r -> r
-                .key("talentmatch-pro-remember-key")
-                .tokenValiditySeconds(7 * 24 * 60 * 60)
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             );
 
         return http.build();

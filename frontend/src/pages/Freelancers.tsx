@@ -56,22 +56,6 @@ const CATEGORY_DATA: CategoryConfig[] = [
       { id: 'content_writing', name: 'Content Marketing & Copywriting', skills: ['Content Strategy', 'SEO Writing', 'Copywriting'] },
       { id: 'translation', name: 'Biên phiên dịch Anh - Nhật - Trung', skills: ['Dịch thuật Anh - Việt', 'Nhật - Việt', 'Localization'] }
     ]
-  },
-  {
-    id: 'Kỹ thuật & Kiến trúc',
-    name: 'Kỹ thuật & Kiến trúc 3D',
-    subcategories: [
-      { id: 'all_arch', name: 'Tất cả Kỹ thuật & Kiến trúc', skills: [] },
-      { id: 'revit_bim', name: 'Thiết kế 3D & Mô hình BIM Revit', skills: ['AutoCAD', 'Revit BIM', '3Ds Max', 'SketchUp'] }
-    ]
-  },
-  {
-    id: 'Tài chính & Kế toán',
-    name: 'Tài chính & Kế toán Thuế',
-    subcategories: [
-      { id: 'all_fin', name: 'Tất cả Tài chính & Kế toán', skills: [] },
-      { id: 'tax_accounting', name: 'Kế toán trưởng & Tư vấn thuế SME', skills: ['Kế toán tài chính', 'Báo cáo tài chính', 'Quyết toán thuế'] }
-    ]
   }
 ];
 

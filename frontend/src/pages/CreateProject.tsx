@@ -71,11 +71,11 @@ export const CreateProject: React.FC = () => {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full p-3 text-xs border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-600 font-medium bg-white"
             >
-              <option value="IT & Lập trình">IT & Lập trình</option>
-              <option value="Thiết kế & Đồ họa">Thiết kế & Đồ họa</option>
-              <option value="Content & Dịch thuật">Content & Dịch thuật</option>
-              <option value="Digital Marketing">Digital Marketing</option>
-              <option value="Hỗ trợ Doanh nghiệp">Hỗ trợ Doanh nghiệp</option>
+              <option value="IT & Lập trình">IT & Lập trình Web/App/AI</option>
+              <option value="Thiết kế & Đồ họa">Thiết kế UI/UX & Đồ họa số</option>
+              <option value="Video & Animation">Video Editing & TikTok Ads</option>
+              <option value="Digital Marketing">Digital Marketing & SEO</option>
+              <option value="Viết lách & Nội dung">Viết lách & Dịch thuật chuyên nghiệp</option>
             </select>
           </div>
 

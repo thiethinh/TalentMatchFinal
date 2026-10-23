@@ -1,9 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { DemoProvider, useDemo } from './context/DemoContext';
-import { UnverifiedBanner } from './components/auth/UnverifiedBanner';
-import { Navbar } from './components/layout/Navbar';
-import { Footer } from './components/layout/Footer';
+import { MarketLayout } from './components/layout/MarketLayout';
 import { ToastContainer } from './components/common/ToastContainer';
 import { AuthModal } from './components/auth/AuthModal';
 import { UnverifiedRestrictionModal } from './components/auth/UnverifiedRestrictionModal';
@@ -25,34 +24,40 @@ const AppContent: React.FC = () => {
   const { isVNPayModalOpen, vnpayModalParams, closeVNPayModal } = useDemo();
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-blue-600 selection:text-white">
-      {/* Real app: No RoleSwitcher at the top */}
-      <UnverifiedBanner />
-      <Navbar />
+    <MarketLayout>
+      <Routes>
+        {/* Core Pages */}
+        <Route path="/" element={<Home />} />
+        
+        {/* Jobs / Projects Routes (Supports both paths) */}
+        <Route path="/jobs" element={<Projects />} />
+        <Route path="/projects" element={<Projects />} />
+        
+        <Route path="/freelancers" element={<Freelancers />} />
+        <Route path="/create-project" element={<CreateProject />} />
+        <Route path="/kyc" element={<KycVerification />} />
 
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/freelancers" element={<Freelancers />} />
-          <Route path="/create-project" element={<CreateProject />} />
-          <Route path="/kyc" element={<KycVerification />} />
-          <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
-          <Route path="/employer/dashboard" element={<EmployerDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/orders/:id" element={<OrderWorkManagement />} />
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </main>
+        {/* Role Dashboards */}
+        <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+        <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+        <Route path="/customer/dashboard" element={<Navigate to="/employer/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-      <Footer />
+        {/* Contract & Escrow Order LifeCycle */}
+        <Route path="/orders/:id" element={<OrderWorkManagement />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Global Modals */}
       <ToastContainer />
       <AuthModal />
       <UnverifiedRestrictionModal />
       <UserProfileModal />
       <WithdrawModal />
 
-      {/* Global VNPay Payment Modal */}
+      {/* Global VNPay Modal Simulation */}
       {isVNPayModalOpen && vnpayModalParams && (
         <VNPayModal
           isOpen={isVNPayModalOpen}
@@ -65,17 +70,19 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
-    </div>
+    </MarketLayout>
   );
 };
 
 export const App: React.FC = () => {
   return (
-    <DemoProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </DemoProvider>
+    <AuthProvider>
+      <DemoProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </DemoProvider>
+    </AuthProvider>
   );
 };
 

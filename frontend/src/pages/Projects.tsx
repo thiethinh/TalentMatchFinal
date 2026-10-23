@@ -58,48 +58,6 @@ const CATEGORY_DATA: CategoryConfig[] = [
       { id: 'seo_writing', name: 'Viết bài chuẩn SEO, PR báo chí', skills: ['Content', 'SEO Writing', 'Copywriting'] },
       { id: 'translation', name: 'Biên dịch & Phiên dịch (Anh, Nhật, Trung)', skills: ['Translation', 'Localization'] }
     ]
-  },
-  {
-    id: 'Kỹ thuật & Kiến trúc',
-    name: 'Kỹ thuật, Xây dựng & Kiến trúc',
-    subcategories: [
-      { id: 'all_engineering', name: 'Tất cả Kỹ thuật & Kiến trúc', skills: [] },
-      { id: 'interior_design', name: 'Thiết kế nội thất & Phối cảnh 3D', skills: ['AutoCAD', 'SketchUp', 'Interior Design'] },
-      { id: 'revit_bim', name: 'Hồ sơ kỹ thuật & Mô hình BIM Revit', skills: ['Revit', 'AutoCAD', 'BIM'] }
-    ]
-  },
-  {
-    id: 'Tài chính & Kế toán',
-    name: 'Tài chính, Thuế & Kế toán',
-    subcategories: [
-      { id: 'all_finance', name: 'Tất cả Tài chính & Kế toán', skills: [] },
-      { id: 'tax_accounting', name: 'Kế toán thuế & Soát xét sổ sách', skills: ['Kế toán thuế', 'Kế toán', 'Excel', 'Báo cáo'] },
-      { id: 'financial_analysis', name: 'Phân tích tài chính & Quản trị dòng tiền', skills: ['Finance', 'Dashboard', 'Cashflow'] }
-    ]
-  },
-  {
-    id: 'Đào tạo & Giáo dục',
-    name: 'Đào tạo & Giáo dục Trực tuyến',
-    subcategories: [
-      { id: 'all_education', name: 'Tất cả Đào tạo & Giáo dục', skills: [] },
-      { id: 'online_teaching', name: 'Dạy học online & Gia sư', skills: ['Teaching', 'Zoom', 'English Teaching'] }
-    ]
-  },
-  {
-    id: 'Hành chính & Nhân sự',
-    name: 'Hành chính & Tuyển dụng Nhân sự',
-    subcategories: [
-      { id: 'all_hr', name: 'Tất cả Hành chính & Nhân sự', skills: [] },
-      { id: 'recruitment', name: 'Tuyển dụng & Sàng lọc CV', skills: ['Recruitment', 'Excel', 'Communication'] }
-    ]
-  },
-  {
-    id: 'Luật & Pháp lý',
-    name: 'Luật & Tư vấn Hợp đồng',
-    subcategories: [
-      { id: 'all_legal', name: 'Tất cả Pháp lý', skills: [] },
-      { id: 'contract_review', name: 'Rà soát hợp đồng & Điều khoản dịch vụ', skills: ['Pháp lý', 'Hợp đồng', 'NDA'] }
-    ]
   }
 ];
 

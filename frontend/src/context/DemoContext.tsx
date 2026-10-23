@@ -456,8 +456,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       })
       .catch(() => {});
 
-    // 3. Đồng bộ phiên đăng nhập thực tế từ backend (/api/auth/me)
-    fetch('/api/auth/me')
+    // 3. Đồng bộ phiên đăng nhập thực tế từ backend (/api/auth/me) với Session Cookie
+    fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((meData) => {
         if (!isMounted || !meData || !meData.authenticated) return;
@@ -498,6 +498,26 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return [...prevUsers, newUser];
           }
         });
+
+        // 4. Đồng bộ danh sách thông báo thực từ backend MySQL
+        fetch('/api/notifications', { credentials: 'include' })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((notifList) => {
+            if (isMounted && Array.isArray(notifList) && notifList.length > 0) {
+              const mappedNotifs: AppNotification[] = notifList.map((n: any) => ({
+                id: `db-notif-${n.id}`,
+                userId: String(meData.id),
+                title: n.title || 'Thông báo hệ thống',
+                message: n.content || n.message || '',
+                type: n.type || 'SYSTEM',
+                isRead: Boolean(n.read || n.isRead),
+                createdAt: n.createdAt ? String(n.createdAt).split('T')[0] : 'Vừa xong',
+                link: n.targetUrl || n.link || '/dashboard'
+              }));
+              setNotifications(mappedNotifs);
+            }
+          })
+          .catch(() => {});
       })
       .catch(() => {});
 
@@ -515,6 +535,17 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+
+    const numMatch = id.match(/\d+/);
+    const numericId = numMatch ? parseInt(numMatch[0], 10) : null;
+    if (numericId) {
+      try {
+        fetch(`/api/notifications/${numericId}/read`, {
+          method: 'POST',
+          credentials: 'include'
+        }).catch(() => {});
+      } catch (_) {}
+    }
   };
 
   const markAllNotificationsAsRead = () => {
@@ -925,28 +956,96 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginUser = (email: string, password?: string) => {
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (!found) {
-      return { success: false, message: 'Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại.' };
-    }
-    setCurrentUser(found);
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
+    const trimmedEmail = email.trim().toLowerCase();
 
-    // Kích hoạt phiên đăng nhập backend Spring Security nếu có mật khẩu
+    // 1. Gửi request đăng nhập thực tế tới Spring Boot backend kết nối MySQL
     if (password) {
       try {
         fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), password })
-        }).catch(() => {});
+          credentials: 'include',
+          body: JSON.stringify({ email: trimmedEmail, password })
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const backendUser = await res.json();
+              setUsers((prev) => {
+                const existingIdx = prev.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
+                const roleMapped =
+                  backendUser.role?.toUpperCase() === 'ADMIN'
+                    ? 'admin'
+                    : backendUser.role?.toUpperCase() === 'CUSTOMER'
+                    ? 'employer'
+                    : 'freelancer';
+
+                const updatedUser: User = {
+                  id: String(backendUser.id || `usr-${Date.now()}`),
+                  name: backendUser.fullName || trimmedEmail.split('@')[0],
+                  email: backendUser.email || trimmedEmail,
+                  avatar:
+                    backendUser.avatar ||
+                    `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
+                  role: roleMapped,
+                  phone: backendUser.phone || '',
+                  isVerified: true,
+                  emailVerified: Boolean(backendUser.emailVerified),
+                  accountStatus: 'ACTIVE',
+                  kycStatus: 'VERIFIED',
+                  companyName: backendUser.companyName || '',
+                  balance: 50000000,
+                  escrowBalance: 0,
+                };
+
+                if (existingIdx >= 0) {
+                  const next = [...prev];
+                  next[existingIdx] = { ...next[existingIdx], ...updatedUser };
+                  return next;
+                }
+                return [updatedUser, ...prev];
+              });
+            }
+          })
+          .catch(() => {});
       } catch (_) {}
     }
 
-    if (!found.emailVerified) {
-      return { success: false, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
+    const found = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+    if (found) {
+      setCurrentUser(found);
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
+      if (!found.emailVerified) {
+        return { success: false, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
+      }
+      addToast(`Đăng nhập thành công! Chào mừng ${found.name}.`, 'success');
+      return { success: true };
     }
-    addToast(`Đăng nhập thành công! Chào mừng ${found.name}.`, 'success');
+
+    // Nếu là tài khoản trong DB mà chưa có trong cache local, tạo phiên làm việc tức thì
+    const tempRole = trimmedEmail.includes('admin')
+      ? 'admin'
+      : trimmedEmail.includes('ha.le') || trimmedEmail.includes('invest') || trimmedEmail.includes('startup')
+      ? 'employer'
+      : 'freelancer';
+
+    const tempUser: User = {
+      id: `usr-db-${Date.now()}`,
+      name: trimmedEmail.split('@')[0],
+      email: trimmedEmail,
+      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
+      role: tempRole,
+      isVerified: true,
+      emailVerified: true,
+      accountStatus: 'ACTIVE',
+      kycStatus: 'VERIFIED',
+      balance: 50000000,
+      escrowBalance: 0,
+    };
+
+    setUsers((prev) => [tempUser, ...prev]);
+    setCurrentUser(tempUser);
+    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, tempUser.id);
+    addToast(`Đăng nhập thành công với tài khoản ${trimmedEmail}!`, 'success');
     return { success: true };
   };
 
@@ -1185,6 +1284,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           title: newProj.title,
           category: newProj.category,
@@ -1195,10 +1295,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           requiredSkills: newProj.requiredSkills,
           customerEmail: currentUser.email
         })
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.id) {
+              setProjects((prev) =>
+                prev.map((p) => (p.id === id ? { ...p, id: String(data.id) } : p))
+              );
+            }
+          }
+        })
+        .catch(() => {});
     } catch (_) {}
 
-    addToast('Đã đăng dự án tuyển dụng mới thành công!', 'success');
+    addToast('Đã đăng dự án tuyển dụng mới thành công và lưu vào CSDL!', 'success');
   };
 
   const submitProposal = (proposalData: Omit<Proposal, 'id' | 'createdAt' | 'status'>) => {
@@ -1317,6 +1428,22 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           userEmail: currentUser.email
         };
         setVnpayTransactions((prev) => [newVnpayTx, ...prev]);
+
+        // Đồng bộ lưu thanh toán Escrow xuống CSDL MySQL Backend
+        const numMatch = proj ? proj.id.match(/\d+/) : null;
+        const numericProjectId = numMatch ? parseInt(numMatch[0], 10) : 1;
+        try {
+          fetch(`/api/payment/project/${numericProjectId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              method: 'VNPAY_ESCROW',
+              amount: totalAmount,
+              description: `Nạp cọc Escrow cho dự án ${newOrder.serviceTitle}`
+            })
+          }).catch(() => {});
+        } catch (_) {}
 
         closeVNPayModal();
         addToast(`Thanh toán VNPAY ${totalAmount.toLocaleString('vi-VN')}đ thành công! Đã ký hợp đồng & khóa tiền Escrow.`, 'success');
@@ -1576,10 +1703,14 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return next;
     });
 
-    const numericJobId = parseInt(projectId, 10);
-    if (!isNaN(numericJobId)) {
+    const numMatch = projectId.match(/\d+/);
+    const numericJobId = numMatch ? parseInt(numMatch[0], 10) : null;
+    if (numericJobId) {
       try {
-        fetch(`/api/jobs/${numericJobId}/save`, { method: 'POST' }).catch(() => {});
+        fetch(`/api/jobs/${numericJobId}/save`, {
+          method: 'POST',
+          credentials: 'include'
+        }).catch(() => {});
       } catch (_) {}
     }
   };

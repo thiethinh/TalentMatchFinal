@@ -14,7 +14,7 @@ export const MarketLayout: React.FC<MarketLayoutProps> = ({ children }) => {
   const isEmailVerified = currentUser.role === 'guest' || Boolean(currentUser.emailVerified);
 
   return (
-    <div className="min-h-screen bg-[#f3f4fa] text-[#111426] flex flex-col font-sans antialiased selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans antialiased selection:bg-[#2563EB] selection:text-white">
       {/* 1. Left Fixed Sidebar */}
       <MarketSidebar
         isOpenMobile={mobileSidebarOpen}

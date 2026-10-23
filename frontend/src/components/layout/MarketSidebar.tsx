@@ -17,55 +17,63 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
     openWithdrawModal,
     openVNPayModal,
     openUserProfileModal,
-    logout,
-    unreadNotificationsCount
+    logout
   } = useDemo();
 
   const role = currentUser.role; // 'guest' | 'freelancer' | 'employer' | 'admin'
 
+  // Soft & Flat navLinkClass
+  // Mặc định: Chữ và Icon #475569
+  // Active: Nền #EFF6FF, Chữ & Icon #1D4ED8
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `min-h-[42px] px-3.5 py-2.5 flex items-center justify-between rounded-xl text-xs font-semibold transition-all duration-150 ${
+    `min-h-[42px] px-3.5 py-2.5 flex items-center justify-between rounded-xl text-xs font-semibold transition-colors ${
       isActive
-        ? 'bg-blue-600 text-white shadow-sm font-bold'
-        : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+        ? 'bg-[#EFF6FF] text-[#1D4ED8] font-bold'
+        : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70'
     }`;
 
   const actionBtnClass =
-    'w-full min-h-[40px] px-3.5 py-2.5 flex items-center justify-between rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors text-left cursor-pointer';
+    'w-full min-h-[40px] px-3.5 py-2.5 flex items-center justify-between rounded-xl text-xs font-semibold text-[#475569] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70 transition-colors text-left cursor-pointer';
 
   return (
     <>
       {/* Mobile Backdrop */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Left Sidebar Shell (w-64 = 256px) */}
+      {/* Left Sidebar Shell (w-64 = 256px, Nền: #F1F5F9, Viền: #E2E8F0) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-white flex flex-col border-r border-slate-800 transition-transform duration-200 ease-out lg:translate-x-0 ${
-          isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#F1F5F9] text-[#0F172A] flex flex-col border-r border-[#E2E8F0] transition-transform duration-200 ease-out lg:translate-x-0 ${
+          isOpenMobile ? 'translate-x-0 shadow-lg' : '-translate-x-full'
         }`}
       >
         {/* 1. Brand Logo */}
-        <div className="h-16 px-5 flex items-center justify-between border-b border-slate-800 shrink-0 bg-[#0f172a]">
+        <div className="h-16 px-4 flex items-center justify-between border-b border-[#E2E8F0] shrink-0 bg-[#F1F5F9]">
           <Link
             to="/"
             onClick={onCloseMobile}
             className="inline-flex items-center gap-2.5 group"
           >
-            <span className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-600/30">
-              TM
-            </span>
-            <div className="leading-tight">
-              <strong className="block text-base font-extrabold tracking-tight text-white group-hover:text-blue-400 transition-colors">
-                TalentMatch
-              </strong>
-              <small className="block text-[9px] font-semibold text-slate-400 tracking-wider uppercase">
-                Freelance Marketplace
-              </small>
+            <div className="relative shrink-0 flex items-center justify-center p-1 bg-white rounded-xl shadow-xs border border-[#E2E8F0] group-hover:scale-105 transition-all">
+              <img
+                src="/logo_talentMatch.png"
+                alt="TalentMatch Logo"
+                className="h-8 w-8 object-contain rounded-lg"
+              />
+            </div>
+            <div className="flex flex-col text-left">
+              <div className="flex items-center tracking-tight font-extrabold text-base leading-none">
+                <span className="text-[#0F172A] group-hover:text-[#2563EB] transition-colors">Talent</span>
+                <span className="text-[#2563EB]">Match</span>
+                <span className="text-[9px] font-bold text-[#1D4ED8] ml-1.5 px-1.5 py-0.5 bg-[#EFF6FF] border border-[#BFDBFE] rounded leading-none">VN</span>
+              </div>
+              <span className="text-[9px] font-semibold text-[#64748B] tracking-wider uppercase mt-1">
+                Freelancer Market
+              </span>
             </div>
           </Link>
 
@@ -73,24 +81,24 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800"
+            className="lg:hidden text-[#64748B] hover:text-[#0F172A] p-1.5 rounded-lg hover:bg-[#E2E8F0]"
             aria-label="Đóng Menu"
           >
             <i className="fa-solid fa-xmark text-lg" />
           </button>
         </div>
 
-        {/* 2. User Info Card (Phân chia quyền theo Tài khoản) */}
-        <div className="p-3.5 border-b border-slate-800 bg-slate-900/60 shrink-0">
+        {/* 2. User Info Card / Wallet Box */}
+        <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F1F5F9] shrink-0">
           {role === 'guest' ? (
-            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
+            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs space-y-2">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#E2E8F0] text-[#64748B] flex items-center justify-center text-xs font-bold shrink-0">
                   <i className="fa-regular fa-user" />
                 </div>
                 <div className="min-w-0">
-                  <strong className="block text-xs font-bold text-slate-200 truncate">Khách vãng lai</strong>
-                  <small className="block text-[10px] text-slate-400">Chưa đăng nhập</small>
+                  <strong className="block text-xs font-bold text-[#1E293B] truncate">Khách vãng lai</strong>
+                  <small className="block text-[10px] text-[#64748B]">Chưa đăng nhập</small>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-1.5 pt-1">
@@ -100,7 +108,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     onCloseMobile();
                     openAuthModal('login');
                   }}
-                  className="py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold text-center transition-colors cursor-pointer"
+                  className="py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg text-xs font-bold text-center transition-colors cursor-pointer shadow-xs"
                 >
                   Đăng nhập
                 </button>
@@ -110,60 +118,34 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     onCloseMobile();
                     openAuthModal('register');
                   }}
-                  className="py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-bold text-center transition-colors cursor-pointer"
+                  className="py-1.5 bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#334155] border border-[#CBD5E1] rounded-lg text-xs font-bold text-center transition-colors cursor-pointer"
                 >
                   Đăng ký
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700 space-y-2">
-              <div className="flex items-center gap-2.5">
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  className="w-9 h-9 rounded-full object-cover border border-slate-600 shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <strong className="block text-xs font-bold text-white truncate">{currentUser.name}</strong>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                        role === 'employer'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : role === 'admin'
-                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}
-                    >
-                      {role === 'employer' ? 'Nhà Tuyển Dụng' : role === 'admin' ? 'Quản Trị Viên' : 'Freelancer'}
-                    </span>
-                    {currentUser.isVerified && (
-                      <i className="fa-solid fa-circle-check text-blue-400 text-[11px]" title="Đã xác thực eKYC" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Số dư ví khả dụng */}
-              <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">Số dư ví:</span>
-                <b className="text-emerald-400 font-mono font-bold">
-                  {(currentUser.balance || 0).toLocaleString('vi-VN')} đ
-                </b>
-              </div>
+            /* Chỉ hiển thị số dư ví, nền trắng viền xám mềm mại */
+            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs flex items-center justify-between text-xs">
+              <span className="text-[#475569] font-medium flex items-center gap-2">
+                <i className="fa-solid fa-wallet text-[#059669] text-sm" />
+                <span>Số dư ví:</span>
+              </span>
+              <b className="text-[#059669] font-mono font-bold text-sm">
+                {(currentUser.balance || 0).toLocaleString('vi-VN')} đ
+              </b>
             </div>
           )}
         </div>
 
         {/* 3. Navigation List (Phân chia quyền theo Role) */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-300">
           
           {/* ================= A. KHÁCH (GUEST) ================= */}
           {role === 'guest' && (
             <div>
-              <div className="px-3 pb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-                Chức Năng Khám Phá
+              <div className="px-3 pb-2 text-[11px] font-extrabold text-[#64748B] uppercase tracking-widest">
+                Khám Phá
               </div>
               <nav className="space-y-1">
                 <NavLink to="/" end className={navLinkClass} onClick={onCloseMobile}>
@@ -186,7 +168,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <a href="/#how" className={actionBtnClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-shield-halved w-4 text-center text-sm text-emerald-400" />
+                    <i className="fa-solid fa-shield-halved w-4 text-center text-sm text-[#059669]" />
                     <span>Quy trình Escrow VNPAY</span>
                   </span>
                 </a>
@@ -194,14 +176,11 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
             </div>
           )}
 
-          {/* ================= B. FREELANCER (ỨNG VIÊN) ================= */}
+          {/* ================= B. FREELANCER ================= */}
           {role === 'freelancer' && (
             <div>
-              <div className="px-3 pb-2 text-[10px] font-extrabold text-blue-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Dành Cho Freelancer</span>
-                <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono">
-                  ỨNG VIÊN
-                </span>
+              <div className="px-3 pb-2 text-[11px] font-extrabold text-[#1D4ED8] uppercase tracking-widest">
+                Freelancer
               </div>
               <nav className="space-y-1">
                 <NavLink to="/" end className={navLinkClass} onClick={onCloseMobile}>
@@ -212,7 +191,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-magnifying-glass w-4 text-center text-sm text-amber-400" />
+                    <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
                     <span>Tìm việc & nộp báo giá</span>
                   </span>
                 </NavLink>
@@ -224,20 +203,15 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-briefcase w-4 text-center text-sm text-emerald-400" />
+                    <i className="fa-solid fa-file-contract w-4 text-center text-sm text-[#059669]" />
                     <span>Hợp đồng & nộp bài</span>
                   </span>
                 </NavLink>
                 <NavLink to="/kyc" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-id-card w-4 text-center text-sm text-indigo-400" />
-                    <span>Xác thực danh tính eKYC</span>
+                    <i className="fa-solid fa-id-card w-4 text-center text-sm" />
+                    <span>Xác thực eKYC</span>
                   </span>
-                  {currentUser.isVerified && (
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
-                      Đã duyệt
-                    </span>
-                  )}
                 </NavLink>
                 <button
                   type="button"
@@ -248,10 +222,10 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   className={actionBtnClass}
                 >
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-wallet w-4 text-center text-sm text-emerald-400" />
+                    <i className="fa-solid fa-wallet w-4 text-center text-sm text-[#059669]" />
                     <span>Rút tiền về Ngân hàng</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-slate-500" />
+                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
                 <button
                   type="button"
@@ -262,10 +236,10 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   className={actionBtnClass}
                 >
                   <span className="flex items-center gap-3">
-                    <i className="fa-regular fa-user w-4 text-center text-sm text-sky-400" />
+                    <i className="fa-regular fa-user w-4 text-center text-sm text-[#2563EB]" />
                     <span>Hồ sơ & Portfolio cá nhân</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-slate-500" />
+                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
               </nav>
             </div>
@@ -274,11 +248,8 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
           {/* ================= C. EMPLOYER (NHÀ TUYỂN DỤNG) ================= */}
           {role === 'employer' && (
             <div>
-              <div className="px-3 pb-2 text-[10px] font-extrabold text-emerald-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Dành Cho Doanh Nghiệp</span>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono">
-                  EMPLOYER
-                </span>
+              <div className="px-3 pb-2 text-[11px] font-extrabold text-[#059669] uppercase tracking-widest">
+                Nhà Tuyển Dụng
               </div>
               <nav className="space-y-1">
                 <NavLink to="/" end className={navLinkClass} onClick={onCloseMobile}>
@@ -289,7 +260,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/create-project" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-circle-plus w-4 text-center text-sm text-emerald-400" />
+                    <i className="fa-solid fa-circle-plus w-4 text-center text-sm text-[#059669]" />
                     <span>Đăng bài tuyển dụng mới</span>
                   </span>
                 </NavLink>
@@ -301,13 +272,13 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-wand-magic-sparkles w-4 text-center text-sm text-indigo-400" />
+                    <i className="fa-solid fa-users w-4 text-center text-sm text-[#2563EB]" />
                     <span>Tìm kiếm & Mời Freelancer</span>
                   </span>
                 </NavLink>
                 <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-file-contract w-4 text-center text-sm text-blue-400" />
+                    <i className="fa-solid fa-file-contract w-4 text-center text-sm" />
                     <span>Hợp đồng & Ký quỹ Escrow</span>
                   </span>
                 </NavLink>
@@ -325,10 +296,10 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   className={actionBtnClass}
                 >
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-credit-card w-4 text-center text-sm text-amber-400" />
+                    <i className="fa-solid fa-credit-card w-4 text-center text-sm text-[#D97706]" />
                     <span>Nạp tiền cọc VNPAY</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-slate-500" />
+                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
                 <button
                   type="button"
@@ -339,10 +310,10 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   className={actionBtnClass}
                 >
                   <span className="flex items-center gap-3">
-                    <i className="fa-regular fa-building w-4 text-center text-sm text-emerald-400" />
+                    <i className="fa-regular fa-building w-4 text-center text-sm text-[#059669]" />
                     <span>Hồ sơ Doanh nghiệp</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-slate-500" />
+                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
               </nav>
             </div>
@@ -351,16 +322,13 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
           {/* ================= D. ADMIN (QUẢN TRỊ VIÊN) ================= */}
           {role === 'admin' && (
             <div>
-              <div className="px-3 pb-2 text-[10px] font-extrabold text-rose-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Quản Trị Hệ Thống</span>
-                <span className="text-[9px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-mono">
-                  ADMIN
-                </span>
+              <div className="px-3 pb-2 text-[11px] font-extrabold text-[#DC2626] uppercase tracking-widest">
+                Quản Trị Viên
               </div>
               <nav className="space-y-1">
                 <NavLink to="/admin/dashboard" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-gauge-high w-4 text-center text-sm text-rose-400" />
+                    <i className="fa-solid fa-gauge-high w-4 text-center text-sm text-[#DC2626]" />
                     <span>Bảng điều khiển Admin</span>
                   </span>
                 </NavLink>
@@ -372,13 +340,13 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-users-gear w-4 text-center text-sm text-indigo-400" />
+                    <i className="fa-solid fa-users-gear w-4 text-center text-sm" />
                     <span>Quản lý thành viên & eKYC</span>
                   </span>
                 </NavLink>
                 <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-scale-balanced w-4 text-center text-sm text-amber-400" />
+                    <i className="fa-solid fa-scale-balanced w-4 text-center text-sm text-[#D97706]" />
                     <span>Trọng tài Tranh chấp & Escrow</span>
                   </span>
                 </NavLink>
@@ -388,33 +356,10 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
 
           {/* ================= HỖ TRỢ & HƯỚNG DẪN ================= */}
           <div>
-            <div className="px-3 pb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+            <div className="px-3 pb-2 text-[11px] font-extrabold text-[#64748B] uppercase tracking-widest">
               Thông Tin & Hỗ Trợ
             </div>
             <nav className="space-y-1">
-              {role !== 'guest' && (
-                <NavLink
-                  to={role === 'freelancer' ? '/freelancer/dashboard' : '/employer/dashboard'}
-                  className={navLinkClass}
-                  onClick={onCloseMobile}
-                >
-                  <span className="flex items-center gap-3">
-                    <i className="fa-regular fa-bell w-4 text-center text-sm text-amber-400" />
-                    <span>Thông báo hệ thống</span>
-                  </span>
-                  {unreadNotificationsCount > 0 && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-600 text-white">
-                      {unreadNotificationsCount}
-                    </span>
-                  )}
-                </NavLink>
-              )}
-              <a href="/#how" className={actionBtnClass} onClick={onCloseMobile}>
-                <span className="flex items-center gap-3">
-                  <i className="fa-regular fa-circle-question w-4 text-center text-sm text-slate-400" />
-                  <span>Quy trình làm việc 4 bước</span>
-                </span>
-              </a>
               <button
                 type="button"
                 onClick={() => {
@@ -423,7 +368,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 className={actionBtnClass}
               >
                 <span className="flex items-center gap-3">
-                  <i className="fa-solid fa-headset w-4 text-center text-sm text-slate-400" />
+                  <i className="fa-solid fa-headset w-4 text-center text-sm text-[#64748B]" />
                   <span>Trung tâm trợ giúp 24/7</span>
                 </span>
               </button>
@@ -431,13 +376,13 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
           </div>
         </div>
 
-        {/* 4. Bottom Action Box */}
-        <div className="p-3.5 border-t border-slate-800 bg-slate-900/90 shrink-0 space-y-2">
+        {/* 4. Bottom Action Box (CTA: #2563EB với chữ màu trắng) */}
+        <div className="p-3.5 border-t border-[#E2E8F0] bg-[#F1F5F9] shrink-0 space-y-2">
           {role === 'employer' ? (
             <Link
               to="/create-project"
               onClick={onCloseMobile}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
             >
               <i className="fa-solid fa-circle-plus text-xs" />
               <span>+ Đăng dự án mới</span>
@@ -446,16 +391,16 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
             <Link
               to="/projects"
               onClick={onCloseMobile}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
             >
-              <i className="fa-solid fa-magnifying-glass text-xs" />
+              <i className="fa-solid fa-briefcase text-xs" />
               <span>Tìm việc làm ngay</span>
             </Link>
           ) : role === 'admin' ? (
             <Link
               to="/admin/dashboard"
               onClick={onCloseMobile}
-              className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
             >
               <i className="fa-solid fa-gauge-high text-xs" />
               <span>Vào trang quản trị</span>
@@ -467,7 +412,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 onCloseMobile();
                 openAuthModal('register');
               }}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              className="w-full py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
               <i className="fa-solid fa-rocket text-xs" />
               <span>Bắt đầu ngay miễn phí</span>
@@ -482,7 +427,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 onCloseMobile();
                 logout();
               }}
-              className="w-full py-2 bg-slate-800/80 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/60 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full py-2 bg-white hover:bg-rose-50 text-[#64748B] hover:text-[#DC2626] border border-[#E2E8F0] hover:border-rose-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <i className="fa-solid fa-right-from-bracket text-xs" />
               <span>Đăng xuất</span>

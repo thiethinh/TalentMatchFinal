@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDemo } from '../context/DemoContext';
 import type { FreelancerProfile, PortfolioItem, Project } from '../types';
 
@@ -124,6 +124,10 @@ export const Freelancers: React.FC = () => {
     );
   };
 
+  // Pagination State
+  const ITEMS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
   // Reset Filters
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -138,6 +142,7 @@ export const Freelancers: React.FC = () => {
     setSelectedLocation('ALL');
     setSelectedSkills([]);
     setSortBy('credit_desc');
+    setCurrentPage(1);
   };
 
   // Filter logic
@@ -265,6 +270,53 @@ export const Freelancers: React.FC = () => {
     selectedSkills
   ]);
 
+  // Reset page to 1 whenever any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    selectedMainCategory,
+    selectedSubcategory,
+    selectedRatePreset,
+    minRateInput,
+    maxRateInput,
+    selectedBadge,
+    minRating,
+    minCompletedOrders,
+    selectedLocation,
+    selectedSkills,
+    sortBy
+  ]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredFreelancers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedFreelancers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredFreelancers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredFreelancers, currentPage]);
+
+  const pageNumbers = useMemo(() => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  }, [totalPages, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 120, behavior: 'smooth' });
+  };
+
   const handleOpenInvite = (free: FreelancerProfile) => {
     setSelectedFreelancer(free);
     setInviteMessage(`Chào ${free.name}, mình đại diện doanh nghiệp rất ấn tượng với profile của bạn và muốn mời bạn phụ trách dự án này.`);
@@ -284,40 +336,47 @@ export const Freelancers: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* 1. Header Hero Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-8 text-white shadow-sm relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 bg-slate-800 text-slate-200 border border-slate-700 px-3 py-1 rounded-md text-xs font-medium">
-            <i className="fa-solid fa-circle-check text-blue-400 text-xs" />
-            <span>Đội Ngũ Freelancer Đã Xác Thực Danh Tính eKYC & Năng Lực Thực Tế</span>
+      {/* 1. Header Hero Banner - Ultra-Minimal & Smart (#DBEAFE, #1E3A8A) */}
+      <div className="bg-[#DBEAFE] border border-[#BFDBFE] rounded-2xl p-5 sm:p-6 text-[#1E3A8A] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 bg-white text-[#1D4ED8] border border-[#BFDBFE] px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+            <i className="fa-solid fa-circle-check text-[#059669] text-xs" />
+            <span>Freelancer Đã Xác Thực eKYC & Năng Lực</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#1E3A8A]">
             Khám Phá Hồ Sơ Freelancer Chuyên Nghiệp
           </h1>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-            Xem hồ sơ năng lực chi tiết, điểm tín nhiệm TalentCredit, đánh giá từ khách hàng trước và các dự án thực tế trong Portfolio của từng chuyên gia.
+          <p className="text-[#1E3A8A]/80 text-xs sm:text-sm font-normal">
+            Hồ sơ năng lực thực tế, điểm tín nhiệm TalentCredit và đánh giá hợp đồng hoàn tất.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="bg-white text-[#1E3A8A] border border-[#BFDBFE] px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs flex items-center gap-1.5">
+            <i className="fa-solid fa-users text-[#2563EB] text-xs" />
+            <span>{filteredFreelancers.length} chuyên gia sẵn sàng</span>
+          </span>
         </div>
       </div>
 
       {/* 2. Main Search & Filter Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
-        {/* Left Sidebar: Detailed Filters */}
+        {/* Left Sidebar: Detailed Filters (Nền Trắng #FFFFFF, viền xám nhạt #E5E7EB với đổ bóng mờ cực nhẹ) */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs space-y-6 sticky top-24">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-xs space-y-6 sticky top-24">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2 font-bold text-slate-900 text-sm">
-                <i className="fa-solid fa-sliders text-indigo-600 text-xs" />
+            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3">
+              <div className="flex items-center space-x-2 font-bold text-[#0F172A] text-sm">
+                <i className="fa-solid fa-sliders text-[#2563EB] text-xs" />
                 <span>Bộ Lọc Freelancer</span>
               </div>
               {activeFiltersCount > 0 && (
                 <button
                   onClick={handleResetFilters}
-                  className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark text-xs" />
                   <span>Xóa lọc ({activeFiltersCount})</span>
@@ -567,27 +626,28 @@ export const Freelancers: React.FC = () => {
         <div className="lg:col-span-3 space-y-5">
           
           {/* Toolbar: Counter & Sort */}
-          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+          {/* Toolbar: Counter & Sort (Trắng #FFFFFF, viền xám nhạt #E5E7EB) */}
+          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-slate-900 text-sm">
-                Tìm thấy <span className="text-indigo-600 font-bold">{filteredFreelancers.length}</span> chuyên gia phù hợp
+              <span className="font-bold text-[#0F172A] text-sm">
+                Tìm thấy <span className="text-[#2563EB] font-bold">{filteredFreelancers.length}</span> chuyên gia phù hợp
               </span>
               {activeFiltersCount > 0 && (
-                <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-[#EFF6FF] text-[#1D4ED8] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#BFDBFE]">
                   Đang lọc {activeFiltersCount} tiêu chí
                 </span>
               )}
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1.5 text-xs text-slate-600">
-                <i className="fa-solid fa-arrow-down-wide-short text-slate-400 text-xs" />
+              <div className="flex items-center space-x-1.5 text-xs text-[#475569]">
+                <i className="fa-solid fa-arrow-down-wide-short text-[#64748B] text-xs" />
                 <span className="font-bold hidden sm:inline">Sắp xếp:</span>
                 <div className="relative">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-300 text-slate-800 font-bold text-xs rounded-md focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
+                    className="appearance-none pl-3 pr-8 py-2 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#0F172A] font-bold text-xs rounded-lg focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-colors cursor-pointer"
                   >
                     <option value="credit_desc">Điểm TalentCredit cao nhất</option>
                     <option value="rating_desc">Đánh giá sao cao nhất</option>
@@ -595,7 +655,7 @@ export const Freelancers: React.FC = () => {
                     <option value="rate_asc">Giá theo giờ: Thấp đến Cao</option>
                     <option value="rate_desc">Giá theo giờ: Cao đến Thấp</option>
                   </select>
-                  <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <i className="fa-solid fa-chevron-down text-[#64748B] text-xs absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -604,12 +664,12 @@ export const Freelancers: React.FC = () => {
           {/* Active Skills Badges */}
           {selectedSkills.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold text-slate-500">Kỹ năng lọc:</span>
+              <span className="text-[11px] font-bold text-[#64748B]">Kỹ năng lọc:</span>
               {selectedSkills.map((sk) => (
                 <button
                   key={sk}
                   onClick={() => handleToggleSkill(sk)}
-                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1.5 cursor-pointer"
+                  className="bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE] text-xs font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{sk}</span>
                   <i className="fa-solid fa-xmark text-xs" />
@@ -620,29 +680,30 @@ export const Freelancers: React.FC = () => {
 
           {/* Freelancers Grid */}
           {filteredFreelancers.length === 0 ? (
-            <div className="bg-white rounded-lg border border-slate-200 p-12 text-center space-y-4 shadow-xs">
-              <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-md flex items-center justify-center mx-auto">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-12 text-center space-y-4 shadow-xs">
+              <div className="w-14 h-14 bg-[#F1F5F9] text-[#64748B] rounded-xl flex items-center justify-center mx-auto">
                 <i className="fa-solid fa-magnifying-glass text-xl" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Không tìm thấy ứng viên nào phù hợp</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                <h3 className="text-base font-bold text-[#0F172A]">Không tìm thấy ứng viên nào phù hợp</h3>
+                <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
                   Hãy thử điều chỉnh lại mức thù lao, giảm yêu cầu điểm đánh giá hoặc chọn lại lĩnh vực chuyên môn.
                 </p>
               </div>
               <button
                 onClick={handleResetFilters}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-md transition-all shadow-xs cursor-pointer"
+                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs rounded-lg transition-colors shadow-xs cursor-pointer"
               >
                 Xóa tất cả bộ lọc
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredFreelancers.map((free) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {paginatedFreelancers.map((free) => (
                 <div
                   key={free.id}
-                  className="bg-white rounded-lg border border-slate-200 p-6 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between space-y-5 group relative"
+                  className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-xs hover:border-[#93C5FD] transition-colors flex flex-col justify-between space-y-5 group relative"
                 >
                   <div className="space-y-4">
                     
@@ -803,7 +864,7 @@ export const Freelancers: React.FC = () => {
                     {currentUser.role === 'employer' ? (
                       <button
                         onClick={() => handleOpenInvite(free)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-md transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
                       >
                         <i className="fa-solid fa-paper-plane text-xs" />
                         <span>Mời Báo Giá</span>
@@ -817,9 +878,9 @@ export const Freelancers: React.FC = () => {
                             addToast(`Đang xem hồ sơ của ${free.name}`, 'info');
                           }
                         }}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
                       >
-                        <i className="fa-solid fa-eye text-slate-500 text-xs" />
+                        <i className="fa-solid fa-eye text-xs" />
                         <span>Xem Chi Tiết</span>
                       </button>
                     )}
@@ -828,7 +889,60 @@ export const Freelancers: React.FC = () => {
                 </div>
               ))}
             </div>
-          )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="text-xs text-[#64748B]">
+                  Hiển thị <span className="font-bold text-[#0F172A]">{(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredFreelancers.length)}</span> trong tổng số <span className="font-bold text-[#0F172A]">{filteredFreelancers.length}</span> chuyên gia
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Prev */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg border border-[#E5E7EB] text-xs font-semibold text-[#475569] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-chevron-left text-[10px]" />
+                    <span>Trước</span>
+                  </button>
+
+                  {/* Page numbers */}
+                  {pageNumbers.map((p, idx) => (
+                    p === '...' ? (
+                      <span key={`dots-${idx}`} className="px-2 text-xs text-[#94A3B8] font-bold">...</span>
+                    ) : (
+                      <button
+                        key={`page-${p}`}
+                        type="button"
+                        onClick={() => handlePageChange(p as number)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          currentPage === p
+                            ? 'bg-[#2563EB] text-white shadow-xs'
+                            : 'bg-white border border-[#E5E7EB] text-[#475569] hover:bg-[#F1F5F9]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  ))}
+
+                  {/* Next */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg border border-[#E5E7EB] text-xs font-semibold text-[#475569] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Sau</span>
+                    <i className="fa-solid fa-chevron-right text-[10px]" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         </div>
 

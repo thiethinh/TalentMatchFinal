@@ -213,7 +213,7 @@ export const FreelancerDashboard: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-sm border border-blue-200 mb-1.5">
             <i className="fa-solid fa-user-check text-xs" />
-            <span>Tài Khoản Freelancer Ứng Viên</span>
+            <span>Tài Khoản Freelancer</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
             Góc Làm Việc Freelancer — {currentUser.name}

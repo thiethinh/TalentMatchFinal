@@ -45,7 +45,7 @@ export const CreateProject: React.FC = () => {
           <span>Đăng Dự Án Tuyển Dụng Dịch Vụ Mới</span>
         </h1>
         <p className="text-slate-500 text-xs sm:text-sm">
-          Nhận báo giá từ hàng nghìn Freelancer chuyên nghiệp tại Việt Nam. Bạn chỉ nạp tiền Escrow khi chọn được ứng viên ưng ý.
+          Nhận báo giá từ hàng nghìn Freelancer chuyên nghiệp tại Việt Nam. Bạn chỉ nạp tiền Escrow khi chọn được Freelancer phù hợp.
         </p>
       </div>
 

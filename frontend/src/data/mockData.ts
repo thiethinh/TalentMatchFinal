@@ -13,7 +13,7 @@ import type {
 
 export const GUEST_USER: User = {
   id: 'usr-guest',
-  name: 'Khách Vãng Lai',
+  name: 'Khách',
   email: 'guest@talentmatch.vn',
   avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=guest-user',
   role: 'guest',

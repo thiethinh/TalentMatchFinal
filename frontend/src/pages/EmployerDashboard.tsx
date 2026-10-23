@@ -84,7 +84,7 @@ export const EmployerDashboard: React.FC = () => {
             Bảng Điều Khiển Tuyển Dụng — {currentUser.name}
           </h1>
           <p className="text-slate-500 text-xs mt-1">
-            Quản lý dự án đăng tuyển, duyệt báo giá ứng viên và nghiệm thu giải ngân qua cổng Escrow VNPAY.
+            Quản lý dự án đăng tuyển, duyệt báo giá Freelancer và nghiệm thu giải ngân qua cổng Escrow VNPAY.
           </p>
         </div>
 

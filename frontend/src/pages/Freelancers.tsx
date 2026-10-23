@@ -685,7 +685,7 @@ export const Freelancers: React.FC = () => {
                 <i className="fa-solid fa-magnifying-glass text-xl" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#0F172A]">Không tìm thấy ứng viên nào phù hợp</h3>
+                <h3 className="text-base font-bold text-[#0F172A]">Không tìm thấy Freelancer nào phù hợp</h3>
                 <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
                   Hãy thử điều chỉnh lại mức thù lao, giảm yêu cầu điểm đánh giá hoặc chọn lại lĩnh vực chuyên môn.
                 </p>
@@ -1018,7 +1018,7 @@ export const Freelancers: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-slate-900 font-bold text-sm">Gửi Lời Mời Nhận Dự Án</h3>
-                  <p className="text-[11px] text-slate-500 font-normal">Ứng viên: <strong className="text-indigo-600 font-bold">{selectedFreelancer.name}</strong></p>
+                  <p className="text-[11px] text-slate-500 font-normal">Freelancer: <strong className="text-indigo-600 font-bold">{selectedFreelancer.name}</strong></p>
                 </div>
               </div>
               <button
@@ -1039,7 +1039,7 @@ export const Freelancers: React.FC = () => {
                   onChange={(e) => setInviteMessage(e.target.value)}
                   rows={3}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
-                  placeholder="Nhập lời chào hoặc ghi chú đặc biệt cho ứng viên..."
+                  placeholder="Nhập lời chào hoặc ghi chú đặc biệt cho Freelancer..."
                 />
               </div>
 

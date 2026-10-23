@@ -85,7 +85,7 @@ export const Home: React.FC = () => {
                 className="px-5 py-2.5 bg-white hover:bg-[#F8FAFC] text-[#1E3A8A] font-bold text-xs sm:text-sm rounded-xl border border-[#BFDBFE] shadow-2xs transition-colors flex items-center gap-2"
               >
                 <i className="fa-solid fa-users text-xs text-[#2563EB]" />
-                <span>Xem Hồ Sơ Ứng Viên</span>
+                <span>Khám Phá Freelancer</span>
               </Link>
             )}
           </div>
@@ -177,7 +177,7 @@ export const Home: React.FC = () => {
             {
               step: '02',
               title: 'Freelancer Nộp Proposal',
-              desc: 'Ứng viên gửi báo giá, thời hạn bàn giao, giải pháp thực hiện kèm link Portfolio chứng minh năng lực.',
+              desc: 'Freelancer gửi báo giá, thời hạn bàn giao, giải pháp thực hiện kèm link Portfolio chứng minh năng lực.',
               badgeColor: 'bg-[#4338CA] text-white'
             },
             {
@@ -283,7 +283,7 @@ export const Home: React.FC = () => {
         <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-[#0F172A]">
-              Ứng Viên Top Rated & Portfolio Năng Lực
+              Freelancer Nổi Bật & Portfolio Năng Lực
             </h2>
             <p className="text-xs text-[#64748B] mt-0.5">Freelancer có điểm TalentCredit xuất sắc, sẵn sàng nhận dự án.</p>
           </div>

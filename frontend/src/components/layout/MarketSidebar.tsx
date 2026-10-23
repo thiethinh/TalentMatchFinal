@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDemo } from '../../context/DemoContext';
 
 interface MarketSidebarProps {
@@ -11,6 +11,8 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const {
     currentUser,
     openAuthModal,
@@ -21,6 +23,16 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
   } = useDemo();
 
   const role = currentUser.role; // 'guest' | 'freelancer' | 'employer' | 'admin'
+
+  const getAdminLinkClass = (tab: string) => {
+    const currentTab = new URLSearchParams(location.search).get('tab') || 'analytics';
+    const isCurrent = location.pathname === '/admin/dashboard' && currentTab === tab;
+    return `w-full min-h-[40px] px-3.5 py-2.5 flex items-center justify-between rounded-xl text-xs transition-colors cursor-pointer text-left ${
+      isCurrent
+        ? 'bg-[#EFF6FF] text-[#1D4ED8] font-bold'
+        : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#E2E8F0]/70'
+    }`;
+  };
 
   // Soft & Flat navLinkClass
   // Mặc định: Chữ và Icon #475569
@@ -97,7 +109,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   <i className="fa-regular fa-user" />
                 </div>
                 <div className="min-w-0">
-                  <strong className="block text-xs font-bold text-[#1E293B] truncate">Khách vãng lai</strong>
+                  <strong className="block text-xs font-bold text-[#1E293B] truncate">Khách</strong>
                   <small className="block text-[10px] text-[#64748B]">Chưa đăng nhập</small>
                 </div>
               </div>
@@ -326,30 +338,97 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 Quản Trị Viên
               </div>
               <nav className="space-y-1">
-                <NavLink to="/admin/dashboard" className={navLinkClass} onClick={onCloseMobile}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=analytics');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('analytics')}
+                >
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-gauge-high w-4 text-center text-sm text-[#DC2626]" />
-                    <span>Bảng điều khiển Admin</span>
+                    <i className="fa-solid fa-chart-simple w-4 text-center text-sm text-[#2563EB]" />
+                    <span>Tổng quan & Biểu đồ</span>
                   </span>
-                </NavLink>
-                <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=users');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('users')}
+                >
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-users w-4 text-center text-sm" />
+                    <span>Quản lý người dùng</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=projects');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('projects')}
+                >
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
-                    <span>Duyệt tin tuyển dụng</span>
+                    <span>Quản lý dự án</span>
                   </span>
-                </NavLink>
-                <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=transactions');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('transactions')}
+                >
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-users-gear w-4 text-center text-sm" />
-                    <span>Quản lý thành viên & eKYC</span>
+                    <i className="fa-solid fa-credit-card w-4 text-center text-sm text-[#059669]" />
+                    <span>Dòng tiền & VNPay</span>
                   </span>
-                </NavLink>
-                <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=disputes');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('disputes')}
+                >
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-scale-balanced w-4 text-center text-sm text-[#D97706]" />
-                    <span>Trọng tài Tranh chấp & Escrow</span>
+                    <i className="fa-solid fa-scale-balanced w-4 text-center text-sm text-[#DC2626]" />
+                    <span>Trọng tài Tranh chấp</span>
                   </span>
-                </NavLink>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=reviews');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('reviews')}
+                >
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-star w-4 text-center text-sm text-[#D97706]" />
+                    <span>Kiểm duyệt đánh giá</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/admin/dashboard?tab=settings');
+                    onCloseMobile();
+                  }}
+                  className={getAdminLinkClass('settings')}
+                >
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-gear w-4 text-center text-sm text-[#64748B]" />
+                    <span>Cấu hình hệ thống</span>
+                  </span>
+                </button>
               </nav>
             </div>
           )}

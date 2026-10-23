@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
             <i className="fa-solid fa-lock text-blue-500 text-xl shrink-0 mt-0.5" />
             <div>
               <h4 className="font-bold text-white mb-1">Bảo Vệ Hai Chiều</h4>
-              <p className="text-neutral-400 text-xs">Chống bùng tiền cho Freelancer, chống quỵt bài cho Nhà tuyển dụng.</p>
+              <p className="text-neutral-400 text-xs">Bảo đảm chi trả minh bạch cho Freelancer, cam kết bàn giao đúng hạn cho Nhà tuyển dụng.</p>
             </div>
           </div>
 

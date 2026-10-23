@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 import type { AccountStatus } from '../types';
 
@@ -20,9 +21,26 @@ export const AdminDashboard: React.FC = () => {
     resetAllDemoData
   } = useDemo();
 
-  const [activeTab, setActiveTab] = useState<
-    'analytics' | 'users' | 'projects' | 'transactions' | 'disputes' | 'reviews' | 'settings'
-  >('analytics');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['analytics', 'users', 'projects', 'transactions', 'disputes', 'reviews', 'settings'] as const;
+  type AdminTab = typeof validTabs[number];
+
+  const paramTab = searchParams.get('tab') as AdminTab;
+  const [activeTab, setActiveTabState] = useState<AdminTab>(
+    validTabs.includes(paramTab) ? paramTab : 'analytics'
+  );
+
+  const setActiveTab = (tab: AdminTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') as AdminTab;
+    if (tabFromUrl && validTabs.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTabState(tabFromUrl);
+    }
+  }, [searchParams]);
 
   // Time Dimension & Range Filter States
   type TimeRangePreset = 'today' | '7days' | '30days' | 'this_quarter' | 'year_2026' | 'all' | 'custom';
@@ -308,39 +326,62 @@ export const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       
-      {/* 1. MODERN LEFT SIDEBAR */}
-      <aside className="w-full lg:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 shadow-md">
-        
-        {/* Sidebar Brand Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center text-white shadow-xs">
-            <i className="fa-solid fa-shield-halved text-sm" />
+      {/* 1. Admin Top Header Banner (Soft & Flat, #FFFFFF with #E5E7EB border) */}
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-12 h-12 bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE] rounded-xl flex items-center justify-center text-xl shrink-0">
+            <i className="fa-solid fa-shield-halved" />
           </div>
           <div>
-            <div className="font-bold text-white text-base tracking-wide">TalentMatch</div>
-            <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Super Admin Portal</div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">Trung Tâm Quản Trị Hệ Thống</h1>
+              <span className="bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                Super Admin
+              </span>
+            </div>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Giám sát dòng tiền Escrow, phê duyệt dự án, quản lý tài khoản và giải quyết khiếu nại sàn TalentMatch.
+            </p>
           </div>
         </div>
 
-        {/* Sidebar Nav Items */}
-        <nav className="p-3 space-y-1 flex-1">
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2.5 mb-1.5">
-            Quản trị & Giám sát
+        {/* Action & Stats right side */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="bg-[#F8FAFC] border border-[#E5E7EB] px-3.5 py-2 rounded-xl text-xs">
+            <span className="text-[#64748B] text-[11px] block">Ví Escrow bảo chứng:</span>
+            <span className="font-mono font-bold text-[#059669] text-sm">
+              {totalEscrowLocked.toLocaleString('vi-VN')} đ
+            </span>
           </div>
 
+          <button
+            type="button"
+            onClick={resetAllDemoData}
+            className="px-3.5 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#475569] font-bold text-xs rounded-xl border border-[#CBD5E1] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Khôi phục toàn bộ dữ liệu mẫu ban đầu"
+          >
+            <i className="fa-solid fa-rotate-right text-[#2563EB]" />
+            <span>Khôi phục dữ liệu</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Horizontal Soft & Flat Navigation Tabs (Only 1 Sidebar on screen, tabs are horizontal!) */}
+      <div className="bg-white rounded-xl border border-[#E5E7EB] p-2 shadow-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {[
             { id: 'analytics', label: 'Tổng Quan & Biểu Đồ', icon: 'fa-chart-simple', badge: null },
             { id: 'users', label: 'Quản Lý Người Dùng', icon: 'fa-users', badge: users.length },
             { id: 'projects', label: 'Quản Lý Dự Án', icon: 'fa-briefcase', badge: projects.length },
-            { id: 'transactions', label: 'Dòng Tiền & Cổng VNPay', icon: 'fa-credit-card', badge: vnpayTransactions.length },
+            { id: 'transactions', label: 'Dòng Tiền & VNPay', icon: 'fa-credit-card', badge: vnpayTransactions.length },
             {
               id: 'disputes',
               label: 'Trọng Tài Tranh Chấp',
-              icon: 'fa-triangle-exclamation',
+              icon: 'fa-scale-balanced',
               badge: disputes.filter((d) => d.status === 'UNDER_REVIEW').length || null,
-              badgeColor: 'bg-rose-500 text-white'
+              badgeColor: 'bg-[#DC2626] text-white'
             },
             { id: 'reviews', label: 'Kiểm Duyệt Đánh Giá', icon: 'fa-star', badge: reviews.length },
             { id: 'settings', label: 'Cấu Hình Hệ Thống', icon: 'fa-gear', badge: null }
@@ -349,21 +390,20 @@ export const AdminDashboard: React.FC = () => {
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id as any)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'bg-white hover:bg-[#F1F5F9] text-[#475569] border border-transparent'
                 }`}
               >
-                <div className="flex items-center space-x-2.5">
-                  <i className={`fa-solid ${item.icon} text-xs w-4 text-center ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </div>
+                <i className={`fa-solid ${item.icon} text-xs`} />
+                <span>{item.label}</span>
                 {item.badge !== null && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                      item.badgeColor || (isActive ? 'bg-blue-800 text-blue-200' : 'bg-slate-800 text-slate-300')
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      item.badgeColor || (isActive ? 'bg-[#1D4ED8] text-white' : 'bg-[#E2E8F0] text-[#475569]')
                     }`}
                   >
                     {item.badge}
@@ -372,30 +412,11 @@ export const AdminDashboard: React.FC = () => {
               </button>
             );
           })}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-800 space-y-2 text-xs">
-          <div className="bg-slate-800/60 p-2.5 rounded-md border border-slate-700/60 space-y-0.5">
-            <div className="text-[10px] text-slate-400">Escrow Trọng tài:</div>
-            <div className="font-mono font-bold text-emerald-400 text-xs">
-              {totalEscrowLocked.toLocaleString('vi-VN')} đ
-            </div>
-            <div className="text-[9px] text-slate-500">Đang giữ an toàn tại ví sàn</div>
-          </div>
-
-          <button
-            onClick={resetAllDemoData}
-            className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <i className="fa-solid fa-rotate-right text-blue-400 text-[10px]" />
-            <span>Khôi phục dữ liệu gốc</span>
-          </button>
         </div>
-      </aside>
+      </div>
 
-      {/* 2. MAIN CONTENT VIEW */}
-      <main className="flex-1 p-5 lg:p-8 space-y-6 overflow-y-auto">
+      {/* 3. MAIN CONTENT VIEW */}
+      <div className="space-y-6">
         
         {/* ========================================================================= */}
         {/* TAB 1: ANALYTICS DASHBOARD WITH RICH CHARTS */}
@@ -920,7 +941,7 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <option value="ALL">Tất cả vai trò</option>
                   <option value="employer">Nhà tuyển dụng (Employer)</option>
-                  <option value="freelancer">Ứng viên (Freelancer)</option>
+                  <option value="freelancer">Freelancer</option>
                   <option value="admin">Quản trị viên (Admin)</option>
                 </select>
 
@@ -1519,8 +1540,7 @@ export const AdminDashboard: React.FC = () => {
             </form>
           </div>
         )}
-
-      </main>
+      </div>
 
     </div>
   );

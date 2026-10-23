@@ -540,7 +540,7 @@ export const AuthModal: React.FC = () => {
                         <i className="fa-solid fa-user-check text-xs" />
                       </div>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                        Ứng viên
+                        Freelancer
                       </span>
                     </div>
                     <div className="font-bold text-xs text-slate-900">Freelancer</div>
@@ -929,7 +929,7 @@ export const AuthModal: React.FC = () => {
                           <i className="fa-solid fa-user-check text-xs" />
                         </div>
                         <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                          Ứng viên
+                          Freelancer
                         </span>
                       </div>
                       <div className="font-bold text-xs text-slate-900">Freelancer</div>

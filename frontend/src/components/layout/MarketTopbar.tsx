@@ -159,28 +159,6 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
         </form>
       </div>
 
-      {/* Middle: Role-Specific Action Button (Employer: Đăng tin tuyển dụng / Freelancer: Hồ sơ & Portfolio / Admin: None) */}
-      <div className="hidden sm:flex items-center gap-2 shrink-0">
-        {role === 'employer' ? (
-          <Link
-            to="/create-project"
-            className="px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
-          >
-            <i className="fa-solid fa-circle-plus text-xs" />
-            <span>Đăng tin tuyển dụng</span>
-          </Link>
-        ) : role === 'freelancer' ? (
-          <button
-            type="button"
-            onClick={() => (onOpenUserProfileModal ? onOpenUserProfileModal() : demoOpenUserProfileModal())}
-            className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-[#1D4ED8] border border-blue-200 hover:border-blue-300 font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-          >
-            <i className="fa-regular fa-user text-xs text-[#2563EB]" />
-            <span>Hồ sơ & Portfolio</span>
-          </button>
-        ) : null}
-      </div>
-
       {/* Right: Actions, Notifications, User Menu */}
       <div className="flex items-center gap-2.5 shrink-0">
         {!isAuthenticated ? (

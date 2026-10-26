@@ -57,7 +57,8 @@ export const FreelancerDashboard: React.FC = () => {
     toggleSaveProject,
     invitations,
     acceptInvitation,
-    declineInvitation
+    declineInvitation,
+    addToast
   } = useDemo();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'proposals' | 'invitations' | 'saved' | 'profile'>(initialTab);
@@ -72,8 +73,9 @@ export const FreelancerDashboard: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDeliverModal, setShowDeliverModal] = useState(false);
   const [deliveryNote, setDeliveryNote] = useState('');
-  const [demoUrl, setDemoUrl] = useState('https://demo-project.vercel.app');
-  const [fileName, setFileName] = useState('SourceCode_Final_Deliverable_v1.0.zip');
+  const [deliveryUrl, setDeliveryUrl] = useState('');
+  const [deliveryTitle, setDeliveryTitle] = useState('');
+  const [demoUrl, setDemoUrl] = useState('');
 
   // Invitations States & Modals
   const [selectedInvitation, setSelectedInvitation] = useState<ProjectInvitation | null>(null);
@@ -163,16 +165,32 @@ export const FreelancerDashboard: React.FC = () => {
 
   const handleOpenDeliver = (ord: Order) => {
     setSelectedOrder(ord);
+    setDeliveryTitle(`Bàn giao sản phẩm - ${ord.serviceTitle}`);
+    setDeliveryUrl('');
+    setDeliveryNote('');
+    setDemoUrl('');
     setShowDeliverModal(true);
   };
 
   const handleConfirmDeliver = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrder) return;
+    if (!deliveryUrl.trim()) {
+      addToast('Vui lòng nhập đường link sản phẩm bàn giao.', 'warning');
+      return;
+    }
 
-    deliverWork(selectedOrder.id, deliveryNote, fileName, demoUrl);
+    deliverWork(selectedOrder.id, {
+      title: deliveryTitle.trim() || `Bàn giao sản phẩm - ${selectedOrder.serviceTitle}`,
+      deliveryUrl: deliveryUrl.trim(),
+      note: deliveryNote.trim(),
+      demoUrl: demoUrl.trim() || undefined
+    });
     setShowDeliverModal(false);
     setDeliveryNote('');
+    setDeliveryUrl('');
+    setDeliveryTitle('');
+    setDemoUrl('');
   };
 
   const handleAddSkill = (skill: string) => {
@@ -1099,78 +1117,152 @@ export const FreelancerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Deliver Work Modal */}
+      {/* Deliver Work Modal (Link-First with Guidelines) */}
       {showDeliverModal && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmDeliver} className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200">
+          <form onSubmit={handleConfirmDeliver} className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2 text-blue-700 font-bold text-sm">
-                <i className="fa-solid fa-arrow-up-from-bracket text-blue-600 text-sm" />
-                <span>Nộp Sản Phẩm Bàn Giao (Deliver Work)</span>
+                <i className="fa-solid fa-link text-blue-600 text-sm" />
+                <span>Nộp Link Sản Phẩm Bàn Giao (Submit Deliverables)</span>
               </div>
-              <button type="button" onClick={() => setShowDeliverModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setShowDeliverModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer p-1 rounded-lg"
+              >
                 <i className="fa-solid fa-xmark text-sm" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+            <div className="space-y-3.5 text-xs max-h-[75vh] overflow-y-auto pr-1">
+              {/* Order Info */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div className="font-bold text-slate-900 text-xs">{selectedOrder.serviceTitle}</div>
-                <div className="text-slate-600 text-[11px] mt-0.5">Khách hàng: <strong>{selectedOrder.employerName}</strong></div>
+                <div className="text-slate-600 text-[11px] mt-0.5">
+                  Khách hàng: <strong>{selectedOrder.employerName}</strong> | Đơn hàng: <span className="font-mono">{selectedOrder.orderNumber}</span>
+                </div>
               </div>
 
+              {/* Guidelines / Thông tin hướng dẫn nộp link */}
+              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl space-y-1.5 text-xs text-blue-900">
+                <div className="flex items-center gap-1.5 font-bold text-blue-800">
+                  <i className="fa-solid fa-circle-info text-blue-600 text-xs" />
+                  <span>Quy định bàn giao sản phẩm qua Đường dẫn liên kết (Link):</span>
+                </div>
+                <p className="text-[11px] text-blue-800 leading-relaxed">
+                  TalentMatch khuyến khích bàn giao qua link trực tuyến để đảm bảo an toàn, không giới hạn dung lượng và kiểm tra tiện lợi:
+                </p>
+                <ul className="text-[11px] text-blue-700/90 space-y-1 pl-4 list-disc leading-relaxed">
+                  <li><strong>Google Drive / Dropbox:</strong> Vui lòng bật quyền truy cập <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em>.</li>
+                  <li><strong>Figma / Canva:</strong> Đính kèm đường dẫn dự án thiết kế hoặc prototype tương tác.</li>
+                  <li><strong>GitHub / GitLab:</strong> Đính kèm đường dẫn kho mã nguồn hoặc Pull Request / Release.</li>
+                  <li><strong>Website / App Staging:</strong> Gửi link demo sản phẩm chạy thực tế (Vercel, Netlify...).</li>
+                  <li><strong>Loom / YouTube:</strong> Video quay màn hình demo hướng dẫn sử dụng.</li>
+                </ul>
+              </div>
+
+              {/* 1. Link sản phẩm bàn giao chính (URL) */}
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">Tên file bàn giao đính kèm:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-800">
+                    Đường link sản phẩm bàn giao (URL) <span className="text-rose-500">*</span>:
+                  </label>
+                  {/* Platform detector badge */}
+                  {deliveryUrl && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                      {deliveryUrl.includes('drive.google.com')
+                        ? '📁 Google Drive'
+                        : deliveryUrl.includes('figma.com')
+                        ? '🎨 Figma Project'
+                        : deliveryUrl.includes('github.com')
+                        ? '💻 GitHub Repo'
+                        : deliveryUrl.includes('loom.com')
+                        ? '🎥 Loom Video'
+                        : '🌐 Link Trực Tuyến'}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={deliveryUrl}
+                    onChange={(e) => setDeliveryUrl(e.target.value)}
+                    placeholder="https://drive.google.com/... hoặc https://github.com/... hoặc https://figma.com/..."
+                    className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-mono text-blue-700 focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
+                    required
+                  />
+                  <i className="fa-solid fa-link absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                </div>
+              </div>
+
+              {/* 2. Tiêu đề / Tên đợt bàn giao */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Tiêu đề sản phẩm bàn giao <span className="text-rose-500">*</span>:
+                </label>
                 <input
                   type="text"
-                  value={fileName}
-                  onChange={(e) => setFileName(e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md text-xs font-mono font-medium focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                  value={deliveryTitle}
+                  onChange={(e) => setDeliveryTitle(e.target.value)}
+                  placeholder="Ví dụ: Bàn giao toàn bộ mã nguồn + Link bản chạy thử nghiệm Vercel"
+                  className="w-full p-2 border border-slate-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
                   required
                 />
               </div>
 
+              {/* 3. Link Demo bổ sung (Tùy chọn) */}
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">Link Demo sản phẩm chạy thực tế (tùy chọn):</label>
+                <label className="block font-semibold text-slate-800 mb-1">
+                  Link Demo chạy thực tế / Video Loom giải thích (tùy chọn):
+                </label>
                 <input
                   type="url"
                   value={demoUrl}
                   onChange={(e) => setDemoUrl(e.target.value)}
-                  placeholder="https://demo-project.vercel.app"
-                  className="w-full p-2 border border-slate-300 rounded-md text-xs font-mono focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                  placeholder="https://demo-project.vercel.app hoặc https://loom.com/share/..."
+                  className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
                 />
               </div>
 
+              {/* 4. Ghi chú hướng dẫn nghiệm thu */}
               <div>
-                <label className="block font-semibold text-slate-800 mb-1">Ghi chú hướng dẫn nghiệm thu cho khách hàng:</label>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Ghi chú & Hướng dẫn nghiệm thu cho khách hàng <span className="text-rose-500">*</span>:
+                </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={deliveryNote}
                   onChange={(e) => setDeliveryNote(e.target.value)}
-                  placeholder="Ghi rõ hướng dẫn cài đặt, tài khoản demo..."
-                  className="w-full p-2.5 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                  placeholder="Mô tả cụ thể cách truy cập tài nguyên, tài khoản demo (nếu có), các điểm cần khách hàng lưu ý kiểm tra khi nghiệm thu..."
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs leading-relaxed"
                   required
                 />
               </div>
 
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-md text-amber-900 text-[11px]">
-                Sau khi nộp bài, hệ thống kích hoạt đếm ngược <strong>72 giờ (3 ngày)</strong>. Nếu khách hàng không phản hồi hoặc không khiếu nại, tiền Escrow tự động giải ngân vào tài khoản của bạn.
+              {/* 72h Countdown Warning */}
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] flex items-start gap-2">
+                <i className="fa-solid fa-hourglass-half text-amber-600 text-xs shrink-0 mt-0.5" />
+                <span>
+                  Sau khi nộp link, hệ thống kích hoạt đếm ngược <strong>72 giờ (3 ngày)</strong>. Khách hàng sẽ kiểm tra và bấm "Nghiệm Thu & Giải Ngân". Nếu khách hàng không phản hồi hoặc không khiếu nại sau 72 giờ, tiền Escrow tự động giải ngân vào tài khoản của bạn.
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">
+            <div className="flex items-center space-x-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setShowDeliverModal(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-md text-xs cursor-pointer transition-colors"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md text-xs shadow-xs cursor-pointer transition-colors"
+                className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold py-2.5 rounded-xl text-xs shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
               >
-                Xác Nhận Nộp Bài
+                <i className="fa-solid fa-paper-plane text-xs" />
+                <span>Xác Nhận Nộp Link Bàn Giao</span>
               </button>
             </div>
           </form>

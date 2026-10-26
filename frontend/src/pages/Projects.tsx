@@ -865,6 +865,39 @@ export const Projects: React.FC = () => {
                     {proj.description}
                   </p>
 
+                  {/* Milestones Preview if available */}
+                  {proj.budgetType === 'MILESTONE' && proj.milestones && proj.milestones.length > 0 && (
+                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-[#334155]">
+                        <span className="flex items-center gap-1.5 text-[#2563EB]">
+                          <i className="fa-solid fa-list-check text-xs" />
+                          <span>Lộ trình {proj.milestones.length} Cột mốc tiến độ</span>
+                        </span>
+                        <span className="text-[10px] text-[#059669] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                          Ký quỹ Escrow từng đợt
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-0.5">
+                        {proj.milestones.map((m, idx) => (
+                          <div
+                            key={m.id || idx}
+                            className="bg-white border border-[#E2E8F0] rounded-lg p-2 text-[11px] flex flex-col justify-between shadow-2xs hover:border-blue-200 transition-colors"
+                          >
+                            <span className="font-semibold text-[#0F172A] line-clamp-1" title={m.title}>
+                              #{idx + 1}. {m.title}
+                            </span>
+                            <div className="flex items-center justify-between text-[10px] text-[#64748B] font-mono mt-1 pt-1 border-t border-slate-100">
+                              <span className="text-[#2563EB] font-bold">
+                                {Number(m.amount).toLocaleString('vi-VN')} đ
+                              </span>
+                              <span>{m.dueDate}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Required Skills */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#F1F5F9]">
                     <span className="text-xs text-[#64748B] font-bold mr-1">Kỹ năng:</span>
@@ -1065,11 +1098,39 @@ export const Projects: React.FC = () => {
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="bg-slate-50 p-4 rounded-md border border-slate-200 space-y-1">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
                 <div className="font-bold text-slate-900 text-sm">{selectedProject.title}</div>
-                <div className="text-slate-500">
-                  Ngân sách đề xuất: <span className="font-bold text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</span>
+                <div className="flex items-center justify-between text-slate-500 flex-wrap gap-2">
+                  <span>
+                    Ngân sách đề xuất: <strong className="font-bold text-blue-700">{selectedProject.budget.toLocaleString('vi-VN')} đ</strong>
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                    {selectedProject.budgetType === 'MILESTONE' ? 'Chia Cột Mốc Escrow' : 'Trọn Gói Cố Định'}
+                  </span>
                 </div>
+
+                {/* Milestones list in proposal modal if project has milestones */}
+                {selectedProject.budgetType === 'MILESTONE' && selectedProject.milestones && selectedProject.milestones.length > 0 && (
+                  <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                    <div className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <i className="fa-solid fa-list-check text-blue-600 text-xs" />
+                      <span>Lộ trình {selectedProject.milestones.length} cột mốc khách hàng yêu cầu:</span>
+                    </div>
+                    <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                      {selectedProject.milestones.map((m, idx) => (
+                        <div key={m.id || idx} className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between gap-2 text-[11px]">
+                          <div className="truncate">
+                            <span className="font-bold text-slate-800">#{idx + 1}.</span>{' '}
+                            <span className="text-slate-700">{m.title}</span>
+                          </div>
+                          <div className="shrink-0 font-mono font-bold text-blue-600">
+                            {Number(m.amount).toLocaleString('vi-VN')} đ
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

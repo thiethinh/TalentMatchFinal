@@ -16,7 +16,8 @@ import type {
   WithdrawalRequest,
   AppNotification,
   BankAccount,
-  ProjectInvitation
+  ProjectInvitation,
+  DeliveryFile
 } from '../types';
 import {
   GUEST_USER,
@@ -193,7 +194,13 @@ interface DemoContextType {
   createProject: (newProject: Omit<Project, 'id' | 'createdAt' | 'status' | 'proposalsCount'>) => void;
   submitProposal: (proposalData: Omit<Proposal, 'id' | 'createdAt' | 'status'>) => void;
   acceptProposal: (proposalId: string) => void;
-  deliverWork: (orderId: string, note: string, fileName: string, demoUrl?: string) => void;
+  deliverWork: (
+    orderId: string,
+    noteOrData: string | { title: string; deliveryUrl: string; note: string; linkType?: any; demoUrl?: string },
+    fileName?: string,
+    demoUrl?: string,
+    deliveryUrl?: string
+  ) => void;
   requestRevision: (orderId: string, note: string) => void;
   acceptDelivery: (orderId: string) => void;
   fileDispute: (orderId: string, reason: string, evidence: string) => void;
@@ -1449,15 +1456,23 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           autoAcceptDaysRemaining: 3,
           paymentMethod: 'VNPAY_QR',
           vnpayTransactionId: `VNPAY-${Date.now().toString().slice(-8)}`,
-          milestones: [
-            {
-              id: `ms-${Date.now()}`,
-              title: 'Cột mốc hoàn thành dự án theo Đề xuất',
-              amount: totalAmount,
-              status: 'ESCROW_FUNDED',
-              dueDate: new Date(Date.now() + prop.estimatedDays * 86400000).toISOString().split('T')[0]
-            }
-          ],
+          milestones: (proj?.milestones && proj.milestones.length > 0)
+            ? proj.milestones.map((pm, idx) => ({
+                id: `ms-${Date.now()}-${idx + 1}`,
+                title: pm.title,
+                amount: Math.round(pm.amount * (totalAmount / (proj.budget || totalAmount))),
+                status: idx === 0 ? 'ESCROW_FUNDED' : 'PENDING',
+                dueDate: pm.dueDate || new Date(Date.now() + prop.estimatedDays * 86400000).toISOString().split('T')[0]
+              }))
+            : [
+                {
+                  id: `ms-${Date.now()}`,
+                  title: 'Cột mốc hoàn thành dự án theo Đề xuất',
+                  amount: totalAmount,
+                  status: 'ESCROW_FUNDED',
+                  dueDate: new Date(Date.now() + prop.estimatedDays * 86400000).toISOString().split('T')[0]
+                }
+              ],
           deliveries: [],
           revisionCount: 0,
           maxRevisionsAllowed: 2,
@@ -1514,19 +1529,61 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const deliverWork = (orderId: string, note: string, fileName: string, demoUrl?: string) => {
+  const deliverWork = (
+    orderId: string,
+    noteOrData: string | { title: string; deliveryUrl: string; note: string; linkType?: any; demoUrl?: string },
+    fileName?: string,
+    demoUrl?: string,
+    deliveryUrl?: string
+  ) => {
     if (!checkActionGuard('Nộp sản phẩm bàn giao')) return;
+
+    let finalTitle = 'Link sản phẩm bàn giao';
+    let finalUrl = '';
+    let finalNote = '';
+    let finalDemoUrl: string | undefined = demoUrl;
+    let finalLinkType: any = 'other';
+
+    if (typeof noteOrData === 'object' && noteOrData !== null) {
+      finalTitle = noteOrData.title || 'Link sản phẩm bàn giao';
+      finalUrl = noteOrData.deliveryUrl || '';
+      finalNote = noteOrData.note || '';
+      finalDemoUrl = noteOrData.demoUrl || demoUrl;
+      finalLinkType = noteOrData.linkType || 'other';
+    } else {
+      finalNote = noteOrData || '';
+      finalTitle = fileName || 'Link sản phẩm bàn giao';
+      finalUrl = deliveryUrl || demoUrl || '';
+    }
+
+    // Auto-detect link platform if not explicitly specified
+    if (finalUrl) {
+      const lower = finalUrl.toLowerCase();
+      if (lower.includes('drive.google.com') || lower.includes('dropbox.com') || lower.includes('onedrive')) {
+        finalLinkType = 'google-drive';
+      } else if (lower.includes('figma.com')) {
+        finalLinkType = 'figma';
+      } else if (lower.includes('github.com') || lower.includes('gitlab.com')) {
+        finalLinkType = 'github';
+      } else if (lower.includes('loom.com') || lower.includes('youtube.com') || lower.includes('youtu.be')) {
+        finalLinkType = 'loom';
+      } else {
+        finalLinkType = 'website';
+      }
+    }
 
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
-          const newDelivery = {
+          const newDelivery: DeliveryFile = {
             id: `del-${Date.now()}`,
-            fileName,
-            fileSize: '18.5 MB',
+            fileName: finalTitle,
+            deliveryUrl: finalUrl,
+            linkType: finalLinkType,
+            fileSize: 'Link trực tuyến',
             uploadedAt: new Date().toLocaleString('vi-VN'),
-            note,
-            demoUrl
+            note: finalNote,
+            demoUrl: finalDemoUrl
           };
           return {
             ...o,
@@ -1538,7 +1595,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return o;
       })
     );
-    addToast('Đã nộp sản phẩm bàn giao thành công! Đếm ngược 72 giờ tự động nghiệm thu đã kích hoạt.', 'success');
+    addToast('Đã nộp link sản phẩm bàn giao thành công! Đếm ngược 72 giờ tự động nghiệm thu đã kích hoạt.', 'success');
   };
 
   const requestRevision = (orderId: string, note: string) => {

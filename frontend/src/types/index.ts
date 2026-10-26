@@ -63,6 +63,14 @@ export interface FreelancerProfile {
   portfolio: PortfolioItem[];
 }
 
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  amount: number;
+  dueDate: string;
+  deliverables?: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -80,6 +88,7 @@ export interface Project {
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   proposalsCount: number;
   createdAt: string;
+  milestones?: ProjectMilestone[];
 }
 
 export interface Proposal {
@@ -120,7 +129,9 @@ export interface Milestone {
 export interface DeliveryFile {
   id: string;
   fileName: string;
-  fileSize: string;
+  fileSize?: string;
+  deliveryUrl?: string; // Link sản phẩm bàn giao trực tuyến (Google Drive, Figma, GitHub, Vercel...)
+  linkType?: 'google-drive' | 'figma' | 'github' | 'loom' | 'website' | 'other';
   uploadedAt: string;
   note: string;
   demoUrl?: string;

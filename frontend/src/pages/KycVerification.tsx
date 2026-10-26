@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 
@@ -11,31 +11,117 @@ export const KycVerification: React.FC = () => {
     openUserProfileModal
   } = useDemo();
 
-  const [kycFullName, setKycFullName] = useState(currentUser.name);
-  const [kycIdNumber, setKycIdNumber] = useState('001202008899');
-  const [kycDob, setKycDob] = useState('1995-08-15');
-  const [kycAddress, setKycAddress] = useState('Quận 1, TP. Hồ Chí Minh');
-  const [kycCompanyName, setKycCompanyName] = useState(currentUser.companyName || 'Công ty TNHH Giải Pháp Số Việt Nam');
-  const [kycTaxCode, setKycTaxCode] = useState(currentUser.taxCode || '0109887766');
-  
+  const isGuestOrPlaceholder = !currentUser.name || currentUser.name === 'Khách' || currentUser.name.startsWith('usr-');
+  const initialName = isGuestOrPlaceholder ? '' : currentUser.name.toUpperCase();
+
+  const [kycFullName, setKycFullName] = useState(initialName);
+  const [kycIdNumber, setKycIdNumber] = useState('');
+  const [kycDob, setKycDob] = useState('');
+  const [kycAddress, setKycAddress] = useState('');
+  const [kycCompanyName, setKycCompanyName] = useState(currentUser.companyName || '');
+  const [kycTaxCode, setKycTaxCode] = useState(currentUser.taxCode || '');
+
+  // File Upload states (thay thế hoàn toàn dữ liệu mẫu hardcode)
+  const [frontCccdFile, setFrontCccdFile] = useState<File | null>(null);
+  const [frontCccdPreview, setFrontCccdPreview] = useState<string | null>(null);
+  const [backCccdFile, setBackCccdFile] = useState<File | null>(null);
+  const [backCccdPreview, setBackCccdPreview] = useState<string | null>(null);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [licenseName, setLicenseName] = useState<string | null>(null);
+
+  const frontInputRef = useRef<HTMLInputElement>(null);
+  const backInputRef = useRef<HTMLInputElement>(null);
+  const licenseInputRef = useRef<HTMLInputElement>(null);
+
   const [isVerifying, setIsVerifying] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const isEmployer = currentUser.role === 'employer';
 
+  // Đồng bộ khi đổi người dùng nhưng KHÔNG tự động điền dữ liệu giả
+  useEffect(() => {
+    if (currentUser) {
+      const isGuest = !currentUser.name || currentUser.name === 'Khách' || currentUser.name.startsWith('usr-');
+      setKycFullName(isGuest ? '' : currentUser.name.toUpperCase());
+      setKycCompanyName(currentUser.companyName || '');
+      setKycTaxCode(currentUser.taxCode || '');
+    }
+  }, [currentUser]);
+
+  const handleFrontFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFrontCccdFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setFrontCccdPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBackFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBackCccdFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setBackCccdPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLicenseFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLicenseFile(file);
+      setLicenseName(file.name);
+    }
+  };
+
   const handleKycSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (!kycFullName.trim()) {
+      setFormError('Vui lòng nhập họ và tên chính xác theo giấy tờ tùy thân.');
+      return;
+    }
+
+    if (isEmployer) {
+      if (!kycCompanyName.trim()) {
+        setFormError('Vui lòng nhập tên công ty / doanh nghiệp.');
+        return;
+      }
+      if (!kycTaxCode.trim()) {
+        setFormError('Vui lòng nhập mã số thuế doanh nghiệp (10 hoặc 13 chữ số).');
+        return;
+      }
+    } else {
+      const cleanId = kycIdNumber.trim();
+      if (!cleanId || cleanId.length !== 12 || !/^\d{12}$/.test(cleanId)) {
+        setFormError('Số Căn cước công dân (CCCD) phải bao gồm đúng 12 chữ số.');
+        return;
+      }
+      if (!kycDob.trim()) {
+        setFormError('Vui lòng chọn ngày sinh theo Căn cước công dân.');
+        return;
+      }
+      if (!kycAddress.trim()) {
+        setFormError('Vui lòng nhập nơi thường trú theo Căn cước công dân.');
+        return;
+      }
+    }
+
     setIsVerifying(true);
     setTimeout(() => {
       submitKyc({
-        idNumber: kycIdNumber,
-        fullName: kycFullName,
-        companyName: isEmployer ? kycCompanyName : undefined,
-        taxCode: isEmployer ? kycTaxCode : undefined
+        idNumber: kycIdNumber.trim(),
+        fullName: kycFullName.trim().toUpperCase(),
+        companyName: isEmployer ? kycCompanyName.trim() : undefined,
+        taxCode: isEmployer ? kycTaxCode.trim() : undefined
       });
       setIsVerifying(false);
       setShowSuccessModal(true);
-    }, 1500);
+    }, 1200);
   };
 
   return (
@@ -170,7 +256,7 @@ export const KycVerification: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Form Submit eKYC */
+          /* Form Submit eKYC - Bắt đầu trống để người dùng nhập thông tin thật */
           <div className="bg-white rounded-lg border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
             <div className="border-b border-slate-100 pb-3.5">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -182,9 +268,16 @@ export const KycVerification: React.FC = () => {
                 </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Vui lòng điền đúng thông tin theo giấy tờ tùy thân / ĐKKD để hệ thống tự động thẩm định tức thì.
+                Vui lòng điền đúng thông tin theo giấy tờ tùy thân / ĐKKD để hệ thống thẩm định và kích hoạt Tích Xanh.
               </p>
             </div>
+
+            {formError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md flex items-center gap-2">
+                <i className="fa-solid fa-triangle-exclamation text-rose-600 text-sm shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleKycSubmit} className="space-y-4 text-xs">
               
@@ -193,25 +286,29 @@ export const KycVerification: React.FC = () => {
                 <div className="space-y-3.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Tên Doanh Nghiệp / Công Ty:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Tên Doanh Nghiệp / Công Ty: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycCompanyName}
                         onChange={(e) => setKycCompanyName(e.target.value)}
-                        placeholder="VD: Công ty Cổ phần Giải Pháp Số VN"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        placeholder="VD: Công ty Cổ phần Công nghệ ABC"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Mã Số Thuế Doanh Nghiệp (MST):</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Mã Số Thuế Doanh Nghiệp (MST): <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycTaxCode}
                         onChange={(e) => setKycTaxCode(e.target.value)}
-                        placeholder="VD: 0109887766"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        placeholder="VD: 0109887766 (10 hoặc 13 chữ số)"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
@@ -219,25 +316,30 @@ export const KycVerification: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Họ và tên Người đại diện pháp luật:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Họ và tên Người đại diện pháp luật: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycFullName}
                         onChange={(e) => setKycFullName(e.target.value)}
-                        placeholder="VD: NGUYEN THU HA"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-bold uppercase text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        placeholder="VD: NGUYỄN VĂN A"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Số CCCD Người đại diện:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Số CCCD Người đại diện: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycIdNumber}
-                        onChange={(e) => setKycIdNumber(e.target.value)}
+                        maxLength={12}
+                        onChange={(e) => setKycIdNumber(e.target.value.replace(/\D/g, ''))}
                         placeholder="VD: 001202008899"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
@@ -245,40 +347,71 @@ export const KycVerification: React.FC = () => {
 
                   {/* Upload Business License */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">File Scan Giấy chứng nhận Đăng ký Doanh nghiệp (ĐKKD):</label>
-                    <div className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded-md p-5 text-center transition-colors cursor-pointer">
-                      <i className="fa-solid fa-file-circle-check text-2xl text-blue-600 mx-auto mb-1.5 block" />
-                      <div className="font-bold text-slate-900 text-xs">
-                        Đã đính kèm: Giay_Phep_DKKD_2026.pdf (Hợp lệ)
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Định dạng hỗ trợ: PDF, JPG, PNG (Dung lượng tối đa 10MB)</div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      File Scan Giấy chứng nhận Đăng ký Doanh nghiệp (ĐKKD):
+                    </label>
+                    <input
+                      ref={licenseInputRef}
+                      type="file"
+                      accept=".pdf,image/png,image/jpeg"
+                      onChange={handleLicenseFileChange}
+                      className="hidden"
+                    />
+                    <div
+                      onClick={() => licenseInputRef.current?.click()}
+                      className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/30 rounded-md p-5 text-center transition-colors cursor-pointer"
+                    >
+                      {licenseName ? (
+                        <div className="space-y-1">
+                          <i className="fa-solid fa-file-circle-check text-2xl text-emerald-600 mx-auto block" />
+                          <div className="font-bold text-slate-900 text-xs">
+                            Đã đính kèm: {licenseFile ? licenseFile.name : licenseName}
+                          </div>
+                          <span className="text-[11px] text-blue-600 hover:underline inline-block font-semibold">
+                            Nhấn để thay đổi file
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <i className="fa-solid fa-arrow-up-from-bracket text-2xl text-slate-400 mx-auto block" />
+                          <div className="font-bold text-slate-800 text-xs">
+                            Nhấn để chọn file Giấy ĐKKD (PDF, JPG, PNG)
+                          </div>
+                          <div className="text-[11px] text-slate-500">Dung lượng tối đa 10MB</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               ) : (
-                /* Form Fields for Freelancer (Employee) */
+                /* Form Fields for Freelancer */
                 <div className="space-y-3.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Họ và tên theo Căn Cước Công Dân:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Họ và tên theo Căn Cước Công Dân: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycFullName}
                         onChange={(e) => setKycFullName(e.target.value)}
-                        placeholder="VD: NGUYEN MINH ANH"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-bold uppercase text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        placeholder="VD: NGUYỄN VĂN A"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Số CCCD (12 chữ số):</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Số CCCD (12 chữ số): <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycIdNumber}
-                        onChange={(e) => setKycIdNumber(e.target.value)}
-                        placeholder="VD: 001202008899"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        maxLength={12}
+                        onChange={(e) => setKycIdNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Nhập 12 chữ số CCCD gắn chip"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-mono font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
@@ -286,41 +419,110 @@ export const KycVerification: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Ngày sinh:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Ngày sinh: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="date"
                         value={kycDob}
                         onChange={(e) => setKycDob(e.target.value)}
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Nơi thường trú:</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nơi thường trú theo CCCD: <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={kycAddress}
                         onChange={(e) => setKycAddress(e.target.value)}
-                        placeholder="VD: Quận 1, TP. Hồ Chí Minh"
-                        className="w-full p-2 bg-white border border-slate-300 rounded-md font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                        placeholder="VD: Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-md font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                         required
                       />
                     </div>
                   </div>
 
-                  {/* CCCD Image Upload Mock */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded-md p-4 text-center transition-colors cursor-pointer">
-                      <i className="fa-solid fa-camera text-blue-600 text-lg mx-auto mb-1 block" />
-                      <div className="font-bold text-slate-900 text-xs">Mặt trước Căn cước công dân</div>
-                      <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ Đã sẵn sàng ảnh chụp mẫu</div>
-                    </div>
+                  {/* CCCD Image Upload */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Ảnh chụp Căn cước công dân gắn chip (Mặt trước & Mặt sau):
+                    </label>
+                    
+                    <input
+                      ref={frontInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFrontFileChange}
+                      className="hidden"
+                    />
+                    <input
+                      ref={backInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBackFileChange}
+                      className="hidden"
+                    />
 
-                    <div className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded-md p-4 text-center transition-colors cursor-pointer">
-                      <i className="fa-solid fa-camera text-blue-600 text-lg mx-auto mb-1 block" />
-                      <div className="font-bold text-slate-900 text-xs">Mặt sau CCCD (Chip & MRZ)</div>
-                      <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">✓ Đã sẵn sàng ảnh quét chip</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Mặt trước */}
+                      <div
+                        onClick={() => frontInputRef.current?.click()}
+                        className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/20 rounded-md p-4 text-center transition-colors cursor-pointer min-h-[110px] flex flex-col items-center justify-center"
+                      >
+                        {frontCccdPreview ? (
+                          <div className="space-y-1 w-full">
+                            <img
+                              src={frontCccdPreview}
+                              alt="Mặt trước CCCD"
+                              className="h-16 mx-auto object-cover rounded border border-slate-200"
+                            />
+                            <div className="font-bold text-slate-900 text-[11px] truncate px-2">
+                              {frontCccdFile?.name || 'Ảnh mặt trước'}
+                            </div>
+                            <span className="text-[10px] text-blue-600 font-semibold hover:underline">
+                              Nhấn để đổi ảnh khác
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-camera text-blue-600 text-lg mx-auto mb-1 block" />
+                            <div className="font-bold text-slate-900 text-xs">Mặt trước Căn cước công dân</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Nhấn để chụp hoặc tải ảnh</div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Mặt sau */}
+                      <div
+                        onClick={() => backInputRef.current?.click()}
+                        className="border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/20 rounded-md p-4 text-center transition-colors cursor-pointer min-h-[110px] flex flex-col items-center justify-center"
+                      >
+                        {backCccdPreview ? (
+                          <div className="space-y-1 w-full">
+                            <img
+                              src={backCccdPreview}
+                              alt="Mặt sau CCCD"
+                              className="h-16 mx-auto object-cover rounded border border-slate-200"
+                            />
+                            <div className="font-bold text-slate-900 text-[11px] truncate px-2">
+                              {backCccdFile?.name || 'Ảnh mặt sau'}
+                            </div>
+                            <span className="text-[10px] text-blue-600 font-semibold hover:underline">
+                              Nhấn để đổi ảnh khác
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-camera text-blue-600 text-lg mx-auto mb-1 block" />
+                            <div className="font-bold text-slate-900 text-xs">Mặt sau CCCD (Chip & MRZ)</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Nhấn để chụp hoặc tải ảnh</div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -402,3 +604,5 @@ export const KycVerification: React.FC = () => {
     </div>
   );
 };
+
+export default KycVerification;

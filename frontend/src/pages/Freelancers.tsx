@@ -125,8 +125,37 @@ export const Freelancers: React.FC = () => {
   };
 
   // Pagination State
-  const ITEMS_PER_PAGE = 20;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(8);
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Mobile Drawer & UI States
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showAllSkills, setShowAllSkills] = useState(false);
+
+  // Monitor scroll for back-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 350);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Close mobile filter drawer on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileFilterOpen) {
+        setIsMobileFilterOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileFilterOpen]);
 
   // Reset Filters
   const handleResetFilters = () => {
@@ -289,11 +318,11 @@ export const Freelancers: React.FC = () => {
   ]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredFreelancers.length / ITEMS_PER_PAGE) || 1;
+  const totalPages = Math.ceil(filteredFreelancers.length / itemsPerPage) || 1;
   const paginatedFreelancers = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredFreelancers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredFreelancers, currentPage]);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredFreelancers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredFreelancers, currentPage, itemsPerPage]);
 
   const pageNumbers = useMemo(() => {
     const pages: (number | string)[] = [];
@@ -333,12 +362,267 @@ export const Freelancers: React.FC = () => {
     setShowInviteModal(false);
   };
 
+  const renderFilterContent = (showTitle = true) => (
+    <div className="space-y-5">
+      {showTitle && (
+        <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3">
+          <div className="flex items-center space-x-2 font-bold text-[#0F172A] text-sm">
+            <i className="fa-solid fa-sliders text-[#2563EB] text-xs" />
+            <span>Bộ Lọc Freelancer</span>
+          </div>
+          {activeFiltersCount > 0 && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <i className="fa-solid fa-xmark text-xs" />
+              <span>Xóa lọc ({activeFiltersCount})</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Main Category */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-bold text-slate-800">Lĩnh vực chuyên môn:</label>
+        <div className="relative">
+          <select
+            value={selectedMainCategory}
+            onChange={(e) => {
+              setSelectedMainCategory(e.target.value);
+              setSelectedSubcategory('ALL');
+            }}
+            className="w-full appearance-none pl-3.5 pr-9 py-2 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
+          >
+            <option value="ALL">Tất cả lĩnh vực</option>
+            {CATEGORY_DATA.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Subcategory Selector */}
+      {selectedMainCategory !== 'ALL' && (
+        <div className="space-y-1.5 animate-in fade-in duration-200">
+          <label className="block text-xs font-bold text-[#2563EB] flex items-center gap-1.5">
+            <i className="fa-solid fa-chevron-right text-[#2563EB] text-xs" />
+            <span>Nhóm nhỏ chuyên sâu:</span>
+          </label>
+          <div className="space-y-1 bg-blue-50/40 p-2 rounded-lg border border-blue-100">
+            {CATEGORY_DATA.find((c) => c.id === selectedMainCategory)?.subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => setSelectedSubcategory(sub.id)}
+                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer ${
+                  selectedSubcategory === sub.id
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'hover:bg-blue-100/70 text-slate-700'
+                }`}
+              >
+                <span className="truncate">{sub.name}</span>
+                {selectedSubcategory === sub.id && <i className="fa-solid fa-circle-check text-white text-xs shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hourly Rate Filter */}
+      <div className="space-y-2 pt-2 border-t border-slate-100">
+        <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <i className="fa-solid fa-money-bill text-[#059669] text-xs" />
+          <span>Mức thù lao / giờ (VND):</span>
+        </label>
+
+        {/* Custom Min - Max input */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">Tối thiểu (Min)</label>
+            <input
+              type="text"
+              placeholder="VD: 200000"
+              value={minRateInput}
+              onChange={(e) => {
+                setMinRateInput(e.target.value);
+                setSelectedRatePreset(0);
+              }}
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#2563EB] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] text-slate-500 font-semibold block mb-0.5">Tối đa (Max)</label>
+            <input
+              type="text"
+              placeholder="VD: 500000"
+              value={maxRateInput}
+              onChange={(e) => {
+                setMaxRateInput(e.target.value);
+                setSelectedRatePreset(0);
+              }}
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#2563EB] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Quick Rate Presets */}
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Khoảng giá nhanh:</span>
+          <div className="flex flex-wrap gap-1">
+            {HOURLY_RATE_PRESETS.map((p, idx) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => {
+                  setSelectedRatePreset(idx);
+                  setMinRateInput('');
+                  setMaxRateInput('');
+                }}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                  selectedRatePreset === idx && !minRateInput && !maxRateInput
+                    ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* TalentCredit Badge Filter */}
+      <div className="space-y-2 pt-2 border-t border-slate-100">
+        <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <i className="fa-solid fa-award text-amber-500 text-xs" />
+          <span>Huy hiệu Tín Nhiệm (Credit):</span>
+        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {['ALL', 'TOP_RATED_PLUS', 'TOP_RATED', 'RISING_TALENT'].map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => setSelectedBadge(b)}
+              className={`py-1.5 px-2 rounded-lg border text-center text-[10px] font-bold transition-all cursor-pointer truncate ${
+                selectedBadge === b ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {b === 'ALL'
+                ? 'Tất cả'
+                : b === 'TOP_RATED_PLUS'
+                ? '★ Top Rated Plus'
+                : b === 'TOP_RATED'
+                ? 'Top Rated'
+                : 'Rising Talent'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Min Rating Filter */}
+      <div className="space-y-1.5 pt-2 border-t border-slate-100">
+        <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <i className="fa-solid fa-star text-amber-400 text-xs" />
+          <span>Đánh giá sao tối thiểu:</span>
+        </label>
+        <div className="grid grid-cols-4 gap-1.5 text-xs font-bold">
+          {[0, 4.0, 4.5, 4.8].map((rt) => (
+            <button
+              key={rt}
+              type="button"
+              onClick={() => setMinRating(rt)}
+              className={`py-1 rounded-lg border text-center text-[11px] transition-all cursor-pointer ${
+                minRating === rt ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {rt === 0 ? 'Tất cả' : `${rt}★+`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Location Filter */}
+      <div className="space-y-1.5 pt-2 border-t border-slate-100">
+        <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <i className="fa-solid fa-location-dot text-rose-500 text-xs" />
+          <span>Khu vực địa lý:</span>
+        </label>
+        <div className="relative">
+          <select
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            className="w-full appearance-none pl-3.5 pr-9 py-2 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
+          >
+            <option value="ALL">Toàn quốc (Tất cả khu vực)</option>
+            <option value="Hà Nội">Hà Nội</option>
+            <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
+            <option value="Đà Nẵng">Đà Nẵng</option>
+          </select>
+          <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Skills Filter (No nested scroll trap) */}
+      <div className="space-y-2 pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <i className="fa-solid fa-tag text-[#2563EB] text-xs" />
+            <span>Kỹ năng chuyên môn:</span>
+          </label>
+          {selectedSkills.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedSkills([])}
+              className="text-[10px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
+            >
+              Bỏ chọn ({selectedSkills.length})
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {(showAllSkills ? POPULAR_SKILLS : POPULAR_SKILLS.slice(0, 8)).map((sk) => {
+            const isSelected = selectedSkills.includes(sk);
+            return (
+              <button
+                key={sk}
+                type="button"
+                onClick={() => handleToggleSkill(sk)}
+                className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#2563EB] text-white shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {isSelected ? `✓ ${sk}` : `+ ${sk}`}
+              </button>
+            );
+          })}
+        </div>
+        {POPULAR_SKILLS.length > 8 && (
+          <button
+            type="button"
+            onClick={() => setShowAllSkills(!showAllSkills)}
+            className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-bold inline-flex items-center gap-1 cursor-pointer pt-0.5"
+          >
+            <span>{showAllSkills ? 'Thu gọn kỹ năng' : `Xem thêm (+${POPULAR_SKILLS.length - 8} kỹ năng)`}</span>
+            <i className={`fa-solid text-[9px] ${showAllSkills ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
       
-      {/* 1. Header Hero Banner - Ultra-Minimal & Smart (#DBEAFE, #1E3A8A) */}
-      <div className="bg-[#DBEAFE] border border-[#BFDBFE] rounded-2xl p-5 sm:p-6 text-[#1E3A8A] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
+      {/* 1. Header Hero Banner - Ultra-Minimal & Smart */}
+      <div className="bg-[#DBEAFE] border border-[#BFDBFE] rounded-2xl p-4 sm:p-5 text-[#1E3A8A] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1">
           <div className="inline-flex items-center gap-1.5 bg-white text-[#1D4ED8] border border-[#BFDBFE] px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
             <i className="fa-solid fa-circle-check text-[#059669] text-xs" />
             <span>Freelancer Đã Xác Thực eKYC & Năng Lực</span>
@@ -361,293 +645,138 @@ export const Freelancers: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Slide-over Filter Drawer */}
+      {isMobileFilterOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-200"
+            onClick={() => setIsMobileFilterOpen(false)}
+          />
+          <div className="fixed inset-y-0 right-0 max-w-full flex">
+            <div className="w-screen max-w-sm bg-white shadow-2xl flex flex-col">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                  <i className="fa-solid fa-sliders text-[#2563EB]" />
+                  <span>Bộ Lọc Freelancer</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  <i className="fa-solid fa-xmark text-lg" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-slate-200">
+                {renderFilterContent(false)}
+              </div>
+
+              <div className="p-3.5 border-t border-slate-200 bg-white flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="flex-1 py-2.5 px-3 border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    Xóa tất cả lọc
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="flex-1 py-2.5 px-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold rounded-xl text-xs shadow-xs transition-colors cursor-pointer"
+                >
+                  Xem {filteredFreelancers.length} chuyên gia
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. Main Search & Filter Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
-        {/* Left Sidebar: Detailed Filters (Nền Trắng #FFFFFF, viền xám nhạt #E5E7EB với đổ bóng mờ cực nhẹ) */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-xs space-y-6 sticky top-24">
-            
-            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3">
-              <div className="flex items-center space-x-2 font-bold text-[#0F172A] text-sm">
-                <i className="fa-solid fa-sliders text-[#2563EB] text-xs" />
-                <span>Bộ Lọc Freelancer</span>
-              </div>
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={handleResetFilters}
-                  className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <i className="fa-solid fa-xmark text-xs" />
-                  <span>Xóa lọc ({activeFiltersCount})</span>
-                </button>
-              )}
-            </div>
-
-            {/* Search Input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-800">Tìm kiếm theo tên / kỹ năng:</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Minh Anh, React, Figma..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:bg-white focus:outline-none"
-                />
-                <i className="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-3" />
-              </div>
-            </div>
-
-            {/* Main Category */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-800">Lĩnh vực chuyên môn:</label>
-              <div className="relative">
-                <select
-                  value={selectedMainCategory}
-                  onChange={(e) => {
-                    setSelectedMainCategory(e.target.value);
-                    setSelectedSubcategory('ALL');
-                  }}
-                  className="w-full appearance-none pl-3.5 pr-9 py-2.5 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-md font-bold text-slate-800 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
-                >
-                  <option value="ALL">Tất cả lĩnh vực</option>
-                  {CATEGORY_DATA.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Subcategory Selector */}
-            {selectedMainCategory !== 'ALL' && (
-              <div className="space-y-1.5 animate-in fade-in duration-200">
-                <label className="block text-xs font-bold text-indigo-700 flex items-center gap-1.5">
-                  <i className="fa-solid fa-chevron-right text-indigo-600 text-xs" />
-                  <span>Nhóm nhỏ chuyên sâu:</span>
-                </label>
-                <div className="space-y-1 bg-indigo-50/50 p-2 rounded-md border border-indigo-100 max-h-48 overflow-y-auto">
-                  {CATEGORY_DATA.find((c) => c.id === selectedMainCategory)?.subcategories.map((sub) => (
-                    <button
-                      key={sub.id}
-                      onClick={() => setSelectedSubcategory(sub.id)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer ${
-                        selectedSubcategory === sub.id
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'hover:bg-indigo-100/70 text-slate-700'
-                      }`}
-                    >
-                      <span className="truncate">{sub.name}</span>
-                      {selectedSubcategory === sub.id && <i className="fa-solid fa-circle-check text-white text-xs shrink-0" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Hourly Rate Price Range Filter */}
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i className="fa-solid fa-dong-sign text-emerald-600 text-xs" />
-                <span>Mức thù lao / Giá theo giờ (VND/h):</span>
-              </label>
-
-              {/* Min - Max Input Fields */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">Tối thiểu (Min)</span>
-                  <input
-                    type="number"
-                    placeholder="VD: 200000"
-                    value={minRateInput}
-                    onChange={(e) => {
-                      setMinRateInput(e.target.value);
-                      setSelectedRatePreset(0);
-                    }}
-                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none font-bold text-slate-900"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">Tối đa (Max)</span>
-                  <input
-                    type="number"
-                    placeholder="VD: 500000"
-                    value={maxRateInput}
-                    onChange={(e) => {
-                      setMaxRateInput(e.target.value);
-                      setSelectedRatePreset(0);
-                    }}
-                    className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none font-bold text-slate-900"
-                  />
-                </div>
-              </div>
-
-              {/* Quick Rate Presets */}
-              <div className="space-y-1 pt-1">
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Khoảng giá nhanh:</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {HOURLY_RATE_PRESETS.map((p, idx) => (
-                    <button
-                      key={p.label}
-                      onClick={() => {
-                        setSelectedRatePreset(idx);
-                        setMinRateInput('');
-                        setMaxRateInput('');
-                      }}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-                        selectedRatePreset === idx && !minRateInput && !maxRateInput
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* TalentCredit Badge Filter */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i className="fa-solid fa-award text-amber-500 text-xs" />
-                <span>Huy hiệu TalentCredit:</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedBadge}
-                  onChange={(e) => setSelectedBadge(e.target.value)}
-                  className="w-full appearance-none pl-3.5 pr-9 py-2.5 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-md font-bold text-slate-800 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
-                >
-                  <option value="ALL">Tất cả cấp độ</option>
-                  <option value="Top Rated">Top Rated (900+ điểm uy tín)</option>
-                  <option value="Gold">Hạng Vàng (Gold 850+)</option>
-                  <option value="Silver">Hạng Bạc (Silver 750+)</option>
-                  <option value="Bronze">Hạng Đồng (Bronze)</option>
-                </select>
-                <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Minimum Rating Filter */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i className="fa-solid fa-star text-amber-400 text-xs" />
-                <span>Đánh giá tối thiểu:</span>
-              </label>
-              <div className="grid grid-cols-4 gap-1 text-[11px] font-bold text-center">
-                <button
-                  onClick={() => setMinRating(0)}
-                  className={`py-1.5 rounded-md border transition-all cursor-pointer ${
-                    minRating === 0 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  Tất cả
-                </button>
-                <button
-                  onClick={() => setMinRating(4.0)}
-                  className={`py-1.5 rounded-md border transition-all cursor-pointer ${
-                    minRating === 4.0 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  4.0★+
-                </button>
-                <button
-                  onClick={() => setMinRating(4.5)}
-                  className={`py-1.5 rounded-md border transition-all cursor-pointer ${
-                    minRating === 4.5 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  4.5★+
-                </button>
-                <button
-                  onClick={() => setMinRating(4.8)}
-                  className={`py-1.5 rounded-md border transition-all cursor-pointer ${
-                    minRating === 4.8 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  4.8★+
-                </button>
-              </div>
-            </div>
-
-            {/* Location Filter */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i className="fa-solid fa-location-dot text-rose-500 text-xs" />
-                <span>Khu vực địa lý:</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="w-full appearance-none pl-3.5 pr-9 py-2.5 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-300 rounded-md font-bold text-slate-800 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all cursor-pointer shadow-2xs"
-                >
-                  <option value="ALL">Toàn quốc (Tất cả khu vực)</option>
-                  <option value="Hà Nội">Hà Nội</option>
-                  <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                  <option value="Đà Nẵng">Đà Nẵng</option>
-                </select>
-                <i className="fa-solid fa-chevron-down text-slate-500 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Skills Filter */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-800">Kỹ năng chuyên môn:</label>
-              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-                {POPULAR_SKILLS.map((sk) => {
-                  const isSelected = selectedSkills.includes(sk);
-                  return (
-                    <button
-                      key={sk}
-                      onClick={() => handleToggleSkill(sk)}
-                      className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {isSelected ? `✓ ${sk}` : `+ ${sk}`}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+        {/* Left Sidebar: Detailed Filters (Desktop - Sticky with independent scroll) */}
+        <div className="hidden lg:block lg:col-span-1 space-y-5">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-4.5 shadow-xs sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200">
+            {renderFilterContent(true)}
           </div>
         </div>
 
-
         {/* Right Section: Results & Cards */}
-        <div className="lg:col-span-3 space-y-5">
+        <div className="lg:col-span-3 space-y-4">
           
-          {/* Toolbar: Counter & Sort */}
-          {/* Toolbar: Counter & Sort (Trắng #FFFFFF, viền xám nhạt #E5E7EB) */}
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-[#0F172A] text-sm">
-                Tìm thấy <span className="text-[#2563EB] font-bold">{filteredFreelancers.length}</span> chuyên gia phù hợp
-              </span>
-              {activeFiltersCount > 0 && (
-                <span className="bg-[#EFF6FF] text-[#1D4ED8] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#BFDBFE]">
-                  Đang lọc {activeFiltersCount} tiêu chí
-                </span>
-              )}
+          {/* Toolbar: Search, Mobile Filter Button, Counter & Sort (Sticky) */}
+          <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-[#E5E7EB] shadow-xs flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên chuyên gia, kỹ năng (React, Figma, AI)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-all"
+                />
+                <i className="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1 cursor-pointer"
+                    title="Xóa từ khóa"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile Filter Drawer Button */}
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(true)}
+                className="lg:hidden px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg border border-slate-200 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+              >
+                <i className="fa-solid fa-sliders text-[#2563EB] text-xs" />
+                <span>Bộ lọc</span>
+                {activeFiltersCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-[10px] flex items-center justify-center font-bold">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1.5 text-xs text-[#475569]">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-100">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-bold text-[#0F172A]">
+                  Tìm thấy <span className="text-[#2563EB] font-bold">{filteredFreelancers.length}</span> chuyên gia phù hợp
+                </span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-[#EFF6FF] text-[#1D4ED8] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#BFDBFE]">
+                    Đang lọc {activeFiltersCount} tiêu chí
+                  </span>
+                )}
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] underline font-bold cursor-pointer ml-1"
+                  >
+                    Xóa tất cả bộ lọc
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2 text-xs text-[#475569]">
                 <i className="fa-solid fa-arrow-down-wide-short text-[#64748B] text-xs" />
                 <span className="font-bold hidden sm:inline">Sắp xếp:</span>
                 <div className="relative">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="appearance-none pl-3 pr-8 py-2 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#0F172A] font-bold text-xs rounded-lg focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                    className="appearance-none pl-3 pr-8 py-1.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-[#0F172A] font-bold text-xs rounded-lg focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] focus:bg-white focus:outline-none transition-colors cursor-pointer"
                   >
                     <option value="credit_desc">Điểm TalentCredit cao nhất</option>
                     <option value="rating_desc">Đánh giá sao cao nhất</option>
@@ -891,11 +1020,32 @@ export const Freelancers: React.FC = () => {
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {filteredFreelancers.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-                <div className="text-xs text-[#64748B]">
-                  Hiển thị <span className="font-bold text-[#0F172A]">{(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredFreelancers.length)}</span> trong tổng số <span className="font-bold text-[#0F172A]">{filteredFreelancers.length}</span> chuyên gia
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="text-xs text-[#64748B]">
+                    Hiển thị <span className="font-bold text-[#0F172A]">{(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredFreelancers.length)}</span> trong tổng số <span className="font-bold text-[#0F172A]">{filteredFreelancers.length}</span> chuyên gia
+                  </div>
+
+                  {/* Items Per Page Selector */}
+                  <div className="flex items-center gap-1.5 text-xs text-[#64748B] pl-2 border-l border-slate-200">
+                    <span>Mỗi trang:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="px-2 py-1 rounded-md border border-[#CBD5E1] bg-[#F8FAFC] text-xs font-bold text-[#0F172A] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+                    >
+                      <option value={6}>6 hồ sơ</option>
+                      <option value={8}>8 hồ sơ</option>
+                      <option value={12}>12 hồ sơ</option>
+                      <option value={20}>20 hồ sơ</option>
+                    </select>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {/* Prev */}
                   <button
@@ -1090,6 +1240,18 @@ export const Freelancers: React.FC = () => {
         </div>
       )}
 
+      {/* 4. Floating Back to Top Button */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+          aria-label="Cuộn lên đầu trang"
+          title="Cuộn lên đầu trang"
+        >
+          <i className="fa-solid fa-arrow-up text-sm" />
+        </button>
+      )}
     </div>
   );
 };

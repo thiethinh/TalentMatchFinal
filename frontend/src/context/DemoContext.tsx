@@ -1120,15 +1120,15 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email: data.email,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.email)}`,
       role: data.role,
-      phone: data.phone || '0901234567',
-      isVerified: true,
+      phone: data.phone || '',
+      isVerified: false,
       emailVerified: true,
       accountStatus: 'ACTIVE',
       kycStatus: 'NOT_SUBMITTED',
-      balance: data.role === 'employer' ? 30000000 : 10000000,
+      balance: 0,
       escrowBalance: 0,
       createdAt: new Date().toISOString().split('T')[0],
-      lastLogin: 'Vừa đăng nhập Google'
+      lastLogin: 'Vừa tạo tài khoản Google'
     };
 
     setUsers((prev) => [...prev, newUser]);
@@ -1136,6 +1136,28 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);
     setPendingGoogleUser(null);
     setIsAuthModalOpen(false);
+
+    if (data.role === 'freelancer') {
+      const newFreeProfile: FreelancerProfile = {
+        id: `free-${Date.now()}`,
+        userId: newUser.id,
+        name: data.name,
+        title: 'Freelancer Chuyên Nghiệp',
+        avatar: newUser.avatar,
+        bio: 'Tôi là chuyên gia dịch vụ số mới gia nhập sàn TalentMatch.',
+        location: 'Việt Nam',
+        rating: 5.0,
+        reviewCount: 0,
+        completedOrders: 0,
+        skills: ['Kỹ năng chung'],
+        talentCreditScore: 800,
+        talentCreditBadge: 'Bronze',
+        isVerified: false,
+        portfolio: []
+      };
+      setFreelancers((prev) => [...prev, newFreeProfile]);
+    }
+
     addToast(
       `Đăng ký & xác thực Gmail thành công! Chào mừng ${data.name} (${
         data.role === 'freelancer' ? 'Freelancer' : 'Nhà tuyển dụng'
@@ -1173,16 +1195,36 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             email: email,
             avatar: data.avatar || googleUser.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
             role: data.role === 'CUSTOMER' ? 'employer' : 'freelancer',
-            phone: data.phone || '0901234567',
-            isVerified: true,
+            phone: data.phone || '',
+            isVerified: false,
             emailVerified: true,
             accountStatus: 'ACTIVE',
             kycStatus: 'NOT_SUBMITTED',
-            balance: data.role === 'CUSTOMER' ? 30000000 : 10000000,
+            balance: 0,
             escrowBalance: 0,
             createdAt: new Date().toISOString().split('T')[0],
-            lastLogin: 'Vừa đăng nhập Google'
+            lastLogin: 'Vừa tạo tài khoản Google'
           };
+          if (newUser.role === 'freelancer') {
+            const newFreeProfile: FreelancerProfile = {
+              id: `free-${Date.now()}`,
+              userId: newUser.id,
+              name: newUser.name,
+              title: 'Freelancer Chuyên Nghiệp',
+              avatar: newUser.avatar,
+              bio: 'Tôi là chuyên gia dịch vụ số mới gia nhập sàn TalentMatch.',
+              location: 'Việt Nam',
+              rating: 5.0,
+              reviewCount: 0,
+              completedOrders: 0,
+              skills: ['Kỹ năng chung'],
+              talentCreditScore: 800,
+              talentCreditBadge: 'Bronze',
+              isVerified: false,
+              portfolio: []
+            };
+            setFreelancers((prev) => [...prev, newFreeProfile]);
+          }
           setUsers((prev) => [...prev, newUser]);
           setCurrentUser(newUser);
           localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);

@@ -100,55 +100,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
           </button>
         </div>
 
-        {/* 2. User Info Card / Wallet Box */}
-        <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F1F5F9] shrink-0">
-          {role === 'guest' ? (
-            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#E2E8F0] text-[#64748B] flex items-center justify-center text-xs font-bold shrink-0">
-                  <i className="fa-regular fa-user" />
-                </div>
-                <div className="min-w-0">
-                  <strong className="block text-xs font-bold text-[#1E293B] truncate">Khách</strong>
-                  <small className="block text-[10px] text-[#64748B]">Chưa đăng nhập</small>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onCloseMobile();
-                    openAuthModal('login');
-                  }}
-                  className="py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg text-xs font-bold text-center transition-colors cursor-pointer shadow-xs"
-                >
-                  Đăng nhập
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onCloseMobile();
-                    openAuthModal('register');
-                  }}
-                  className="py-1.5 bg-[#F8FAFC] hover:bg-[#E2E8F0] text-[#334155] border border-[#CBD5E1] rounded-lg text-xs font-bold text-center transition-colors cursor-pointer"
-                >
-                  Đăng ký
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Chỉ hiển thị số dư ví, nền trắng viền xám mềm mại */
-            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs flex items-center justify-between text-xs">
-              <span className="text-[#475569] font-medium flex items-center gap-2">
-                <i className="fa-solid fa-wallet text-[#059669] text-sm" />
-                <span>Số dư ví:</span>
-              </span>
-              <b className="text-[#059669] font-mono font-bold text-sm">
-                {(currentUser.balance || 0).toLocaleString('vi-VN')} đ
-              </b>
-            </div>
-          )}
-        </div>
 
         {/* 3. Navigation List (Phân chia quyền theo Role) */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-300">

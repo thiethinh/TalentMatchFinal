@@ -20,7 +20,9 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
     unreadNotificationsCount,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    openUserProfileModal: demoOpenUserProfileModal
+    openUserProfileModal: demoOpenUserProfileModal,
+    openWithdrawModal,
+    openVNPayModal
   } = useDemo();
   const navigate = useNavigate();
 
@@ -36,12 +38,16 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Global Ctrl+K shortcut listener
+  // Global Ctrl+K shortcut listener and Escape to close menus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false);
+        setNotifDropdownOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -334,7 +340,10 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
               <button
                 type="button"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                aria-label="Tài khoản cá nhân"
               >
                 {currentUser.avatar ? (
                   <img
@@ -347,23 +356,128 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
                     {currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                 )}
-                <i className="fa-solid fa-chevron-down text-[10px] text-slate-400 hidden sm:inline" />
+                <i className={`fa-solid fa-chevron-down text-[10px] text-slate-400 hidden sm:inline transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 divide-y divide-slate-100">
+                <div
+                  className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-xl border border-slate-200 p-2.5 z-50 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-150"
+                  role="menu"
+                >
+                  {/* 1. Avatar, Họ tên | 2. Email | 3. Role Badge */}
                   <div className="p-3">
-                    <strong className="block text-xs font-bold text-slate-900 truncate">
-                      {currentUser.name || 'Người dùng'}
-                    </strong>
-                    <small className="block text-[11px] text-slate-500 font-mono truncate">
-                      {currentUser.email}
-                    </small>
-                    <span className="inline-block mt-1 text-[10px] uppercase font-extrabold tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
-                      {role === 'employer' ? 'Nhà Tuyển Dụng' : role === 'admin' ? 'Quản Trị Viên' : 'Freelancer'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      {currentUser.avatar ? (
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#2563EB] text-white font-bold text-sm flex items-center justify-center ring-2 ring-blue-100 shrink-0">
+                          {currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <strong className="block text-sm font-bold text-slate-900 truncate">
+                          {currentUser.name || 'Người dùng'}
+                        </strong>
+                        <small className="block text-[11px] text-slate-500 font-mono truncate">
+                          {currentUser.email}
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                      <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
+                        role === 'employer'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : role === 'admin'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
+                        <i className={`text-[8px] ${
+                          role === 'employer'
+                            ? 'fa-solid fa-briefcase'
+                            : role === 'admin'
+                            ? 'fa-solid fa-shield-halved'
+                            : 'fa-solid fa-bolt'
+                        }`} />
+                        <span>{role === 'employer' ? 'Nhà Tuyển Dụng' : role === 'admin' ? 'Quản Trị Viên' : 'Freelancer'}</span>
+                      </span>
+
+                      {currentUser.isVerified && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                          <i className="fa-solid fa-circle-check text-[9px]" />
+                          <span>Đã eKYC</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
+                  {/* 4. Vùng hiển thị số dư ví (Icon ví + Số tiền nổi bật + Thao tác ví) */}
+                  <div className="p-3 bg-gradient-to-br from-slate-50 to-blue-50/40 rounded-xl my-1 border border-slate-100">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                      <span className="flex items-center gap-1.5 font-medium text-slate-700">
+                        <i className="fa-solid fa-wallet text-[#059669] text-sm" />
+                        <span>Số dư ví</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                        VND
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline justify-between gap-2 mt-1">
+                      <div className="text-xl font-bold font-mono text-[#059669] tracking-tight">
+                        {(currentUser.balance || 0).toLocaleString('vi-VN')} đ
+                      </div>
+                    </div>
+
+                    {/* Quick Wallet Actions based on role */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center gap-2">
+                      {role === 'freelancer' ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            openWithdrawModal();
+                          }}
+                          className="flex-1 py-1.5 px-2 bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <i className="fa-solid fa-arrow-up-from-bracket text-[10px]" />
+                          <span>Rút tiền</span>
+                        </button>
+                      ) : role === 'employer' ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            openVNPayModal({
+                              amount: 10000000,
+                              orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
+                              orderTitle: 'Nạp cọc Ví Tạm Giữ Escrow VNPAY',
+                              onPaymentComplete: () => {}
+                            });
+                          }}
+                          className="flex-1 py-1.5 px-2 bg-white hover:bg-blue-50 text-[#1D4ED8] hover:text-[#1E40AF] border border-blue-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <i className="fa-solid fa-plus text-[10px]" />
+                          <span>Nạp tiền VNPAY</span>
+                        </button>
+                      ) : null}
+
+                      <Link
+                        to={role === 'freelancer' ? '/freelancer/dashboard' : role === 'employer' ? '/employer/dashboard' : '/admin/dashboard'}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="py-1.5 px-2 text-[#475569] hover:text-[#0F172A] hover:bg-slate-200/60 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <span>Chi tiết ví</span>
+                        <i className="fa-solid fa-chevron-right text-[9px]" />
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* 5. Các thao tác điều hướng */}
                   <div className="py-1">
                     <button
                       type="button"
@@ -375,7 +489,7 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
                           demoOpenUserProfileModal();
                         }
                       }}
-                      className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
                     >
                       <i className="fa-regular fa-user text-slate-400 w-4 text-center" />
                       <span>Hồ sơ cá nhân</span>
@@ -389,13 +503,14 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
                           : '/freelancer/dashboard'
                       }
                       onClick={() => setUserMenuOpen(false)}
-                      className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-xl flex items-center gap-2.5 transition-colors"
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl flex items-center gap-2.5 transition-colors"
                     >
                       <i className="fa-solid fa-chart-pie text-slate-400 w-4 text-center" />
                       <span>Bảng điều khiển</span>
                     </Link>
                   </div>
 
+                  {/* 6. Đăng xuất (Phân biệt rõ ràng) */}
                   <div className="pt-1">
                     <button
                       type="button"

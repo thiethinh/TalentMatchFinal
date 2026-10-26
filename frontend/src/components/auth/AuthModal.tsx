@@ -250,13 +250,20 @@ export const AuthModal: React.FC = () => {
     e.preventDefault();
     setLoginError(null);
 
-    const result = loginUser(email, password);
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setLoginError({ message: 'Vui lòng nhập định dạng email hợp lệ (vd: yourname@example.com).' });
+      return;
+    }
+
+    const result = loginUser(cleanEmail, password);
     if (!result.success) {
       if (result.isUnverified) {
         setLoginError({
           message: 'Tài khoản của bạn chưa được xác thực email.',
           isUnverified: true,
-          unverifiedUserEmail: email
+          unverifiedUserEmail: cleanEmail
         });
       } else {
         setLoginError({ message: result.message || 'Đăng nhập không thành công.' });
@@ -268,11 +275,17 @@ export const AuthModal: React.FC = () => {
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      alert('Vui lòng nhập địa chỉ email hợp lệ (vd: yourname@example.com). Tài khoản bắt buộc phải sử dụng email thật.');
+      return;
+    }
     if (password !== confirmPassword) {
       alert('Mật khẩu xác nhận không khớp!');
       return;
     }
-    registerUser({ name, email, password, role, phone });
+    registerUser({ name: name.trim(), email: cleanEmail, password, role, phone: phone.trim() });
   };
 
   const triggerSendGoogleOtp = async (emailTarget: string, nameTarget: string, roleTarget: 'freelancer' | 'employer') => {
@@ -313,6 +326,11 @@ export const AuthModal: React.FC = () => {
       return;
     }
     const cleanEmail = googleEmailInput.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setGoogleMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ email hợp lệ (vd: yourname@gmail.com).' });
+      return;
+    }
     setGoogleLoading(true);
 
     try {
@@ -358,6 +376,11 @@ export const AuthModal: React.FC = () => {
       return;
     }
     const cleanEmail = googleEmailInput.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setGoogleMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ email hợp lệ (vd: yourname@gmail.com).' });
+      return;
+    }
 
     // Kiểm tra tính hợp lệ theo mục đích trước khi gửi OTP
     if (googleMode === 'login') {
@@ -408,6 +431,7 @@ export const AuthModal: React.FC = () => {
           email: cleanEmail,
           name: googleNameInput.trim() || cleanEmail.split('@')[0],
           role: googleRoleInput,
+          emailVerified: true,
         });
         closeAuthModal();
         navigate('/kyc');

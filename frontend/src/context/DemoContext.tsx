@@ -177,7 +177,7 @@ interface DemoContextType {
   }) => void;
   loginUser: (email: string, password?: string) => { success: boolean; isUnverified?: boolean; message?: string };
   loginWithGoogle: (targetEmail?: string) => void;
-  registerWithGoogle: (data: { email: string; name: string; role: 'freelancer' | 'employer'; phone?: string }) => void;
+  registerWithGoogle: (data: { email: string; name: string; role: 'freelancer' | 'employer'; phone?: string; emailVerified?: boolean }) => void;
   handleGoogleAuthSuccess: (googleUser: { email: string; name: string; avatar?: string; role?: 'freelancer' | 'employer' }) => Promise<void>;
   completeGoogleRegister: (role: 'freelancer' | 'employer') => void;
   logout: () => void;
@@ -408,7 +408,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             skills: skills.length > 0 ? skills : ['Chuyên môn'],
             talentCreditScore: talentScore,
             talentCreditBadge: badge,
-            isVerified: Boolean(f.emailVerified),
+            isVerified: existingProfile?.isVerified || false,
             portfolioUrl: f.website || existingProfile?.portfolioUrl,
             portfolio: existingProfile?.portfolio || [
               {
@@ -438,10 +438,10 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 avatar: f.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(f.email)}`,
                 role: 'freelancer',
                 phone: f.phone || '',
-                isVerified: Boolean(f.emailVerified),
+                isVerified: false,
                 emailVerified: Boolean(f.emailVerified),
                 accountStatus: f.locked ? 'SUSPENDED' : (f.emailVerified ? 'ACTIVE' : 'PENDING'),
-                kycStatus: f.emailVerified ? 'VERIFIED' : 'NOT_SUBMITTED',
+                kycStatus: 'NOT_SUBMITTED',
                 balance: 10000000,
                 escrowBalance: 0,
                 bio: f.bio || '',
@@ -461,16 +461,17 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .then((res) => (res.ok ? res.json() : null))
       .then((meData) => {
         if (!isMounted || !meData || !meData.authenticated) return;
-        const isVerified = Boolean(meData.emailVerified);
-        const status: AccountStatus = meData.enabled ? 'ACTIVE' : 'PENDING';
+        const isEmailVerified = Boolean(meData.emailVerified);
+        const status: AccountStatus = meData.enabled ? (isEmailVerified ? 'ACTIVE' : 'PENDING') : 'SUSPENDED';
         setUsers((prevUsers) => {
           const exists = prevUsers.find((u) => u.email.toLowerCase() === meData.email.toLowerCase());
           if (exists) {
-            const updated = {
+            const updated: User = {
               ...exists,
               name: meData.fullName || exists.name,
-              emailVerified: isVerified,
-              isVerified: isVerified,
+              emailVerified: isEmailVerified,
+              isVerified: exists.isVerified || false,
+              kycStatus: exists.kycStatus || 'NOT_SUBMITTED',
               accountStatus: status,
               avatar: meData.avatar || exists.avatar,
             };
@@ -485,10 +486,10 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               avatar: meData.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(meData.email)}`,
               role: role,
               phone: meData.phone || '',
-              isVerified: isVerified,
-              emailVerified: isVerified,
+              isVerified: false,
+              emailVerified: isEmailVerified,
               accountStatus: status,
-              kycStatus: isVerified ? 'VERIFIED' : 'NOT_SUBMITTED',
+              kycStatus: 'NOT_SUBMITTED',
               balance: 10000000,
               escrowBalance: 0,
               createdAt: '2026-10-01',
@@ -825,10 +826,17 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const registerUser = (data: { name: string; email: string; password?: string; role: 'freelancer' | 'employer'; phone?: string }) => {
+    const trimmedEmail = data.email.trim().toLowerCase();
+    const existing = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+    if (existing && existing.emailVerified) {
+      addToast('Email này đã được sử dụng và đã xác thực. Vui lòng chọn Đăng nhập!', 'error');
+      return;
+    }
+
     const newUser: User = {
-      id: `usr-${Date.now()}`,
+      id: existing ? existing.id : `usr-${Date.now()}`,
       name: data.name,
-      email: data.email,
+      email: trimmedEmail,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.name)}`,
       role: data.role,
       phone: data.phone,
@@ -836,13 +844,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       emailVerified: false,
       accountStatus: 'PENDING',
       kycStatus: 'NOT_SUBMITTED',
-      balance: 0,
+      balance: existing ? existing.balance : 0,
       escrowBalance: 0,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: existing ? existing.createdAt : new Date().toISOString().split('T')[0],
       lastLogin: 'Vừa tạo tài khoản'
     };
 
-    setUsers((prev) => [...prev, newUser]);
+    setUsers((prev) => {
+      const idx = prev.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...newUser };
+        return next;
+      }
+      return [...prev, newUser];
+    });
     setCurrentUser(newUser);
     localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);
 
@@ -972,6 +988,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const backendUser = await res.json();
               setUsers((prev) => {
                 const existingIdx = prev.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
+                const existingUser = existingIdx >= 0 ? prev[existingIdx] : undefined;
                 const roleMapped =
                   backendUser.role?.toUpperCase() === 'ADMIN'
                     ? 'admin'
@@ -979,19 +996,20 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     ? 'employer'
                     : 'freelancer';
 
+                const isBackendEmailVerified = Boolean(backendUser.emailVerified);
                 const updatedUser: User = {
-                  id: String(backendUser.id || `usr-${Date.now()}`),
+                  id: String(backendUser.id || (existingUser ? existingUser.id : `usr-${Date.now()}`)),
                   name: backendUser.fullName || trimmedEmail.split('@')[0],
                   email: backendUser.email || trimmedEmail,
                   avatar:
                     backendUser.avatar ||
-                    `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
+                    (existingUser ? existingUser.avatar : `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`),
                   role: roleMapped,
                   phone: backendUser.phone || '',
-                  isVerified: true,
-                  emailVerified: Boolean(backendUser.emailVerified),
-                  accountStatus: 'ACTIVE',
-                  kycStatus: 'VERIFIED',
+                  isVerified: existingUser ? existingUser.isVerified : false,
+                  emailVerified: isBackendEmailVerified,
+                  accountStatus: isBackendEmailVerified ? 'ACTIVE' : 'PENDING',
+                  kycStatus: existingUser ? existingUser.kycStatus : 'NOT_SUBMITTED',
                   companyName: backendUser.companyName || '',
                   balance: 50000000,
                   escrowBalance: 0,
@@ -1015,7 +1033,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setCurrentUser(found);
       localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
       if (!found.emailVerified) {
-        return { success: false, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
+        addToast(`Cảnh báo: Tài khoản ${found.email} chưa xác thực email. Vui lòng xác thực mã OTP để mở khóa đầy đủ tính năng!`, 'warning');
+        return { success: true, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
       }
       addToast(`Đăng nhập thành công! Chào mừng ${found.name}.`, 'success');
       return { success: true };
@@ -1034,10 +1053,10 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email: trimmedEmail,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
       role: tempRole,
-      isVerified: true,
+      isVerified: false,
       emailVerified: true,
       accountStatus: 'ACTIVE',
-      kycStatus: 'VERIFIED',
+      kycStatus: 'NOT_SUBMITTED',
       balance: 50000000,
       escrowBalance: 0,
     };
@@ -1066,18 +1085,18 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const found = users.find((u) => u.email.toLowerCase() === email);
       if (found) {
-        const verifiedUser = { ...found, emailVerified: true };
-        setCurrentUser(verifiedUser);
+        setCurrentUser(found);
         localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
         setIsAuthModalOpen(false);
-        addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
+        if (!found.emailVerified) {
+          addToast(`Cảnh báo: Tài khoản Google (${found.email}) chưa được xác thực email. Vui lòng xác thực mã OTP!`, 'warning');
+        } else {
+          addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
+        }
         return;
       } else {
-        registerWithGoogle({
-          email: email,
-          name: email.split('@')[0],
-          role: 'freelancer',
-        });
+        // Tài khoản chưa tồn tại: chuyển sang giao diện tạo tài khoản Google với OTP
+        setAuthModalMode('google-auth');
         return;
       }
     }
@@ -1090,6 +1109,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     name: string;
     role: 'freelancer' | 'employer';
     phone?: string;
+    emailVerified?: boolean;
   }) => {
     try {
       fetch('/api/auth/google', {
@@ -1104,10 +1124,11 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }).catch(() => {});
     } catch (_) {}
 
+    const isEmailVer = data.emailVerified !== undefined ? data.emailVerified : true;
     const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
     if (existing) {
-      const verified = { ...existing, emailVerified: true };
-      setCurrentUser(verified);
+      const updated = { ...existing, emailVerified: isEmailVer || existing.emailVerified };
+      setCurrentUser(updated);
       localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, existing.id);
       setIsAuthModalOpen(false);
       addToast(`Đã tìm thấy tài khoản! Đăng nhập thành công: ${existing.name}`, 'success');
@@ -1122,8 +1143,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       role: data.role,
       phone: data.phone || '',
       isVerified: false,
-      emailVerified: true,
-      accountStatus: 'ACTIVE',
+      emailVerified: isEmailVer,
+      accountStatus: isEmailVer ? 'ACTIVE' : 'PENDING',
       kycStatus: 'NOT_SUBMITTED',
       balance: 0,
       escrowBalance: 0,

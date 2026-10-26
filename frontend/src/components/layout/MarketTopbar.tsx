@@ -4,7 +4,7 @@ import { useDemo } from '../../context/DemoContext';
 
 interface MarketTopbarProps {
   onOpenMobileSidebar: () => void;
-  onOpenAuthModal?: (tab?: 'login' | 'register') => void;
+  onOpenAuthModal?: (tab?: 'login' | 'register' | 'verification' | 'google-auth') => void;
   onOpenUserProfileModal?: () => void;
 }
 
@@ -159,22 +159,26 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
         </form>
       </div>
 
-      {/* Middle: Mode Switch Toggle (Hire vs Work) */}
+      {/* Middle: Role-Specific Action Button (Employer: Đăng tin tuyển dụng / Freelancer: Hồ sơ & Portfolio / Admin: None) */}
       <div className="hidden sm:flex items-center gap-2 shrink-0">
-        <Link
-          to="/freelancers"
-          className="px-3.5 py-1.5 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] font-semibold text-xs transition-colors flex items-center gap-2 border border-[#FDE68A]"
-        >
-          <i className="fa-solid fa-briefcase text-xs" />
-          <span>Tôi muốn thuê</span>
-        </Link>
-        <Link
-          to="/projects"
-          className="px-3.5 py-1.5 rounded-lg bg-[#D1FAE5] hover:bg-[#A7F3D0] text-[#065F46] font-semibold text-xs transition-colors flex items-center gap-2 border border-[#A7F3D0]"
-        >
-          <i className="fa-solid fa-bolt text-xs" />
-          <span>Tôi muốn làm</span>
-        </Link>
+        {role === 'employer' ? (
+          <Link
+            to="/create-project"
+            className="px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <i className="fa-solid fa-circle-plus text-xs" />
+            <span>Đăng tin tuyển dụng</span>
+          </Link>
+        ) : role === 'freelancer' ? (
+          <button
+            type="button"
+            onClick={() => (onOpenUserProfileModal ? onOpenUserProfileModal() : demoOpenUserProfileModal())}
+            className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-[#1D4ED8] border border-blue-200 hover:border-blue-300 font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <i className="fa-regular fa-user text-xs text-[#2563EB]" />
+            <span>Hồ sơ & Portfolio</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Right: Actions, Notifications, User Menu */}
@@ -406,13 +410,61 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
                         <span>{role === 'employer' ? 'Nhà Tuyển Dụng' : role === 'admin' ? 'Quản Trị Viên' : 'Freelancer'}</span>
                       </span>
 
-                      {currentUser.isVerified && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                      {/* Email Verification Status Badge */}
+                      {currentUser.emailVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold border border-emerald-200">
                           <i className="fa-solid fa-circle-check text-[9px]" />
-                          <span>Đã eKYC</span>
+                          <span>Email đã xác thực</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full font-bold border border-amber-300 animate-pulse">
+                          <i className="fa-solid fa-triangle-exclamation text-[9px]" />
+                          <span>Chưa xác thực email</span>
                         </span>
                       )}
+
+                      {/* eKYC Status Badge */}
+                      {currentUser.isVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full font-bold border border-blue-200">
+                          <i className="fa-solid fa-id-card text-[9px]" />
+                          <span>Đã eKYC</span>
+                        </span>
+                      ) : (
+                        <Link
+                          to="/kyc"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-0.5 rounded-full font-medium transition-colors cursor-pointer"
+                        >
+                          <i className="fa-regular fa-id-card text-[9px]" />
+                          <span>Chưa eKYC</span>
+                        </Link>
+                      )}
                     </div>
+
+                    {/* Unverified Email Warning CTA in Dropdown */}
+                    {!currentUser.emailVerified && (
+                      <div className="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2 shadow-2xs">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                            <i className="fa-solid fa-triangle-exclamation text-amber-600 text-xs" />
+                            <span>Chưa xác thực email</span>
+                          </p>
+                          <p className="text-[10px] text-amber-700 truncate">
+                            Nhập mã OTP để mở khóa tài khoản
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            onOpenAuthModal?.('verification');
+                          }}
+                          className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shrink-0 transition-colors cursor-pointer shadow-xs"
+                        >
+                          Xác thực ngay
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* 4. Vùng hiển thị số dư ví (Icon ví + Số tiền nổi bật + Thao tác ví) */}

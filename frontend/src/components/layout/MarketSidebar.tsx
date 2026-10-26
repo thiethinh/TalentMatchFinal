@@ -119,14 +119,14 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 </NavLink>
                 <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-magnifying-glass w-4 text-center text-sm" />
-                    <span>Tìm dự án / việc làm</span>
+                    <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
+                    <span>Danh sách công việc</span>
                   </span>
                 </NavLink>
                 <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-users w-4 text-center text-sm" />
-                    <span>Tìm kiếm Freelancer</span>
+                    <span>Danh sách Freelancer</span>
                   </span>
                 </NavLink>
                 <a href="/#how" className={actionBtnClass} onClick={onCloseMobile}>
@@ -155,7 +155,13 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
-                    <span>Tìm việc & nộp báo giá</span>
+                    <span>Danh sách công việc</span>
+                  </span>
+                </NavLink>
+                <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-users w-4 text-center text-sm" />
+                    <span>Danh sách Freelancer</span>
                   </span>
                 </NavLink>
                 <NavLink to="/freelancer/dashboard" className={navLinkClass} onClick={onCloseMobile}>
@@ -188,7 +194,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <i className="fa-solid fa-wallet w-4 text-center text-sm text-[#059669]" />
                     <span>Rút tiền về Ngân hàng</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
                 <button
                   type="button"
@@ -202,7 +207,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <i className="fa-regular fa-user w-4 text-center text-sm text-[#2563EB]" />
                     <span>Hồ sơ & Portfolio cá nhân</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
               </nav>
             </div>
@@ -221,6 +225,18 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <span>Trang chủ</span>
                   </span>
                 </NavLink>
+                <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
+                    <span>Danh sách công việc</span>
+                  </span>
+                </NavLink>
+                <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-users w-4 text-center text-sm" />
+                    <span>Danh sách Freelancer</span>
+                  </span>
+                </NavLink>
                 <NavLink to="/create-project" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-circle-plus w-4 text-center text-sm text-[#059669]" />
@@ -231,12 +247,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-chart-pie w-4 text-center text-sm" />
                     <span>Quản lý dự án tuyển dụng</span>
-                  </span>
-                </NavLink>
-                <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
-                  <span className="flex items-center gap-3">
-                    <i className="fa-solid fa-users w-4 text-center text-sm text-[#2563EB]" />
-                    <span>Tìm kiếm & Mời Freelancer</span>
                   </span>
                 </NavLink>
                 <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
@@ -262,7 +272,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <i className="fa-solid fa-credit-card w-4 text-center text-sm text-[#D97706]" />
                     <span>Nạp tiền cọc VNPAY</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
                 <button
                   type="button"
@@ -276,7 +285,6 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <i className="fa-regular fa-building w-4 text-center text-sm text-[#059669]" />
                     <span>Hồ sơ Doanh nghiệp</span>
                   </span>
-                  <i className="fa-solid fa-arrow-right text-[10px] text-[#94A3B8]" />
                 </button>
               </nav>
             </div>
@@ -289,6 +297,24 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                 Quản Trị Viên
               </div>
               <nav className="space-y-1">
+                <NavLink to="/" end className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-house w-4 text-center text-sm" />
+                    <span>Trang chủ</span>
+                  </span>
+                </NavLink>
+                <NavLink to="/projects" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-briefcase w-4 text-center text-sm" />
+                    <span>Danh sách công việc</span>
+                  </span>
+                </NavLink>
+                <NavLink to="/freelancers" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-users w-4 text-center text-sm" />
+                    <span>Danh sách Freelancer</span>
+                  </span>
+                </NavLink>
                 <button
                   type="button"
                   onClick={() => {

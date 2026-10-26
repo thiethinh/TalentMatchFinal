@@ -26,19 +26,20 @@ export const MarketLayout: React.FC<MarketLayoutProps> = ({ children }) => {
         
         {/* Unverified Email Warning Banner */}
         {currentUser.role !== 'guest' && !isEmailVerified && (
-          <div className="bg-amber-500 text-amber-950 px-4 py-2 text-xs font-semibold sticky top-0 z-40 flex items-center justify-between gap-3 shadow-xs">
+          <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2.5 text-xs font-semibold sticky top-0 z-40 flex items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-2 truncate">
-              <i className="fa-solid fa-triangle-exclamation text-sm shrink-0" />
+              <i className="fa-solid fa-triangle-exclamation text-base shrink-0 text-amber-200 animate-pulse" />
               <span className="truncate">
-                Tài khoản ({currentUser.email}) chưa xác thực email. Vui lòng xác thực để mở khóa toàn bộ quyền đăng tin và ứng tuyển.
+                Tài khoản (<strong className="font-mono">{currentUser.email}</strong>) chưa được xác thực email. Vui lòng xác thực mã OTP để mở khóa đầy đủ tính năng!
               </span>
             </div>
             <button
               type="button"
-              onClick={() => openAuthModal?.('register')}
-              className="underline hover:text-white text-xs shrink-0 cursor-pointer font-bold"
+              onClick={() => openAuthModal?.('verification')}
+              className="px-3.5 py-1 bg-amber-950 hover:bg-black text-white rounded-md text-xs font-bold shrink-0 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
             >
-              Nhập mã OTP
+              <i className="fa-solid fa-shield-check text-xs text-amber-400" />
+              <span>Xác thực OTP ngay</span>
             </button>
           </div>
         )}

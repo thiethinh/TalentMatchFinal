@@ -90,7 +90,8 @@ npm start
 | `npm start` hoặc `npm run dev` | Khởi động toàn bộ dự án với Docker |
 | `npm run dev:d` | Chạy Docker ở chế độ chạy ngầm (detached) |
 | `npm run dev:down` | Dừng toàn bộ Docker container |
-| `npm run dev:clean` | Dừng và dọn sạch volumes database Docker |
+| `npm run dev:clean` | Dừng và dọn sạch volumes database Docker (reset DB về mới hoàn toàn) |
+| `npm run db:seed` | Nạp lại 100% CSDL mới từ TalentMatch_database.sql vào MySQL |
 | `npm run dev:local` | Chạy cùng lúc cả Spring Boot & Vite Frontend không qua Docker |
 | `npm run db:up` | Chỉ khởi động MySQL database qua Docker |
 | `npm run db:down` | Dừng MySQL database |
@@ -101,13 +102,12 @@ npm start
 | `npm run frontend:build` | Build production cho Frontend |
 | `npm run frontend:preview` | Preview bản build Frontend |
 
-## 4. Tài Khoản Demo Sẵn Có
-Khi khởi động lần đầu, hệ thống tự động sinh dữ liệu demo:
+## 4. Tài Khoản Test Demo Chuẩn Xác
+Hệ thống sử dụng bảng tra cứu 19 tài khoản test thực tế đồng bộ 100% với MySQL trong file `tai_khoan_test.txt`:
+* **Mật khẩu chung:** `demo123456` (cho tất cả tài khoản Freelancer và Employer)
+* **Mật khẩu Admin:** `admin123456` (hoặc `demo123456`)
+* **Chuyển đổi tài khoản nhanh:** Bấm nút **"Test"** trên Header website để chuyển đổi giữa các vai trò (Employer Lê Thu Hà, Freelancer Nguyễn Minh Anh, Admin,...).
 
-| Vai trò | Email | Mật khẩu |
-| :--- | :--- | :--- |
-| **Quản trị viên (Admin)** | `admin@talentmatch.vn` | `admin123` |
-| **Khách hàng / Doanh nghiệp** | `client@talentmatch.vn` | `123456` |
-| **Khách hàng 2** | `customer2@talentmatch.vn` | `123456` |
-| **Freelancer (UI/UX)** | `freelancer@talentmatch.vn` | `123456` |
-| **Freelancer (Developer)** | `developer@talentmatch.vn` | `123456` |
+> 💡 **Lưu ý khi Git Pull về máy khác:**
+> - Nếu chạy lần đầu: Chỉ cần `npm run dev` là Docker tự động nạp toàn bộ CSDL mới.
+> - Nếu máy đã từng chạy Docker trước đó (đã có volume dữ liệu cũ): Chỉ cần chạy `npm run db:seed` (hoặc `npm run dev:clean` rồi `npm run dev`) để cập nhật CSDL mới nhất.

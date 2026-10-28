@@ -244,9 +244,9 @@ export const Home: React.FC = () => {
                   <span className="text-[11px] text-[#94A3B8] font-medium">Hạn chót: {proj.deadline}</span>
                 </div>
 
-                <h3 className="font-bold text-[#0F172A] text-base line-clamp-1 group-hover:text-[#2563EB] transition-colors">
+                <Link to={`/jobs/${proj.id}`} className="block font-bold text-[#0F172A] text-base line-clamp-1 group-hover:text-[#2563EB] transition-colors">
                   {proj.title}
-                </h3>
+                </Link>
                 <p className="text-xs text-[#475569] line-clamp-2 leading-relaxed">
                   {proj.description}
                 </p>
@@ -267,10 +267,10 @@ export const Home: React.FC = () => {
                 </div>
 
                 <Link
-                  to="/projects"
+                  to={`/jobs/${proj.id}`}
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-colors shadow-xs"
                 >
-                  Nộp Báo Giá ({proj.proposalsCount})
+                  Xem & Nộp Giá ({proj.proposalsCount})
                 </Link>
               </div>
             </div>

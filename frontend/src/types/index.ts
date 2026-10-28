@@ -107,6 +107,8 @@ export interface Proposal {
   coverLetter: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   createdAt: string;
+  attachments?: { name: string; size?: string; type?: string; url?: string }[];
+  milestonesProposal?: { title: string; amount: number; days: number }[];
 }
 
 export type OrderStatus =

@@ -12,6 +12,8 @@ import { VNPayModal } from './components/common/VNPayModal';
 
 import { Home } from './pages/Home';
 import { Projects } from './pages/Projects';
+import { JobDetail } from './pages/JobDetail';
+import { SavedJobs } from './pages/SavedJobs';
 import { Freelancers } from './pages/Freelancers';
 import { CreateProject } from './pages/CreateProject';
 import { FreelancerDashboard } from './pages/FreelancerDashboard';
@@ -32,6 +34,11 @@ const AppContent: React.FC = () => {
         {/* Jobs / Projects Routes (Supports both paths) */}
         <Route path="/jobs" element={<Projects />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/jobs/:id" element={<JobDetail />} />
+        <Route path="/projects/:id" element={<JobDetail />} />
+
+        {/* Saved Jobs Dedicated Page */}
+        <Route path="/saved-jobs" element={<SavedJobs />} />
         
         <Route path="/freelancers" element={<Freelancers />} />
         <Route path="/create-project" element={<CreateProject />} />

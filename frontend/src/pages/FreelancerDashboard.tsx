@@ -46,14 +46,11 @@ export const FreelancerDashboard: React.FC = () => {
     proposals,
     projects,
     currentUser,
-    users,
     freelancers,
     deliverWork,
     updateFreelancerBioAndPortfolio,
     openWithdrawModal,
-    savedEmployerIds,
     savedProjectIds,
-    toggleSaveEmployer,
     toggleSaveProject,
     invitations,
     acceptInvitation,
@@ -122,8 +119,6 @@ export const FreelancerDashboard: React.FC = () => {
     if (invitationFilter === 'ALL') return true;
     return inv.status === invitationFilter;
   });
-
-  const savedEmployers = users.filter((u) => u.role === 'employer' && savedEmployerIds.includes(u.id));
   const savedProjectsList = projects.filter((p) => savedProjectIds.includes(p.id));
 
   const activeOrders = myOrders.filter((o) => o.status === 'ORDER_IN_PROGRESS' || o.status === 'REVISION_REQUESTED');
@@ -334,7 +329,7 @@ export const FreelancerDashboard: React.FC = () => {
           }`}
         >
           <i className="fa-solid fa-bookmark text-xs" />
-          <span>Đã Lưu ({savedEmployers.length + savedProjectsList.length})</span>
+          <span>Việc Đã Lưu ({savedProjectsList.length})</span>
         </button>
 
         <button
@@ -712,101 +707,21 @@ export const FreelancerDashboard: React.FC = () => {
       {activeTab === 'saved' && (
         <div className="space-y-6 animate-in fade-in duration-150">
           
-          {/* Section 1: Saved Employers */}
-          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          {/* Dedicated Saved Jobs link banner */}
+          <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+            <div className="flex items-center gap-2.5 text-blue-900">
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shrink-0">
+                <i className="fa-solid fa-heart" />
+              </span>
               <div>
-                <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <i className="fa-solid fa-building text-blue-600 text-xs" />
-                  <span>Doanh Nghiệp / Nhà Tuyển Dụng Đã Lưu ({savedEmployers.length})</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Danh sách các công ty và khách hàng tiềm năng bạn đã đánh dấu.
-                </p>
+                <div className="font-bold text-slate-900">Quản lý việc làm quan tâm trên trang riêng biệt</div>
+                <div className="text-[11px] text-slate-600">Hệ thống chỉ lưu bài đăng công việc theo đúng chuyên môn, không lưu công ty.</div>
               </div>
-
-              <Link
-                to="/projects"
-                className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 self-start sm:self-auto"
-              >
-                <span>Khám phá thêm dự án</span>
-                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
-              </Link>
             </div>
-
-            {savedEmployers.length === 0 ? (
-              <div className="text-center py-10 bg-slate-50 rounded-md border border-slate-200 space-y-2">
-                <i className="fa-solid fa-building text-2xl text-slate-300 mx-auto block" />
-                <div className="font-semibold text-slate-700 text-xs">Bạn chưa lưu Nhà tuyển dụng nào</div>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                  Khi xem các dự án tuyển dụng, bạn có thể bấm nút Lưu Doanh Nghiệp để tiện theo dõi.
-                </p>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs"
-                >
-                  <span>Xem dự án đang tuyển</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {savedEmployers.map((emp) => {
-                  const empProjects = projects.filter((p) => p.employerId === emp.id || p.employerName === emp.name);
-                  return (
-                    <div
-                      key={emp.id}
-                      className="p-4 bg-slate-50/70 hover:bg-white rounded-md border border-slate-200 hover:border-slate-300 transition-colors flex flex-col justify-between space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={emp.avatar}
-                            alt={emp.name}
-                            className="w-10 h-10 rounded-md object-cover border border-slate-200"
-                          />
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h3 className="font-bold text-slate-900 text-xs">{emp.companyName || emp.name}</h3>
-                              {emp.isVerified && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-blue-700 bg-blue-100 font-semibold px-1.5 py-0.2 rounded-xs">
-                                  <i className="fa-solid fa-circle-check text-[9px] text-blue-600" />
-                                  <span>Tín nhiệm</span>
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                              Đại diện: <strong className="text-slate-700">{emp.name}</strong> • MST: <span className="font-mono">{emp.taxCode || '0101234567'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => toggleSaveEmployer(emp.id)}
-                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                          title="Bỏ lưu nhà tuyển dụng"
-                        >
-                          <i className="fa-solid fa-trash-can text-xs" />
-                        </button>
-                      </div>
-
-                      <div className="pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs">
-                        <div className="text-[11px] text-slate-600">
-                          Đang có <strong className="text-blue-700 font-bold">{empProjects.length}</strong> dự án
-                        </div>
-
-                        <Link
-                          to={`/projects?search=${encodeURIComponent(emp.companyName || emp.name)}`}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] rounded-md transition-colors flex items-center gap-1"
-                        >
-                          <span>Xem việc làm</span>
-                          <i className="fa-solid fa-arrow-up-right-from-square text-[9px]" />
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <Link to="/saved-jobs" className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs shrink-0 flex items-center gap-1.5">
+              <span>Mở trang /saved-jobs</span>
+              <i className="fa-solid fa-arrow-right text-[10px]" />
+            </Link>
           </div>
 
           {/* Section 2: Saved Projects */}

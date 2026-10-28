@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 import type { Project } from '../types';
 
@@ -91,9 +91,7 @@ export const Projects: React.FC = () => {
     submitProposal,
     currentUser,
     toggleSaveProject,
-    toggleSaveEmployer,
     isProjectSaved,
-    isEmployerSaved
   } = useDemo();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -784,9 +782,12 @@ export const Projects: React.FC = () => {
                       </div>
 
                       {/* Project Title */}
-                      <h2 className="font-bold text-[#0F172A] text-base sm:text-lg group-hover:text-[#2563EB] transition-colors leading-snug">
+                      <Link
+                        to={`/jobs/${proj.id}`}
+                        className="block font-bold text-[#0F172A] text-base sm:text-lg group-hover:text-[#2563EB] transition-colors leading-snug cursor-pointer"
+                      >
                         {proj.title}
-                      </h2>
+                      </Link>
 
                       {/* Employer Info & Save Employer Button */}
                       <div className="flex items-center gap-2 flex-wrap text-xs text-[#475569]">
@@ -809,22 +810,7 @@ export const Projects: React.FC = () => {
                           </span>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSaveEmployer(proj.employerId);
-                          }}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition-colors cursor-pointer flex items-center gap-1 ${
-                            isEmployerSaved(proj.employerId)
-                              ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
-                              : 'bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#475569] border-[#E2E8F0]'
-                          }`}
-                          title={isEmployerSaved(proj.employerId) ? 'Bỏ lưu nhà tuyển dụng' : 'Lưu nhà tuyển dụng này'}
-                        >
-                          <i className="fa-solid fa-building text-[10px]" />
-                          <span>{isEmployerSaved(proj.employerId) ? '✓ Đã lưu Cty' : '+ Lưu Cty'}</span>
-                        </button>
+
                       </div>
                     </div>
 
@@ -920,7 +906,14 @@ export const Projects: React.FC = () => {
                       </span>
                     </div>
 
-                    {currentUser.role === 'freelancer' ? (
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/jobs/${proj.id}`}
+                        className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition-colors"
+                      >
+                        Xem Chi Tiết
+                      </Link>
+                      {currentUser.role === 'freelancer' ? (
                       <button
                         type="button"
                         onClick={() => handleOpenProposal(proj)}
@@ -943,6 +936,7 @@ export const Projects: React.FC = () => {
                         (Chuyển vai trò Freelancer để nộp báo giá)
                       </span>
                     )}
+                    </div>
                   </div>
                 </div>
               ))}

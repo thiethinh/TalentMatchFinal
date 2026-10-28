@@ -129,6 +129,12 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <span>Danh sách Freelancer</span>
                   </span>
                 </NavLink>
+                <NavLink to="/saved-jobs" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-heart w-4 text-center text-sm text-rose-500" />
+                    <span>Việc làm đã lưu</span>
+                  </span>
+                </NavLink>
                 <a href="/#how" className={actionBtnClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-shield-halved w-4 text-center text-sm text-[#059669]" />
@@ -174,6 +180,12 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-file-contract w-4 text-center text-sm text-[#059669]" />
                     <span>Hợp đồng & nộp bài</span>
+                  </span>
+                </NavLink>
+                <NavLink to="/saved-jobs" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-heart w-4 text-center text-sm text-rose-500" />
+                    <span>Việc làm đã lưu</span>
                   </span>
                 </NavLink>
                 <NavLink to="/kyc" className={navLinkClass} onClick={onCloseMobile}>

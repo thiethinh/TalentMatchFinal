@@ -20,19 +20,22 @@ import type {
   DeliveryFile,
   OrderChatMessage
 } from '../types';
-import {
-  GUEST_USER,
-  INITIAL_USERS,
-  FREELANCERS,
-  PROJECTS,
-  PROPOSALS,
-  INITIAL_ORDERS,
-  INITIAL_REVIEWS,
-  INITIAL_DISPUTES,
-  INITIAL_VNPAY_TRANSACTIONS,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_INVITATIONS
-} from '../data/mockData';
+export const GUEST_USER: User = {
+  id: 'usr-guest',
+  name: 'Khách',
+  email: 'guest@talentmatch.vn',
+  avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=guest-user',
+  role: 'guest',
+  isVerified: false,
+  emailVerified: false,
+  accountStatus: 'ACTIVE',
+  kycStatus: 'NOT_SUBMITTED',
+  balance: 0,
+  escrowBalance: 0,
+  createdAt: '2026-09-28',
+  lastLogin: 'Hiện tại',
+  bankAccounts: []
+};
 
 interface Toast {
   id: string;
@@ -40,48 +43,22 @@ interface Toast {
   message: string;
 }
 
-const CURRENT_DATA_VERSION = 'v5_seed_complete_2026';
-const STORAGE_KEY_DATA_VERSION = 'talentmatch_demo_data_version';
-
-const STORAGE_KEY_USERS = 'talentmatch_demo_users_v5';
-const STORAGE_KEY_CURRENT_USER_ID = 'talentmatch_demo_current_user_id_v5';
-const STORAGE_KEY_PROJECTS = 'talentmatch_demo_projects_v5';
-const STORAGE_KEY_PROPOSALS = 'talentmatch_demo_proposals_v5';
-const STORAGE_KEY_ORDERS = 'talentmatch_demo_orders_v5';
-const STORAGE_KEY_REVIEWS = 'talentmatch_demo_reviews_v5';
-const STORAGE_KEY_DISPUTES = 'talentmatch_demo_disputes_v5';
-const STORAGE_KEY_VNPAY = 'talentmatch_demo_vnpay_v5';
-const STORAGE_KEY_CONFIG = 'talentmatch_demo_config_v5';
-const STORAGE_KEY_FREELANCERS = 'talentmatch_demo_freelancers_v5';
-const STORAGE_KEY_NOTIFICATIONS = 'talentmatch_demo_notifications_v5';
-const STORAGE_KEY_SAVED_FREELANCERS = 'talentmatch_demo_saved_freelancers_v5';
-const STORAGE_KEY_SAVED_EMPLOYERS = 'talentmatch_demo_saved_employers_v5';
-const STORAGE_KEY_SAVED_PROJECTS = 'talentmatch_demo_saved_projects_v5';
-const STORAGE_KEY_INVITATIONS = 'talentmatch_demo_invitations_v5';
-const STORAGE_KEY_ORDER_MESSAGES = 'talentmatch_demo_order_messages_v5';
-
-// Tự động đồng bộ dữ liệu mẫu mới nhất khi version thay đổi (đảm bảo git pull + npm run dev tự cập nhật cho tất cả mọi người)
-if (typeof window !== 'undefined') {
-  try {
-    const existingVersion = localStorage.getItem(STORAGE_KEY_DATA_VERSION);
-    if (existingVersion !== CURRENT_DATA_VERSION) {
-      localStorage.setItem(STORAGE_KEY_DATA_VERSION, CURRENT_DATA_VERSION);
-      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(INITIAL_USERS));
-      localStorage.setItem(STORAGE_KEY_FREELANCERS, JSON.stringify(FREELANCERS));
-      localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(PROJECTS));
-      localStorage.setItem(STORAGE_KEY_PROPOSALS, JSON.stringify(PROPOSALS));
-      localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(INITIAL_ORDERS));
-      localStorage.setItem(STORAGE_KEY_REVIEWS, JSON.stringify(INITIAL_REVIEWS));
-      localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_DISPUTES));
-      localStorage.setItem(STORAGE_KEY_VNPAY, JSON.stringify(INITIAL_VNPAY_TRANSACTIONS));
-      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
-      localStorage.setItem(STORAGE_KEY_INVITATIONS, JSON.stringify(INITIAL_INVITATIONS));
-      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, INITIAL_USERS[0].id);
-    }
-  } catch (e) {
-    // ignore
-  }
-}
+const STORAGE_KEY_USERS = 'talentmatch_db_users_v6';
+const STORAGE_KEY_CURRENT_USER_ID = 'talentmatch_db_current_user_id_v6';
+const STORAGE_KEY_PROJECTS = 'talentmatch_db_projects_v6';
+const STORAGE_KEY_PROPOSALS = 'talentmatch_db_proposals_v6';
+const STORAGE_KEY_ORDERS = 'talentmatch_db_orders_v6';
+const STORAGE_KEY_REVIEWS = 'talentmatch_db_reviews_v6';
+const STORAGE_KEY_DISPUTES = 'talentmatch_db_disputes_v6';
+const STORAGE_KEY_VNPAY = 'talentmatch_db_vnpay_v6';
+const STORAGE_KEY_CONFIG = 'talentmatch_db_config_v6';
+const STORAGE_KEY_FREELANCERS = 'talentmatch_db_freelancers_v6';
+const STORAGE_KEY_NOTIFICATIONS = 'talentmatch_db_notifications_v6';
+const STORAGE_KEY_SAVED_FREELANCERS = 'talentmatch_db_saved_freelancers_v6';
+const STORAGE_KEY_SAVED_EMPLOYERS = 'talentmatch_db_saved_employers_v6';
+const STORAGE_KEY_SAVED_PROJECTS = 'talentmatch_db_saved_projects_v6';
+const STORAGE_KEY_INVITATIONS = 'talentmatch_db_invitations_v6';
+const STORAGE_KEY_ORDER_MESSAGES = 'talentmatch_db_order_messages_v6';
 
 const loadFromStorage = <T,>(key: string, fallback: T): T => {
   try {
@@ -251,50 +228,50 @@ interface DemoContextType {
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
 
 export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>(() => loadFromStorage(STORAGE_KEY_USERS, INITIAL_USERS));
+  const [users, setUsers] = useState<User[]>(() => loadFromStorage(STORAGE_KEY_USERS, []));
   const [currentUser, setCurrentUser] = useState<User>(() => {
-    const savedUserId = localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID);
+    const savedUserId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID) : null;
     if (savedUserId === 'usr-guest') return GUEST_USER;
-    const savedUsers = loadFromStorage(STORAGE_KEY_USERS, INITIAL_USERS);
-    if (savedUserId) {
+    const savedUsers = loadFromStorage(STORAGE_KEY_USERS, [] as User[]);
+    if (savedUserId && savedUsers.length > 0) {
       const found = savedUsers.find((u: User) => u.id === savedUserId);
       if (found) return found;
     }
-    return savedUsers[0] || INITIAL_USERS[0];
+    return savedUsers[0] || GUEST_USER;
   });
-  const [projects, setProjects] = useState<Project[]>(() => loadFromStorage(STORAGE_KEY_PROJECTS, PROJECTS));
-  const [proposals, setProposals] = useState<Proposal[]>(() => loadFromStorage(STORAGE_KEY_PROPOSALS, PROPOSALS));
-  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage(STORAGE_KEY_ORDERS, INITIAL_ORDERS));
-  const [reviews, setReviews] = useState<Review[]>(() => loadFromStorage(STORAGE_KEY_REVIEWS, INITIAL_REVIEWS));
-  const [disputes, setDisputes] = useState<Dispute[]>(() => loadFromStorage(STORAGE_KEY_DISPUTES, INITIAL_DISPUTES));
+  const [projects, setProjects] = useState<Project[]>(() => loadFromStorage(STORAGE_KEY_PROJECTS, []));
+  const [proposals, setProposals] = useState<Proposal[]>(() => loadFromStorage(STORAGE_KEY_PROPOSALS, []));
+  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage(STORAGE_KEY_ORDERS, []));
+  const [reviews, setReviews] = useState<Review[]>(() => loadFromStorage(STORAGE_KEY_REVIEWS, []));
+  const [disputes, setDisputes] = useState<Dispute[]>(() => loadFromStorage(STORAGE_KEY_DISPUTES, []));
   const [freelancers, setFreelancers] = useState<FreelancerProfile[]>(() =>
-    loadFromStorage(STORAGE_KEY_FREELANCERS, FREELANCERS)
+    loadFromStorage(STORAGE_KEY_FREELANCERS, [])
   );
   const [vnpayTransactions, setVnpayTransactions] = useState<VNPayTransaction[]>(() =>
-    loadFromStorage(STORAGE_KEY_VNPAY, INITIAL_VNPAY_TRANSACTIONS)
+    loadFromStorage(STORAGE_KEY_VNPAY, [])
   );
   const [platformConfig, setPlatformConfig] = useState<PlatformConfig>(() =>
     loadFromStorage(STORAGE_KEY_CONFIG, DEFAULT_CONFIG)
   );
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
-    loadFromStorage(STORAGE_KEY_NOTIFICATIONS, INITIAL_NOTIFICATIONS)
+    loadFromStorage(STORAGE_KEY_NOTIFICATIONS, [])
   );
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Saved Bookmarks (Freelancers, Employers, Projects)
   const [savedFreelancerIds, setSavedFreelancerIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_FREELANCERS, ['free-1', 'free-2'])
+    loadFromStorage(STORAGE_KEY_SAVED_FREELANCERS, ['free-8', 'free-9'])
   );
   const [savedEmployerIds, setSavedEmployerIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_EMPLOYERS, ['usr-emp-1', 'usr-emp-2'])
+    loadFromStorage(STORAGE_KEY_SAVED_EMPLOYERS, ['usr-emp-2', 'usr-emp-3'])
   );
   const [savedProjectIds, setSavedProjectIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_PROJECTS, ['prj-1', 'prj-2'])
+    loadFromStorage(STORAGE_KEY_SAVED_PROJECTS, ['1', '2'])
   );
 
   // Project Invitations State
   const [invitations, setInvitations] = useState<ProjectInvitation[]>(() =>
-    loadFromStorage(STORAGE_KEY_INVITATIONS, INITIAL_INVITATIONS)
+    loadFromStorage(STORAGE_KEY_INVITATIONS, [] as ProjectInvitation[])
   );
 
   const INITIAL_ORDER_MESSAGES: Record<string, OrderChatMessage[]> = {
@@ -384,14 +361,28 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [notifications]);
 
   // Tự động đồng bộ dữ liệu trực tiếp từ MySQL Database (TalentMatch Pro)
-  useEffect(() => {
-    let isMounted = true;
+  const reloadAllDataFromDb = () => {
+    // 1. Đồng bộ người dùng từ bảng users & user_bank_accounts
+    fetch('/api/users')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((dbUsers) => {
+        if (Array.isArray(dbUsers) && dbUsers.length > 0) {
+          setUsers(dbUsers);
+          setCurrentUser((curr) => {
+            if (curr.id === 'usr-guest') return curr;
+            const savedId = localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID);
+            const found = dbUsers.find((u: User) => u.id === savedId || u.email === curr.email);
+            return found || dbUsers[1] || curr; // Default to Lê Thu Hà (usr-emp-2)
+          });
+        }
+      })
+      .catch(() => {});
 
-    // 1. Đồng bộ toàn bộ Dự án từ MySQL (/api/jobs)
+    // 2. Đồng bộ toàn bộ Dự án từ MySQL (/api/jobs)
     fetch('/api/jobs?size=500')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!isMounted || !data || !Array.isArray(data.items) || data.items.length === 0) return;
+        if (!data || !Array.isArray(data.items) || data.items.length === 0) return;
         const mappedProjects: Project[] = data.items.map((j: any) => {
           let skills: string[] = ['Chuyên môn'];
           if (Array.isArray(j.requiredSkills)) {
@@ -408,7 +399,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: String(j.id),
             title: j.title || 'Dự án tuyển dụng',
             category: cat,
-            employerId: j.customerId ? `usr-emp-${j.customerId}` : (j.customer ? `usr-emp-${j.customer.id}` : 'usr-emp-1'),
+            employerId: j.customerId ? `usr-emp-${j.customerId}` : (j.customer ? `usr-emp-${j.customer.id}` : 'usr-emp-2'),
             employerName: j.customerName || (j.customer ? (j.customer.companyName || j.customer.fullName) : 'Nhà tuyển dụng'),
             employerAvatar: j.customerAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(j.customerName || 'employer')}`,
             employerCompany: j.customerName || undefined,
@@ -427,21 +418,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       })
       .catch(() => {});
 
-    // 2. Đồng bộ toàn bộ Freelancer từ MySQL (/api/freelancers)
-    fetch('/api/freelancers')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!isMounted || !data || !Array.isArray(data.freelancers) || data.freelancers.length === 0) return;
-        const mappedFreelancers: FreelancerProfile[] = data.freelancers.map((f: any) => {
+    // 3. Đồng bộ Freelancers & Portfolios từ MySQL
+    Promise.all([
+      fetch('/api/freelancers').then((r) => (r.ok ? r.json() : null)),
+      fetch('/api/portfolios').then((r) => (r.ok ? r.json() : null))
+    ])
+      .then(([freeData, portData]) => {
+        if (!freeData || !Array.isArray(freeData.freelancers)) return;
+        const portList: any[] = Array.isArray(portData) ? portData : [];
+
+        const mappedFreelancers: FreelancerProfile[] = freeData.freelancers.map((f: any) => {
           let skills: string[] = ['Kỹ năng'];
-          if (Array.isArray(f.skills)) {
-            skills = f.skills;
-          } else if (typeof f.skills === 'string' && f.skills.trim()) {
+          if (Array.isArray(f.skills)) skills = f.skills;
+          else if (typeof f.skills === 'string' && f.skills.trim()) {
             skills = f.skills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean);
           }
-          const existingProfile = FREELANCERS.find(
-            (p) => p.name === f.fullName || p.userId === `usr-free-${f.id}` || p.id === `free-${f.id}`
-          );
           const rating = f.rating ? Number(f.rating) : 4.9;
           const completedCount = f.completedProjects ? Number(f.completedProjects) : 25;
           const talentScore = f.talentCreditBalance && f.talentCreditBalance > 0
@@ -449,6 +440,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             : Math.min(990, Math.max(800, Math.round(rating * 195)));
           const badge: FreelancerProfile['talentCreditBadge'] =
             rating >= 4.9 ? 'Top Rated' : rating >= 4.8 ? 'Gold' : rating >= 4.5 ? 'Silver' : 'Bronze';
+
+          const userPorts = portList.filter((p: any) => p.userId === `usr-free-${f.id}` || p.freelancerId === `free-${f.id}`);
 
           return {
             id: `free-${f.id}`,
@@ -465,9 +458,9 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             skills: skills.length > 0 ? skills : ['Chuyên môn'],
             talentCreditScore: talentScore,
             talentCreditBadge: badge,
-            isVerified: existingProfile?.isVerified || false,
-            portfolioUrl: f.website || existingProfile?.portfolioUrl,
-            portfolio: existingProfile?.portfolio || [
+            isVerified: Boolean(f.isVerified || f.kycStatus === 'VERIFIED'),
+            portfolioUrl: f.website || 'https://talentmatch.vn',
+            portfolio: userPorts.length > 0 ? userPorts : [
               {
                 id: `port-${f.id}-1`,
                 title: `${f.professionalTitle || 'Dự Án Tiêu Biểu'} - ${f.fullName}`,
@@ -480,44 +473,62 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           };
         });
         setFreelancers(mappedFreelancers);
-
-        // Bổ sung tài khoản từ DB vào danh sách users nếu chưa có
-        setUsers((prevUsers) => {
-          const userEmails = new Set(prevUsers.map((u) => u.email.toLowerCase()));
-          const newUsers: User[] = [];
-          data.freelancers.forEach((f: any) => {
-            if (f.email && !userEmails.has(f.email.toLowerCase())) {
-              userEmails.add(f.email.toLowerCase());
-              newUsers.push({
-                id: `usr-free-${f.id}`,
-                name: f.fullName,
-                email: f.email,
-                avatar: f.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(f.email)}`,
-                role: 'freelancer',
-                phone: f.phone || '',
-                isVerified: false,
-                emailVerified: Boolean(f.emailVerified),
-                accountStatus: f.locked ? 'SUSPENDED' : (f.emailVerified ? 'ACTIVE' : 'PENDING'),
-                kycStatus: 'NOT_SUBMITTED',
-                balance: 10000000,
-                escrowBalance: 0,
-                bio: f.bio || '',
-                skills: f.skills ? f.skills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean) : [],
-                createdAt: f.createdAt ? String(f.createdAt).split('T')[0] : '2026-10-01',
-                bankAccounts: []
-              });
-            }
-          });
-          return newUsers.length > 0 ? [...prevUsers, ...newUsers] : prevUsers;
-        });
       })
       .catch(() => {});
 
-    // 3. Đồng bộ phiên đăng nhập thực tế từ backend (/api/auth/me) với Session Cookie
+    // 4. Đồng bộ Đề xuất báo giá từ MySQL (/api/proposals)
+    fetch('/api/proposals')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setProposals(data);
+      })
+      .catch(() => {});
+
+    // 5. Đồng bộ Hợp đồng / Đơn hàng từ MySQL (/api/orders)
+    fetch('/api/orders')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setOrders(data);
+      })
+      .catch(() => {});
+
+    // 6. Đồng bộ Đánh giá từ MySQL (/api/reviews)
+    fetch('/api/reviews')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setReviews(data);
+      })
+      .catch(() => {});
+
+    // 7. Đồng bộ Khiếu nại từ MySQL (/api/disputes)
+    fetch('/api/disputes')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setDisputes(data);
+      })
+      .catch(() => {});
+
+    // 8. Đồng bộ Giao dịch VNPay từ MySQL (/api/vnpay-transactions)
+    fetch('/api/vnpay-transactions')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setVnpayTransactions(data);
+      })
+      .catch(() => {});
+
+    // 9. Đồng bộ Lời mời dự án từ MySQL (/api/invitations)
+    fetch('/api/invitations')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setInvitations(data);
+      })
+      .catch(() => {});
+
+    // 10. Đồng bộ phiên đăng nhập thực tế từ backend (/api/auth/me) với Session Cookie
     fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((meData) => {
-        if (!isMounted || !meData || !meData.authenticated) return;
+        if (!meData || !meData.authenticated) return;
         const isEmailVerified = Boolean(meData.emailVerified);
         const status: AccountStatus = meData.enabled ? (isEmailVerified ? 'ACTIVE' : 'PENDING') : 'SUSPENDED';
         setUsers((prevUsers) => {
@@ -557,11 +568,11 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         });
 
-        // 4. Đồng bộ danh sách thông báo thực từ backend MySQL
+        // Đồng bộ danh sách thông báo thực từ backend MySQL
         fetch('/api/notifications', { credentials: 'include' })
           .then((res) => (res.ok ? res.json() : null))
           .then((notifList) => {
-            if (isMounted && Array.isArray(notifList) && notifList.length > 0) {
+            if (Array.isArray(notifList) && notifList.length > 0) {
               const mappedNotifs: AppNotification[] = notifList.map((n: any) => ({
                 id: `db-notif-${n.id}`,
                 userId: String(meData.id),
@@ -578,10 +589,10 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .catch(() => {});
       })
       .catch(() => {});
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    reloadAllDataFromDb();
   }, []);
 
   // Notifications calculation and actions
@@ -788,21 +799,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem(STORAGE_KEY_INVITATIONS);
     localStorage.removeItem(STORAGE_KEY_NOTIFICATIONS);
 
-    setUsers(INITIAL_USERS);
-    setCurrentUser(INITIAL_USERS[0]);
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, INITIAL_USERS[0].id);
-    setProjects(PROJECTS);
-    setProposals(PROPOSALS);
-    setOrders(INITIAL_ORDERS);
-    setReviews(INITIAL_REVIEWS);
-    setDisputes(INITIAL_DISPUTES);
-    setFreelancers(FREELANCERS);
-    setVnpayTransactions(INITIAL_VNPAY_TRANSACTIONS);
-    setPlatformConfig(DEFAULT_CONFIG);
-    setInvitations(INITIAL_INVITATIONS);
-    setNotifications(INITIAL_NOTIFICATIONS);
-
-    addToast('Đã khôi phục toàn bộ dữ liệu mẫu TalentMatch ban đầu!', 'info');
+    reloadAllDataFromDb();
+    addToast('Đã làm mới và đồng bộ 100% dữ liệu từ Cơ sở dữ liệu MySQL!', 'info');
   };
 
   const openAuthModal = (mode: 'login' | 'register' | 'verification' | 'google-auth' = 'login') => {

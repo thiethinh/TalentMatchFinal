@@ -29,14 +29,24 @@
 
 ---
 
-## III. TỔNG KẾT TIẾN ĐỘ CHUNG & CAM KẾT CHẤT LƯỢNG
-* **Tổng số vấn đề theo tài liệu Google Docs:** 10/10 vấn đề đã được giải quyết triệt để và kiểm thử thành công (Đạt 100%).
+## IV. BỎ DỮ LIỆU TĨNH LOCAL, TẠO SQL KHỞI TẠO CSDL MỚI & TRUY VẤN 100% TỪ MYSQL DATABASE
+
+| STT | Vấn đề & Yêu cầu | Tiến độ | Mô tả chi tiết việc đã hoàn thành & Kết quả kiểm thử |
+|:---:|:---|:---:|:---|
+| **1** | **Xóa bỏ toàn bộ dữ liệu mock tĩnh trong file, dữ liệu 100% phải truy vấn từ MySQL Database** | **✅ ĐÃ HOÀN THÀNH** | - **Kết quả thực hiện:**<br>1. **Tạo CSDL mới sạch 100% (`TalentMatch_database.sql`):** Xây dựng kịch bản SQL tự hủy các bảng cũ (`DROP TABLE IF EXISTS`), thiết lập chuẩn UTF-8 `utf8mb4_unicode_ci`, khởi tạo toàn bộ 22 bảng và nạp 100% dữ liệu chi tiết phong phú:<br>   - 19 tài khoản test đối soát chuẩn theo `@tai_khoan_test.txt` (BCrypt password `demo123456` và `admin123456`, số dư ví thực, trạng thái eKYC, điểm tín nhiệm TalentCredit).<br>   - 16 tin tuyển dụng việc làm đa ngành nghề (IT & Lập trình, UI/UX, AI, Video, Marketing, Content, Kiến trúc, Kế toán, Dịch thuật,...).<br>   - 9 đề xuất chào giá Proposal của Freelancer.<br>   - 3 Hợp đồng dự án Escrow ký quỹ phong tỏa (`TM-2026-8891`, `TM-2026-7732`, `TM-2026-6621`).<br>   - 5 Milestone cột mốc nghiệm thu, 3 bài nộp bàn giao sản phẩm kèm file/link, 2 đánh giá sao đa tiêu chí, 1 hồ sơ tranh chấp trọng tài, 18 tài khoản ngân hàng liên kết, 12 hồ sơ Portfolio và 4 giao dịch VNPAY Sandbox.<br>2. **Đồng bộ docker entrypoint:** Cập nhật đồng bộ sang `docker-entrypoint-initdb.d/02_TalentMatch_database.sql` và thực thi nạp thành công vào container `talentmatch-mysql`.<br>3. **Xây dựng Spring Boot REST API (`ApiDataSyncController.java`):** Cung cấp các endpoint REST kết nối trực tiếp MySQL:<br>   - `GET /api/users`: Trả về danh sách người dùng kèm STK ngân hàng.<br>   - `GET /api/orders`: Trả về danh sách hợp đồng dự án kèm milestone và bài nộp bàn giao.<br>   - `GET /api/proposals`: Trả về toàn bộ đề xuất báo giá.<br>   - `GET /api/reviews`: Trả về đánh giá đa tiêu chí.<br>   - `GET /api/disputes`: Trả về hồ sơ khiếu nại tranh chấp.<br>   - `GET /api/vnpay-transactions`: Trả về lịch sử giao dịch VNPAY.<br>   - `GET /api/portfolios`: Trả về danh mục Portfolio của freelancer.<br>   - `POST /api/orders/{id}/deliver`, `POST /api/orders/{id}/accept`, `POST /api/user/withdrawals`, `POST /api/user/bank-accounts`, `POST /api/disputes`.<br>4. **Tái cấu trúc Frontend (`DemoContext.tsx`):** Chuyển đổi toàn bộ việc khởi tạo và tải dữ liệu sang gọi các REST API từ MySQL Database; đồng bộ các thao tác ghi dữ liệu xuống DB.<br>5. **Xóa file dữ liệu tĩnh dư thừa:** Đã xóa bỏ hoàn toàn file `frontend/src/data/mockData.ts` khỏi codebase.<br>- **Kiểm thử:** Đã kiểm thử các API `GET /api/users` (19 items), `/api/orders` (3 items), `/api/proposals` (9 items), `/api/portfolios` (12 items) trả về HTTP 200 từ MySQL; Frontend `npm run build` và Backend `./gradlew.bat test` đều vượt qua 100%. |
+
+---
+
+## V. TỔNG KẾT TIẾN ĐỘ CHUNG & CAM KẾT CHẤT LƯỢNG
+* **Tổng số vấn đề theo tài liệu Google Docs & Yêu cầu CSDL:** 11/11 vấn đề đã được giải quyết triệt để và kiểm thử thành công (Đạt 100%).
 * **Các commit tính năng đã thực hiện:**
   1. `188a420`: Sửa giao diện Hồ sơ cá nhân (không bị che tên, canh lề chuẩn).
   2. `9abdbd4`: Thêm trang Chi tiết công việc (`JobDetail.tsx`), trang Việc đã lưu riêng biệt (`SavedJobs.tsx`), form nộp đề xuất chi tiết có đính kèm file.
   3. `137af31`: Cho phép chỉnh sửa trực tiếp hồ sơ cá nhân, chuẩn hóa các trường rỗng mặc định, nâng cấp quy trình rút tiền Napas 24/7 và lịch sử giao dịch.
   4. `8dc4d56`: Thêm biểu đồ cột theo khoảng ngày & biểu đồ tròn tỷ lệ, xem chi tiết báo giá tuyển dụng của Employer, đồng bộ chat hợp đồng thời gian thực và quy trình nghiệm thu bàn giao Escrow.
   5. `ae81633`: Tách riêng hoàn toàn Hợp Đồng & Nộp Bài (/contracts) và Việc Đã Lưu (/saved-jobs) thành các trang độc lập, sửa link sidebar chuẩn xác.
+  6. `[Tiếp theo]`: Xóa bỏ toàn bộ dữ liệu tĩnh local, tạo file SQL làm mới CSDL MySQL và chuyển đổi toàn bộ web truy vấn trực tiếp từ database.
 * **Tình trạng build & kiểm thử:**
   - Frontend: `npm run build` (`tsc -b && vite build`) chạy thành công 100% với 0 lỗi.
   - Backend: `./gradlew.bat compileJava` & `./gradlew.bat test` chạy thành công 100% (UP-TO-DATE, BUILD SUCCESSFUL).
+  - MySQL Database: Nạp sạch và đối soát thành công 22 bảng dữ liệu UTF-8 tiếng Việt hoàn chỉnh.

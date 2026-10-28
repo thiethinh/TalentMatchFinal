@@ -43,8 +43,8 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         if (!seed) return;
-        // Do not overwrite real Client changes on every application restart after demo data has been seeded.
-        if (jobs.count() >= 375) return;
+        // Nếu cơ sở dữ liệu đã có dữ liệu (từ TalentMatch_database.sql), không ghi đè lại
+        if (jobs.count() > 0 || users.count() > 0) return;
 
         User admin = ensure("Quản trị TalentMatch", "admin@talentmatch.vn", Role.ADMIN, "admin123");
         User client = ensure("Nguyễn Minh Anh", "client@talentmatch.vn", Role.CUSTOMER, "123456");

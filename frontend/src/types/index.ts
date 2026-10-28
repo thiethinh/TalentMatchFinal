@@ -26,6 +26,7 @@ export interface User {
   kycStatus: 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED';
   createdAt?: string;
   lastLogin?: string;
+  title?: string;
   bio?: string;
   portfolioUrl?: string;
   skills?: string[];
@@ -224,9 +225,11 @@ export interface PlatformConfig {
 
 export interface WithdrawalRequest {
   bankName: string;
+  bankCode?: string;
   accountNumber: string;
   accountHolder: string;
   amount: number;
+  saveToProfile?: boolean;
 }
 
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
@@ -266,3 +269,16 @@ export interface AppNotification {
 }
 
 
+
+export interface OrderChatMessage {
+  id: string;
+  orderId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderRole: 'employer' | 'freelancer' | 'admin' | 'system' | 'guest';
+  text: string;
+  attachments?: string[];
+  createdAt: string;
+  isSystem?: boolean;
+}

@@ -17,7 +17,8 @@ import type {
   AppNotification,
   BankAccount,
   ProjectInvitation,
-  DeliveryFile
+  DeliveryFile,
+  OrderChatMessage
 } from '../types';
 import {
   GUEST_USER,
@@ -57,6 +58,7 @@ const STORAGE_KEY_SAVED_FREELANCERS = 'talentmatch_demo_saved_freelancers_v5';
 const STORAGE_KEY_SAVED_EMPLOYERS = 'talentmatch_demo_saved_employers_v5';
 const STORAGE_KEY_SAVED_PROJECTS = 'talentmatch_demo_saved_projects_v5';
 const STORAGE_KEY_INVITATIONS = 'talentmatch_demo_invitations_v5';
+const STORAGE_KEY_ORDER_MESSAGES = 'talentmatch_demo_order_messages_v5';
 
 // Tự động đồng bộ dữ liệu mẫu mới nhất khi version thay đổi (đảm bảo git pull + npm run dev tự cập nhật cho tất cả mọi người)
 if (typeof window !== 'undefined') {
@@ -218,6 +220,9 @@ interface DemoContextType {
     communicationRating: number;
     comment: string;
   }) => void;
+  updateUserProfile: (data: Partial<User>) => void;
+  orderMessages: Record<string, OrderChatMessage[]>;
+  sendOrderMessage: (orderId: string, text: string) => void;
   updateFreelancerBioAndPortfolio: (data: {
     bio: string;
     portfolioUrl?: string;
@@ -292,6 +297,45 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadFromStorage(STORAGE_KEY_INVITATIONS, INITIAL_INVITATIONS)
   );
 
+  const INITIAL_ORDER_MESSAGES: Record<string, OrderChatMessage[]> = {
+    'ord-1': [
+      {
+        id: 'msg-init-1',
+        orderId: 'ord-1',
+        senderId: 'system',
+        senderName: 'Hệ thống TalentMatch',
+        senderRole: 'system',
+        text: 'Hợp đồng dự án đã kích hoạt thành công. 100% kinh phí đã được phong tỏa an toàn trong Ví Escrow VNPAY.',
+        createdAt: '2026-03-01 09:00',
+        isSystem: true
+      },
+      {
+        id: 'msg-init-2',
+        orderId: 'ord-1',
+        senderId: 'usr-emp-1',
+        senderName: 'Lê Thu Hà',
+        senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=le-thu-ha',
+        senderRole: 'employer',
+        text: 'Chào bạn Minh Anh, mình đã nộp cọc Escrow cho dự án E-commerce Flutter. Bạn xem tài liệu SOW và bắt đầu triển khai các module Phase 1 giúp mình nhé.',
+        createdAt: '2026-03-01 09:15'
+      },
+      {
+        id: 'msg-init-3',
+        orderId: 'ord-1',
+        senderId: 'usr-free-1',
+        senderName: 'Nguyễn Minh Anh',
+        senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=nguyen-minh-anh',
+        senderRole: 'freelancer',
+        text: 'Dạ vâng chị Hà, em đã nhận được hợp đồng và tiền cọc Escrow. Em đang cấu hình source code base và chuẩn bị bàn giao bản demo đầu tiên đúng hạn ạ!',
+        createdAt: '2026-03-01 10:00'
+      }
+    ]
+  };
+
+  const [orderMessages, setOrderMessages] = useState<Record<string, OrderChatMessage[]>>(() =>
+    loadFromStorage(STORAGE_KEY_ORDER_MESSAGES, INITIAL_ORDER_MESSAGES)
+  );
+
   // Sync to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
@@ -308,6 +352,9 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_INVITATIONS, JSON.stringify(invitations));
   }, [invitations]);
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_ORDER_MESSAGES, JSON.stringify(orderMessages));
+  }, [orderMessages]);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(projects));
   }, [projects]);
@@ -1857,6 +1904,75 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addToast(`Admin đã ban hành phán quyết tranh chấp: ${resolution}`, 'info');
   };
 
+  const updateUserProfile = (data: Partial<User>) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      ...data
+    }));
+
+    setUsers((prev) =>
+      prev.map((u) => (u.id === currentUser.id ? { ...u, ...data } : u))
+    );
+
+    if (currentUser.role === 'freelancer') {
+      setFreelancers((prev) =>
+        prev.map((f) => {
+          if (f.userId === currentUser.id || f.name === currentUser.name) {
+            return {
+              ...f,
+              name: data.name !== undefined ? data.name : f.name,
+              avatar: data.avatar !== undefined ? data.avatar : f.avatar,
+              title: data.title !== undefined ? data.title : f.title,
+              bio: data.bio !== undefined ? data.bio : f.bio,
+              skills: data.skills !== undefined ? data.skills : f.skills
+            };
+          }
+          return f;
+        })
+      );
+    }
+
+    addToast('Đã lưu thông tin hồ sơ cá nhân thành công!', 'success');
+  };
+
+  const sendOrderMessage = (orderId: string, text: string) => {
+    if (!text.trim()) return;
+
+    let filteredText = text.trim();
+    const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/g;
+    const zaloRegex = /(zalo|facebook|fb\.com|telegram)/gi;
+    if (phoneRegex.test(filteredText) || zaloRegex.test(filteredText)) {
+      filteredText = filteredText
+        .replace(phoneRegex, '[SỐ ĐIỆN THOẠI BỊ ẨN ĐỂ BẢO VỆ GIAO DỊCH]')
+        .replace(zaloRegex, '[LINK NGOẠI SÀN BỊ ẨN]');
+    }
+
+    const newMsg: OrderChatMessage = {
+      id: `msg-${Date.now()}`,
+      orderId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      senderRole: currentUser.role,
+      text: filteredText,
+      createdAt: new Date().toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    };
+
+    setOrderMessages((prev) => {
+      const prevMsgs = prev[orderId] || [];
+      return {
+        ...prev,
+        [orderId]: [...prevMsgs, newMsg]
+      };
+    });
+  };
+
   const updateFreelancerBioAndPortfolio = (data: {
     bio: string;
     portfolioUrl?: string;
@@ -2140,6 +2256,9 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         fileDispute,
         resolveDispute,
         submitReview,
+        updateUserProfile,
+        orderMessages,
+        sendOrderMessage,
         updateFreelancerBioAndPortfolio,
         savedFreelancerIds,
         savedEmployerIds,

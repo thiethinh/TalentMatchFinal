@@ -19,6 +19,7 @@ import { CreateProject } from './pages/CreateProject';
 import { FreelancerDashboard } from './pages/FreelancerDashboard';
 import { EmployerDashboard } from './pages/EmployerDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { Contracts } from './pages/Contracts';
 import { OrderWorkManagement } from './pages/OrderWorkManagement';
 import { KycVerification } from './pages/KycVerification';
 
@@ -51,6 +52,8 @@ const AppContent: React.FC = () => {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* Contract & Escrow Order LifeCycle */}
+        <Route path="/contracts" element={<Contracts />} />
+        <Route path="/orders" element={<Contracts />} />
         <Route path="/orders/:id" element={<OrderWorkManagement />} />
 
         {/* Fallback */}

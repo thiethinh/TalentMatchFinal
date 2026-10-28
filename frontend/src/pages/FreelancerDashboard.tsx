@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
-import type { Order, ProjectInvitation } from '../types';
+import type { ProjectInvitation } from '../types';
 import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 
 const PRESET_SKILLS = [
@@ -40,7 +40,7 @@ const PRESET_SKILLS = [
 
 export const FreelancerDashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'invitations' ? 'invitations' : 'orders';
+  const initialTab = searchParams.get('tab') === 'invitations' ? 'invitations' : 'proposals';
 
   const {
     orders,
@@ -48,18 +48,15 @@ export const FreelancerDashboard: React.FC = () => {
     projects,
     currentUser,
     freelancers,
-    deliverWork,
     updateFreelancerBioAndPortfolio,
     openWithdrawModal,
     savedProjectIds,
-    toggleSaveProject,
     invitations,
     acceptInvitation,
     declineInvitation,
-    addToast
   } = useDemo();
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'proposals' | 'invitations' | 'saved' | 'profile'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'proposals' | 'invitations' | 'profile'>(initialTab);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -67,13 +64,6 @@ export const FreelancerDashboard: React.FC = () => {
       setActiveTab('invitations');
     }
   }, [searchParams]);
-
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [showDeliverModal, setShowDeliverModal] = useState(false);
-  const [deliveryNote, setDeliveryNote] = useState('');
-  const [deliveryUrl, setDeliveryUrl] = useState('');
-  const [deliveryTitle, setDeliveryTitle] = useState('');
-  const [demoUrl, setDemoUrl] = useState('');
 
   // Invitations States & Modals
   const [selectedInvitation, setSelectedInvitation] = useState<ProjectInvitation | null>(null);
@@ -157,36 +147,6 @@ export const FreelancerDashboard: React.FC = () => {
         : declineReasonOption;
     declineInvitation(selectedInvitation.id, finalReason);
     setShowDeclineInviteModal(false);
-  };
-
-  const handleOpenDeliver = (ord: Order) => {
-    setSelectedOrder(ord);
-    setDeliveryTitle(`Bàn giao sản phẩm - ${ord.serviceTitle}`);
-    setDeliveryUrl('');
-    setDeliveryNote('');
-    setDemoUrl('');
-    setShowDeliverModal(true);
-  };
-
-  const handleConfirmDeliver = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedOrder) return;
-    if (!deliveryUrl.trim()) {
-      addToast('Vui lòng nhập đường link sản phẩm bàn giao.', 'warning');
-      return;
-    }
-
-    deliverWork(selectedOrder.id, {
-      title: deliveryTitle.trim() || `Bàn giao sản phẩm - ${selectedOrder.serviceTitle}`,
-      deliveryUrl: deliveryUrl.trim(),
-      note: deliveryNote.trim(),
-      demoUrl: demoUrl.trim() || undefined
-    });
-    setShowDeliverModal(false);
-    setDeliveryNote('');
-    setDeliveryUrl('');
-    setDeliveryTitle('');
-    setDemoUrl('');
   };
 
   const handleAddSkill = (skill: string) => {
@@ -281,20 +241,67 @@ export const FreelancerDashboard: React.FC = () => {
       {/* Thống kê biểu đồ Cột & Tròn */}
       <DashboardAnalyticsCharts userRole="freelancer" orders={myOrders} projects={projects} />
 
+      {/* Quick Navigation Cards: Hợp Đồng & Việc Đã Lưu tách trang riêng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          to="/contracts"
+          className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50/60 rounded-xl border border-blue-200 hover:border-blue-400 hover:shadow-xs transition-all flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-xs group-hover:scale-105 transition-transform">
+              <i className="fa-solid fa-file-contract" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
+                  Hợp Đồng & Nộp Bài Bàn Giao
+                </h3>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold text-[10px]">
+                  {myOrders.length}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {activeOrders.length} đang thực hiện • {deliveredOrders.length} chờ duyệt
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
+            <span>Mở trang /contracts</span>
+            <i className="fa-solid fa-arrow-right text-[10px]" />
+          </div>
+        </Link>
+
+        <Link
+          to="/saved-jobs"
+          className="p-4 bg-gradient-to-r from-rose-50 to-pink-50/60 rounded-xl border border-rose-200 hover:border-rose-400 hover:shadow-xs transition-all flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm shadow-xs group-hover:scale-105 transition-transform">
+              <i className="fa-solid fa-heart" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-sm group-hover:text-rose-700 transition-colors">
+                  Việc Làm Đã Lưu Quan Tâm
+                </h3>
+                <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-bold text-[10px]">
+                  {savedProjectsList.length}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Xem lại danh sách công việc đã lưu để nộp đề xuất
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-bold text-rose-600 group-hover:translate-x-1 transition-transform">
+            <span>Mở trang /saved-jobs</span>
+            <i className="fa-solid fa-arrow-right text-[10px]" />
+          </div>
+        </Link>
+      </div>
+
       {/* Tabs Navigation */}
       <div className="flex border-b border-slate-200 text-xs font-bold">
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`py-2.5 px-4 sm:px-5 border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-            activeTab === 'orders'
-              ? 'border-blue-600 text-blue-600 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <i className="fa-solid fa-briefcase text-xs" />
-          <span>Hợp Đồng ({myOrders.length})</span>
-        </button>
-
         <button
           onClick={() => setActiveTab('proposals')}
           className={`py-2.5 px-4 sm:px-5 border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
@@ -316,24 +323,12 @@ export const FreelancerDashboard: React.FC = () => {
           }`}
         >
           <i className="fa-solid fa-envelope text-xs" />
-          <span>Lời Mời ({myInvitations.length})</span>
+          <span>Lời Mời Tuyển Dụng ({myInvitations.length})</span>
           {pendingInvitations.length > 0 && (
             <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
               {pendingInvitations.length}
             </span>
           )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('saved')}
-          className={`py-2.5 px-4 sm:px-5 border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-            activeTab === 'saved'
-              ? 'border-blue-600 text-blue-600 font-bold'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <i className="fa-solid fa-bookmark text-xs" />
-          <span>Việc Đã Lưu ({savedProjectsList.length})</span>
         </button>
 
         <button
@@ -345,91 +340,13 @@ export const FreelancerDashboard: React.FC = () => {
           }`}
         >
           <i className="fa-solid fa-pen-to-square text-xs" />
-          <span>Bio & Kỹ Năng</span>
+          <span>Bio & Kỹ Năng Chuyên Môn</span>
         </button>
       </div>
 
-      {/* TAB 1: ORDERS LIST */}
-      {activeTab === 'orders' && (
-        <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
-          <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
-            <i className="fa-solid fa-briefcase text-blue-600 text-sm" />
-            <span>Danh Sách Hợp Đồng Dự Án Escrow Của Bạn</span>
-          </h2>
+      {/* TAB 1: PROPOSALS SENT */}
 
-          {myOrders.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-xs">Chưa có hợp đồng nào.</div>
-          ) : (
-            <div className="space-y-3">
-              {myOrders.map((ord) => (
-                <div
-                  key={ord.id}
-                  className="border border-slate-200 rounded-md p-4 hover:border-slate-300 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50/40"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-mono font-semibold text-slate-500">{ord.orderNumber}</span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${
-                          ord.status === 'ORDER_IN_PROGRESS'
-                            ? 'bg-blue-100 text-blue-800'
-                            : ord.status === 'DELIVERED'
-                            ? 'bg-amber-100 text-amber-800'
-                            : ord.status === 'COMPLETED'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {ord.status}
-                      </span>
-                    </div>
-
-                    <Link to={`/orders/${ord.id}`} className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors block">
-                      {ord.serviceTitle}
-                    </Link>
-
-                    <div className="text-xs text-slate-600">
-                      Nhà tuyển dụng: <span className="font-semibold text-slate-800">{ord.employerName}</span> | Tiền thực nhận (90%): <span className="font-bold text-emerald-600">{ord.freelancerPayoutAmount.toLocaleString('vi-VN')} đ</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 shrink-0">
-                    {ord.status === 'ORDER_IN_PROGRESS' && (
-                      <button
-                        onClick={() => handleOpenDeliver(ord)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors shadow-xs flex items-center space-x-1.5 cursor-pointer"
-                      >
-                        <i className="fa-solid fa-arrow-up-from-bracket text-xs" />
-                        <span>Nộp Bài Bàn Giao</span>
-                      </button>
-                    )}
-
-                    {ord.status === 'REVISION_REQUESTED' && (
-                      <button
-                        onClick={() => handleOpenDeliver(ord)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors shadow-xs flex items-center space-x-1.5 cursor-pointer"
-                      >
-                        <i className="fa-solid fa-arrow-up-from-bracket text-xs" />
-                        <span>Nộp Lại Bản Sửa</span>
-                      </button>
-                    )}
-
-                    <Link
-                      to={`/orders/${ord.id}`}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-md transition-colors flex items-center space-x-1"
-                    >
-                      <span>Chi Tiết</span>
-                      <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 2: PROPOSALS SENT */}
+      {/* TAB 1: PROPOSALS SENT */}
       {activeTab === 'proposals' && (
         <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
           <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -707,133 +624,6 @@ export const FreelancerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: SAVED EMPLOYERS & PROJECTS */}
-      {activeTab === 'saved' && (
-        <div className="space-y-6 animate-in fade-in duration-150">
-          
-          {/* Dedicated Saved Jobs link banner */}
-          <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
-            <div className="flex items-center gap-2.5 text-blue-900">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shrink-0">
-                <i className="fa-solid fa-heart" />
-              </span>
-              <div>
-                <div className="font-bold text-slate-900">Quản lý việc làm quan tâm trên trang riêng biệt</div>
-                <div className="text-[11px] text-slate-600">Hệ thống chỉ lưu bài đăng công việc theo đúng chuyên môn, không lưu công ty.</div>
-              </div>
-            </div>
-            <Link to="/saved-jobs" className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs shrink-0 flex items-center gap-1.5">
-              <span>Mở trang /saved-jobs</span>
-              <i className="fa-solid fa-arrow-right text-[10px]" />
-            </Link>
-          </div>
-
-          {/* Section 2: Saved Projects */}
-          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div>
-                <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <i className="fa-solid fa-heart text-rose-500 text-xs" />
-                  <span>Dự Án Tuyển Dụng Đã Lưu ({savedProjectsList.length})</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Các bài đăng dự án bạn quan tâm để chuẩn bị hồ sơ chào giá.
-                </p>
-              </div>
-
-              <Link
-                to="/projects"
-                className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 self-start sm:self-auto"
-              >
-                <span>Xem tất cả dự án</span>
-                <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
-              </Link>
-            </div>
-
-            {savedProjectsList.length === 0 ? (
-              <div className="text-center py-10 bg-slate-50 rounded-md border border-slate-200 space-y-2">
-                <i className="fa-solid fa-heart text-2xl text-slate-300 mx-auto block" />
-                <div className="font-semibold text-slate-700 text-xs">Bạn chưa lưu Dự án nào</div>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                  Duyệt danh sách Dự án Tuyển Dụng và nhấn nút Tim / Bookmark để lưu.
-                </p>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs"
-                >
-                  <span>Duyệt dự án ngay</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {savedProjectsList.map((prj) => (
-                  <div
-                    key={prj.id}
-                    className="p-4 bg-slate-50/70 hover:bg-white rounded-md border border-slate-200 hover:border-slate-300 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1.5 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-sm">
-                          {prj.category}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">#{prj.id}</span>
-                        <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.2 rounded-sm">
-                          Escrow Bảo Chứng
-                        </span>
-                      </div>
-
-                      <h3 className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors">
-                        {prj.title}
-                      </h3>
-
-                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                        {prj.description}
-                      </p>
-
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {prj.requiredSkills.map((sk) => (
-                          <span key={sk} className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded-sm font-medium text-slate-600">
-                            {sk}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex md:flex-col items-center md:items-end justify-between gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200">
-                      <div className="text-right">
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Ngân sách</div>
-                        <div className="text-sm font-bold text-blue-700 font-mono">
-                          {prj.budget.toLocaleString('vi-VN')} đ
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleSaveProject(prj.id)}
-                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                          title="Bỏ lưu dự án"
-                        >
-                          <i className="fa-solid fa-trash-can text-xs" />
-                        </button>
-
-                        <Link
-                          to={`/projects`}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs flex items-center gap-1.5"
-                        >
-                          <span>Gửi Báo Giá</span>
-                          <i className="fa-solid fa-paper-plane text-[10px]" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
-      )}
-
       {/* TAB 4: UPDATE BIO & PORTFOLIO */}
       {activeTab === 'profile' && (
         <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-2xs">
@@ -1032,158 +822,6 @@ export const FreelancerDashboard: React.FC = () => {
               <i className="fa-solid fa-floppy-disk text-xs" />
               <span>Lưu Thông Tin Hồ Sơ & Kỹ Năng</span>
             </button>
-          </form>
-        </div>
-      )}
-
-      {/* Deliver Work Modal (Link-First with Guidelines) */}
-      {showDeliverModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmDeliver} className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2 text-blue-700 font-bold text-sm">
-                <i className="fa-solid fa-link text-blue-600 text-sm" />
-                <span>Nộp Link Sản Phẩm Bàn Giao (Submit Deliverables)</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDeliverModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer p-1 rounded-lg"
-              >
-                <i className="fa-solid fa-xmark text-sm" />
-              </button>
-            </div>
-
-            <div className="space-y-3.5 text-xs max-h-[75vh] overflow-y-auto pr-1">
-              {/* Order Info */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <div className="font-bold text-slate-900 text-xs">{selectedOrder.serviceTitle}</div>
-                <div className="text-slate-600 text-[11px] mt-0.5">
-                  Khách hàng: <strong>{selectedOrder.employerName}</strong> | Đơn hàng: <span className="font-mono">{selectedOrder.orderNumber}</span>
-                </div>
-              </div>
-
-              {/* Guidelines / Thông tin hướng dẫn nộp link */}
-              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl space-y-1.5 text-xs text-blue-900">
-                <div className="flex items-center gap-1.5 font-bold text-blue-800">
-                  <i className="fa-solid fa-circle-info text-blue-600 text-xs" />
-                  <span>Quy định bàn giao sản phẩm qua Đường dẫn liên kết (Link):</span>
-                </div>
-                <p className="text-[11px] text-blue-800 leading-relaxed">
-                  TalentMatch khuyến khích bàn giao qua link trực tuyến để đảm bảo an toàn, không giới hạn dung lượng và kiểm tra tiện lợi:
-                </p>
-                <ul className="text-[11px] text-blue-700/90 space-y-1 pl-4 list-disc leading-relaxed">
-                  <li><strong>Google Drive / Dropbox:</strong> Vui lòng bật quyền truy cập <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em>.</li>
-                  <li><strong>Figma / Canva:</strong> Đính kèm đường dẫn dự án thiết kế hoặc prototype tương tác.</li>
-                  <li><strong>GitHub / GitLab:</strong> Đính kèm đường dẫn kho mã nguồn hoặc Pull Request / Release.</li>
-                  <li><strong>Website / App Staging:</strong> Gửi link demo sản phẩm chạy thực tế (Vercel, Netlify...).</li>
-                  <li><strong>Loom / YouTube:</strong> Video quay màn hình demo hướng dẫn sử dụng.</li>
-                </ul>
-              </div>
-
-              {/* 1. Link sản phẩm bàn giao chính (URL) */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-bold text-slate-800">
-                    Đường link sản phẩm bàn giao (URL) <span className="text-rose-500">*</span>:
-                  </label>
-                  {/* Platform detector badge */}
-                  {deliveryUrl && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      {deliveryUrl.includes('drive.google.com')
-                        ? '📁 Google Drive'
-                        : deliveryUrl.includes('figma.com')
-                        ? '🎨 Figma Project'
-                        : deliveryUrl.includes('github.com')
-                        ? '💻 GitHub Repo'
-                        : deliveryUrl.includes('loom.com')
-                        ? '🎥 Loom Video'
-                        : '🌐 Link Trực Tuyến'}
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type="url"
-                    value={deliveryUrl}
-                    onChange={(e) => setDeliveryUrl(e.target.value)}
-                    placeholder="https://drive.google.com/... hoặc https://github.com/... hoặc https://figma.com/..."
-                    className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-xs font-mono text-blue-700 focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
-                    required
-                  />
-                  <i className="fa-solid fa-link absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                </div>
-              </div>
-
-              {/* 2. Tiêu đề / Tên đợt bàn giao */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  Tiêu đề sản phẩm bàn giao <span className="text-rose-500">*</span>:
-                </label>
-                <input
-                  type="text"
-                  value={deliveryTitle}
-                  onChange={(e) => setDeliveryTitle(e.target.value)}
-                  placeholder="Ví dụ: Bàn giao toàn bộ mã nguồn + Link bản chạy thử nghiệm Vercel"
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
-                  required
-                />
-              </div>
-
-              {/* 3. Link Demo bổ sung (Tùy chọn) */}
-              <div>
-                <label className="block font-semibold text-slate-800 mb-1">
-                  Link Demo chạy thực tế / Video Loom giải thích (tùy chọn):
-                </label>
-                <input
-                  type="url"
-                  value={demoUrl}
-                  onChange={(e) => setDemoUrl(e.target.value)}
-                  placeholder="https://demo-project.vercel.app hoặc https://loom.com/share/..."
-                  className="w-full p-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs"
-                />
-              </div>
-
-              {/* 4. Ghi chú hướng dẫn nghiệm thu */}
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">
-                  Ghi chú & Hướng dẫn nghiệm thu cho khách hàng <span className="text-rose-500">*</span>:
-                </label>
-                <textarea
-                  rows={3}
-                  value={deliveryNote}
-                  onChange={(e) => setDeliveryNote(e.target.value)}
-                  placeholder="Mô tả cụ thể cách truy cập tài nguyên, tài khoản demo (nếu có), các điểm cần khách hàng lưu ý kiểm tra khi nghiệm thu..."
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none shadow-2xs leading-relaxed"
-                  required
-                />
-              </div>
-
-              {/* 72h Countdown Warning */}
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] flex items-start gap-2">
-                <i className="fa-solid fa-hourglass-half text-amber-600 text-xs shrink-0 mt-0.5" />
-                <span>
-                  Sau khi nộp link, hệ thống kích hoạt đếm ngược <strong>72 giờ (3 ngày)</strong>. Khách hàng sẽ kiểm tra và bấm "Nghiệm Thu & Giải Ngân". Nếu khách hàng không phản hồi hoặc không khiếu nại sau 72 giờ, tiền Escrow tự động giải ngân vào tài khoản của bạn.
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowDeliverModal(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold py-2.5 rounded-xl text-xs shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
-              >
-                <i className="fa-solid fa-paper-plane text-xs" />
-                <span>Xác Nhận Nộp Link Bàn Giao</span>
-              </button>
-            </div>
           </form>
         </div>
       )}

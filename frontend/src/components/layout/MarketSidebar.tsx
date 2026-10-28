@@ -135,6 +135,12 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <span>Việc làm đã lưu</span>
                   </span>
                 </NavLink>
+                <NavLink to="/contracts" className={navLinkClass} onClick={onCloseMobile}>
+                  <span className="flex items-center gap-3">
+                    <i className="fa-solid fa-file-contract w-4 text-center text-sm text-[#059669]" />
+                    <span>Hợp đồng & Escrow</span>
+                  </span>
+                </NavLink>
                 <a href="/#how" className={actionBtnClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-shield-halved w-4 text-center text-sm text-[#059669]" />
@@ -176,7 +182,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <span>Bảng điều khiển công việc</span>
                   </span>
                 </NavLink>
-                <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
+                <NavLink to="/contracts" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-file-contract w-4 text-center text-sm text-[#059669]" />
                     <span>Hợp đồng & nộp bài</span>
@@ -261,7 +267,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
                     <span>Quản lý dự án tuyển dụng</span>
                   </span>
                 </NavLink>
-                <NavLink to="/orders/1" className={navLinkClass} onClick={onCloseMobile}>
+                <NavLink to="/contracts" className={navLinkClass} onClick={onCloseMobile}>
                   <span className="flex items-center gap-3">
                     <i className="fa-solid fa-file-contract w-4 text-center text-sm" />
                     <span>Hợp đồng & Ký quỹ Escrow</span>

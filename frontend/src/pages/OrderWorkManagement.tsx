@@ -14,7 +14,9 @@ export const OrderWorkManagement: React.FC = () => {
     requestRevision,
     fileDispute,
     submitReview,
-    addToast
+    addToast,
+    orderMessages,
+    sendOrderMessage
   } = useDemo();
 
   const order = orders.find((o) => o.id === id) || orders[0];
@@ -22,6 +24,8 @@ export const OrderWorkManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'timeline' | 'deliveries' | 'chat'>('timeline');
   const [chatInput, setChatInput] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionNote, setRevisionNote] = useState('');
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeEvidence, setDisputeEvidence] = useState('');
@@ -72,34 +76,21 @@ export const OrderWorkManagement: React.FC = () => {
     return { label: 'Link Trực Tuyến', icon: 'fa-solid fa-link text-blue-600', color: 'bg-blue-50 text-blue-800 border-blue-200' };
   };
 
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; isSystem?: boolean }>>([
-    {
-      sender: 'Hệ thống TalentMatch',
-      text: `Hợp đồng ${order.orderNumber} đã nạp tiền 100% vào Ví Tạm Giữ Escrow qua cổng VNPAY thành công. Freelancer hãy tiến hành làm việc theo đúng SOW.`,
-      isSystem: true
-    },
-    {
-      sender: order.freelancerName,
-      text: 'Chào bạn, mình đã nhận được hợp đồng và đang tiến hành thực hiện đúng tiến độ.'
-    }
-  ]);
+    const activeChatMessages = (order && orderMessages[order.id]) || [];
 
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
-
-    let filteredText = chatInput;
-    const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/g;
-    const zaloRegex = /(zalo|facebook|fb\.com|telegram)/gi;
-
-    if (phoneRegex.test(chatInput) || zaloRegex.test(chatInput)) {
-      filteredText = chatInput
-        .replace(phoneRegex, '[SỐ ĐIỆN THOẠI BỊ ẨN ĐỂ BẢO VỆ GIAO DỊCH]')
-        .replace(zaloRegex, '[LINK NGOẠI SÀN BỊ ẨN]');
-    }
-
-    setChatMessages((prev) => [...prev, { sender: currentUser.name, text: filteredText }]);
+    if (!chatInput.trim() || !order) return;
+    sendOrderMessage(order.id, chatInput);
     setChatInput('');
+  };
+
+  const handleConfirmRevision = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order || !revisionNote.trim()) return;
+    requestRevision(order.id, revisionNote.trim());
+    setShowRevisionModal(false);
+    setRevisionNote('');
   };
 
   const handleAcceptDeliveryAction = () => {
@@ -310,6 +301,34 @@ export const OrderWorkManagement: React.FC = () => {
             )}
           </div>
 
+          {/* Employer Acceptance / Revision Action Box */}
+          {order.status === 'DELIVERED' && (currentUser.role === 'employer' || currentUser.id === order.employerId) && (
+            <div className="p-4 bg-amber-50/90 rounded-xl border border-amber-300 space-y-3 shadow-2xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 text-amber-950 font-bold text-xs">
+                <i className="fa-solid fa-bell text-amber-600 text-sm" />
+                <span>Freelancer đã bàn giao sản phẩm. Vui lòng kiểm tra link bên dưới và đưa ra quyết định:</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleAcceptDeliveryAction}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i className="fa-solid fa-circle-check text-xs" />
+                  <span>Nghiệm Thu & Giải Ngân Escrow</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRevisionModal(true)}
+                  className="px-4 py-2 bg-white hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-lg border border-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <i className="fa-solid fa-rotate-left text-xs" />
+                  <span>Yêu Cầu Chỉnh Sửa</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Quy định bàn giao qua Link info alert */}
           <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg flex items-start gap-2.5 text-blue-900 text-[11px] leading-relaxed">
             <i className="fa-solid fa-circle-info text-blue-600 text-xs shrink-0 mt-0.5" />
@@ -409,22 +428,44 @@ export const OrderWorkManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="h-60 overflow-y-auto space-y-2.5 p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            {chatMessages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-2.5 rounded-md max-w-lg ${
-                  msg.isSystem
-                    ? 'bg-amber-50 border border-amber-200 text-amber-900 text-[11px] mx-auto text-center'
-                    : msg.sender === currentUser.name
-                    ? 'bg-blue-600 text-white ml-auto'
-                    : 'bg-white border border-slate-200 text-slate-800 mr-auto'
-                }`}
-              >
-                {!msg.isSystem && <div className="font-bold text-[10px] opacity-75 mb-0.5">{msg.sender}</div>}
-                <div>{msg.text}</div>
-              </div>
-            ))}
+          <div className="h-72 overflow-y-auto space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+            {activeChatMessages.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-xs">Chưa có tin nhắn nào trong hợp đồng này. Hãy gửi lời chào đầu tiên!</div>
+            ) : (
+              activeChatMessages.map((msg) => {
+                const isMe = msg.senderId === currentUser.id || msg.senderName === currentUser.name;
+                if (msg.isSystem) {
+                  return (
+                    <div key={msg.id} className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] rounded-lg max-w-md mx-auto text-center font-medium shadow-2xs">
+                      <i className="fa-solid fa-shield-halved text-amber-600 mr-1.5" />
+                      <span>{msg.text}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={msg.id} className={`flex gap-2.5 max-w-lg ${isMe ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
+                    <img
+                      src={msg.senderAvatar || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + msg.senderName}
+                      alt={msg.senderName}
+                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200 shadow-2xs"
+                    />
+                    <div className="space-y-1">
+                      <div className={`flex items-center gap-2 text-[10px] ${isMe ? 'justify-end' : ''}`}>
+                        <span className="font-bold text-slate-800">{msg.senderName}</span>
+                        <span className="text-slate-400">{msg.createdAt}</span>
+                      </div>
+                      <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
+                        isMe
+                          ? 'bg-blue-600 text-white rounded-tr-xs shadow-xs'
+                          : 'bg-white border border-slate-200 text-slate-800 rounded-tl-xs shadow-2xs'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <form onSubmit={handleSendChat} className="flex gap-2">
@@ -441,6 +482,53 @@ export const OrderWorkManagement: React.FC = () => {
             >
               <i className="fa-solid fa-paper-plane text-xs" />
             </button>
+          </form>
+        </div>
+      )}
+
+      {/* Revision Request Modal */}
+      {showRevisionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <form onSubmit={handleConfirmRevision} className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2 text-amber-800 font-bold text-sm">
+                <i className="fa-solid fa-rotate-left text-amber-600 text-sm" />
+                <span>Yêu Cầu Chỉnh Sửa Sản Phẩm Bàn Giao</span>
+              </div>
+              <button type="button" onClick={() => setShowRevisionModal(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-slate-700 font-semibold text-xs">
+                Mô tả chi tiết những điểm cần Freelancer chỉnh sửa / hoàn thiện:
+              </label>
+              <textarea
+                rows={4}
+                value={revisionNote}
+                onChange={(e) => setRevisionNote(e.target.value)}
+                placeholder="VD: Cần sửa lại màu sắc header theo branding, kiểm tra lại responsive trên điện thoại màn hình nhỏ..."
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowRevisionModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-xs cursor-pointer"
+              >
+                Gửi Yêu Cầu Sửa
+              </button>
+            </div>
           </form>
         </div>
       )}

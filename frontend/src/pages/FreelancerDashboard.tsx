@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 import type { Order, ProjectInvitation } from '../types';
+import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 
 const PRESET_SKILLS = [
   { name: 'ReactJS', category: 'dev' },
@@ -276,6 +277,9 @@ export const FreelancerDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Thống kê biểu đồ Cột & Tròn */}
+      <DashboardAnalyticsCharts userRole="freelancer" orders={myOrders} projects={projects} />
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-slate-200 text-xs font-bold">

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
-import type { Order } from '../types';
+import type { Order, Project } from '../types';
+import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 import { ReviewModal } from '../components/common/ReviewModal';
 
 export const EmployerDashboard: React.FC = () => {
@@ -28,6 +29,7 @@ export const EmployerDashboard: React.FC = () => {
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewTargetOrder, setReviewTargetOrder] = useState<Order | null>(null);
+  const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<Project | null>(null);
   const [revisionNote, setRevisionNote] = useState('');
 
   const myOrders = orders.filter((o) => o.employerId === currentUser.id || o.employerId === 'usr-emp-1');
@@ -157,6 +159,9 @@ export const EmployerDashboard: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Thống kê biểu đồ Cột Doanh thu/Chi phí & Tròn Trạng thái */}
+      <DashboardAnalyticsCharts userRole="employer" orders={myOrders} projects={myProjects} />
 
       {/* Action Needed Section: Proposals & Deliveries */}
       {pendingProposals.length > 0 && (
@@ -608,7 +613,145 @@ export const EmployerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Review Modal */}
+      {/* Modal: View & Accept Proposals for Posted Project */}
+      {selectedProjectForProposals && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl border border-slate-200 text-xs my-8 max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-wider mb-1">
+                  <span>Dự Án #{selectedProjectForProposals.id}</span>
+                </div>
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                  {selectedProjectForProposals.title}
+                </h3>
+                <div className="text-slate-500 text-xs mt-0.5 flex items-center gap-3">
+                  <span>Ngân sách dự kiến: <strong className="text-blue-700 font-mono">{selectedProjectForProposals.budget.toLocaleString('vi-VN')} đ</strong></span>
+                  <span>•</span>
+                  <span>Ngành: <strong>{selectedProjectForProposals.category}</strong></span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProjectForProposals(null)}
+                className="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            {/* List of Proposals */}
+            <div className="overflow-y-auto space-y-3.5 flex-1 pr-1">
+              {proposals.filter((p) => p.projectId === selectedProjectForProposals.id).length === 0 ? (
+                <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <i className="fa-solid fa-file-circle-question text-3xl text-slate-300 mx-auto block" />
+                  <div className="font-semibold text-slate-700">Chưa có đề xuất báo giá nào</div>
+                  <p className="text-slate-400 text-xs">
+                    Bài đăng hiện vẫn đang được công khai trên Sàn. Các Freelancer phù hợp sẽ gửi đề xuất sớm.
+                  </p>
+                </div>
+              ) : (
+                proposals
+                  .filter((p) => p.projectId === selectedProjectForProposals.id)
+                  .map((prop) => (
+                    <div
+                      key={prop.id}
+                      className="p-4 bg-slate-50/80 hover:bg-slate-50 rounded-xl border border-slate-200 space-y-3 transition-colors shadow-2xs"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-2.5">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={prop.freelancerAvatar}
+                            alt={prop.freelancerName}
+                            className="w-9 h-9 rounded-full object-cover border border-slate-200"
+                          />
+                          <div>
+                            <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                              <span>{prop.freelancerName}</span>
+                              <span className="text-amber-500 flex items-center gap-0.5 text-[11px]">
+                                <i className="fa-solid fa-star text-[10px]" />
+                                <span>{prop.freelancerRating}</span>
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500">Mã đề xuất: #{prop.id}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-blue-700 font-mono">
+                              {prop.bidAmount.toLocaleString('vi-VN')} đ
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                              Cam kết hoàn thành trong <strong>{prop.estimatedDays} ngày</strong>
+                            </div>
+                          </div>
+
+                          {prop.status === 'ACCEPTED' ? (
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-lg text-xs">
+                              ✓ Đã Ký Hợp Đồng
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                acceptProposal(prop.id);
+                                setSelectedProjectForProposals(null);
+                              }}
+                              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                              <i className="fa-solid fa-file-contract text-xs" />
+                              <span>Duyệt & Nạp Cọc Escrow</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Cover letter */}
+                      <div>
+                        <div className="text-[11px] font-semibold text-slate-700 mb-1">Thư chào giá & Phương án thực hiện:</div>
+                        <p className="p-3 bg-white rounded-lg border border-slate-200 text-slate-700 text-xs leading-relaxed italic">
+                          "{prop.coverLetter}"
+                        </p>
+                      </div>
+
+                      {/* Attachments if any */}
+                      {prop.attachments && prop.attachments.length > 0 && (
+                        <div className="pt-1">
+                          <div className="text-[11px] font-semibold text-slate-700 mb-1.5">File & tài liệu đính kèm:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {prop.attachments.map((att, attIdx) => (
+                              <div key={attIdx} className="px-2.5 py-1 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 flex items-center gap-1.5">
+                                <i className="fa-solid fa-paperclip text-slate-400 text-[10px]" />
+                                <span>{typeof att === 'string' ? att : att.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end pt-3 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedProjectForProposals(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+            {/* Review Modal */}
       {showReviewModal && reviewTargetOrder && (
         <ReviewModal
           isOpen={showReviewModal}

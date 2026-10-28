@@ -4,17 +4,46 @@ import { useDemo } from '../../context/DemoContext';
 interface EmailVerificationScreenProps {
   onSuccess?: () => void;
   inline?: boolean;
+  targetEmail?: string;
+  onBackToLogin?: () => void;
 }
 
-export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = ({ onSuccess, inline = false }) => {
-  const { currentUser, verifyEmail, resendVerificationEmail, changeVerificationEmail } = useDemo();
+export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = ({
+  onSuccess,
+  inline = false,
+  targetEmail,
+  onBackToLogin,
+}) => {
+  const {
+    currentUser,
+    pendingVerificationEmail,
+    completeOtpVerification,
+    resendVerificationEmail,
+    changeVerificationEmail,
+    openAuthModal,
+  } = useDemo();
+
+  const activeEmail = (
+    targetEmail ||
+    pendingVerificationEmail ||
+    (currentUser.role !== 'guest' ? currentUser.email : '') ||
+    ''
+  ).trim().toLowerCase();
+
   const [cooldown, setCooldown] = useState<number>(0);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [newEmailInput, setNewEmailInput] = useState(currentUser.email);
+  const [newEmailInput, setNewEmailInput] = useState(activeEmail);
   const [otpInput, setOtpInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
+
+  // Cập nhật email hiển thị nếu activeEmail thay đổi
+  useEffect(() => {
+    if (activeEmail) {
+      setNewEmailInput(activeEmail);
+    }
+  }, [activeEmail]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
@@ -35,22 +64,29 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       return;
     }
 
+    if (!activeEmail) {
+      setErrorMessage('Không tìm thấy email cần xác thực. Vui lòng quay lại đăng ký hoặc đăng nhập.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: currentUser.email, otp: cleanOtp }),
+        credentials: 'include',
+        body: JSON.stringify({ email: activeEmail, otp: cleanOtp }),
       });
 
       if (response.ok) {
-        verifyEmail(currentUser.id);
+        const userData = await response.json().catch(() => ({}));
+        completeOtpVerification(activeEmail, userData);
         if (onSuccess) onSuccess();
       } else {
         const data = await response.json().catch(() => ({}));
-        // Hỗ trợ mã test demo nếu server chưa bật SMTP
+        // Hỗ trợ mã test demo nếu server chưa bật SMTP (123456 hoặc 889922)
         if (cleanOtp === '123456' || cleanOtp === '889922') {
-          verifyEmail(currentUser.id);
+          completeOtpVerification(activeEmail, { email: activeEmail });
           if (onSuccess) onSuccess();
         } else {
           setErrorMessage(data.message || 'Mã OTP không chính xác hoặc đã hết hạn.');
@@ -58,7 +94,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       }
     } catch {
       if (cleanOtp === '123456' || cleanOtp === '889922') {
-        verifyEmail(currentUser.id);
+        completeOtpVerification(activeEmail, { email: activeEmail });
         if (onSuccess) onSuccess();
       } else {
         setErrorMessage('Không thể kết nối đến máy chủ. Vui lòng thử lại.');
@@ -70,6 +106,10 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
 
   const handleResend = async () => {
     if (cooldown > 0) return;
+    if (!activeEmail) {
+      setErrorMessage('Thiếu địa chỉ email để gửi lại mã.');
+      return;
+    }
     setCooldown(60);
     setErrorMessage('');
     setSuccessNotice('Đang gửi lại mã xác thực mới...');
@@ -78,41 +118,42 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       const response = await fetch('/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: currentUser.email }),
+        body: JSON.stringify({ email: activeEmail }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok && data.message && data.message.includes('xác thực trước đó')) {
-        verifyEmail(currentUser.id);
-        setSuccessNotice('Tài khoản đã được xác thực trước đó! Đang hoàn tất...');
+        completeOtpVerification(activeEmail);
+        setSuccessNotice('Tài khoản đã được xác thực trước đó! Đang hoàn tất đăng nhập...');
         setTimeout(() => { if (onSuccess) onSuccess(); }, 1200);
         return;
       }
-      setSuccessNotice(data.message || 'Đã gửi lại mã OTP mới về email của bạn!');
+      setSuccessNotice(data.message || 'Đã gửi lại mã OTP mới về email của bạn! (Mã demo: 123456)');
     } catch {
-      setSuccessNotice('Đã gửi yêu cầu tạo mã xác thực mới.');
+      setSuccessNotice('Đã gửi yêu cầu tạo mã xác thực mới. (Mã demo: 123456)');
     }
-    resendVerificationEmail(currentUser.email);
+    resendVerificationEmail(activeEmail);
   };
 
   const handleSaveEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmailInput || newEmailInput === currentUser.email) {
+    const cleanNew = newEmailInput.trim().toLowerCase();
+    if (!cleanNew || cleanNew === activeEmail) {
       setIsEditingEmail(false);
       return;
     }
-    changeVerificationEmail(newEmailInput);
+    changeVerificationEmail(cleanNew, activeEmail);
     setIsEditingEmail(false);
   };
 
-  if (currentUser.emailVerified) {
+  if (currentUser.emailVerified && currentUser.role !== 'guest' && !pendingVerificationEmail) {
     return (
       <div className="text-center py-8 px-4">
         <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <i className="fa-solid fa-circle-check text-3xl" />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Email đã được xác thực</h3>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Tài khoản đã được kích hoạt</h3>
         <p className="text-slate-600 mb-6 max-w-md mx-auto text-xs leading-relaxed">
-          Tài khoản TalentMatch của bạn (<span className="font-semibold text-slate-800">{currentUser.email}</span>) đã được kích hoạt thành công. Bạn đã có toàn quyền truy cập nền tảng.
+          Tài khoản TalentMatch của bạn (<span className="font-semibold text-slate-800">{currentUser.email}</span>) đã được xác thực thành công. Bạn đã có toàn quyền truy cập nền tảng.
         </p>
         {onSuccess && (
           <button
@@ -133,9 +174,9 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         <i className="fa-solid fa-envelope-circle-check text-xl" />
       </div>
 
-      <h2 className="text-xl font-bold text-center text-slate-900 mb-1">Xác thực tài khoản Gmail</h2>
+      <h2 className="text-xl font-bold text-center text-slate-900 mb-1">Xác thực mã OTP</h2>
       <p className="text-center text-slate-500 text-xs mb-4">
-        Mã xác nhận 6 số đã được gửi đến hộp thư:
+        Bắt buộc nhập mã OTP 6 số để kích hoạt và truy cập tài khoản:
       </p>
 
       {/* Target Email Box */}
@@ -158,10 +199,10 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           </form>
         ) : (
           <>
-            <span className="font-semibold text-slate-800 text-xs truncate">{currentUser.email}</span>
+            <span className="font-semibold text-slate-800 text-xs truncate">{activeEmail || 'Chưa có email'}</span>
             <button
               onClick={() => {
-                setNewEmailInput(currentUser.email);
+                setNewEmailInput(activeEmail);
                 setIsEditingEmail(true);
               }}
               className="text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1 hover:underline ml-2 cursor-pointer"
@@ -199,7 +240,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
             value={otpInput}
             onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
             placeholder="······"
-            className="w-56 text-center text-2xl font-bold tracking-[8px] py-2 px-3 border-2 border-blue-400 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 placeholder-slate-300"
+            className="w-56 text-center text-2xl font-bold tracking-[8px] py-2 px-3 border-2 border-blue-400 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 placeholder-slate-300 font-mono"
             autoFocus
           />
         </div>
@@ -214,12 +255,12 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           ) : (
             <i className="fa-solid fa-shield-halved text-xs" />
           )}
-          <span>Xác nhận mã OTP</span>
+          <span>Xác nhận mã OTP & Vào tài khoản</span>
         </button>
       </form>
 
       {/* Action Gửi lại mã */}
-      <div className="mb-5">
+      <div className="mb-4">
         <button
           type="button"
           onClick={handleResend}
@@ -235,16 +276,34 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         </button>
       </div>
 
+      {/* Nút Quay lại Đăng nhập */}
+      <div className="text-center pt-2 pb-3 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={() => {
+            if (onBackToLogin) {
+              onBackToLogin();
+            } else {
+              openAuthModal('login');
+            }
+          }}
+          className="text-xs text-slate-500 hover:text-slate-800 font-medium hover:underline cursor-pointer"
+        >
+          &larr; Quay lại màn hình Đăng nhập
+        </button>
+      </div>
+
       {/* Hướng dẫn lưu ý */}
       <div className="bg-slate-50 rounded-md p-3 border border-slate-200 text-left text-xs text-slate-600 space-y-1.5">
         <div className="font-bold text-slate-800 flex items-center gap-1.5">
           <i className="fa-solid fa-circle-info text-blue-500 text-xs" />
-          <span>Lưu ý khi xác thực email:</span>
+          <span>Lưu ý khi xác thực OTP:</span>
         </div>
         <ul className="list-disc list-inside space-y-1 text-slate-500 text-[11px] leading-relaxed">
           <li>Kiểm tra cả thư mục <strong>Spam / Thư rác</strong> hoặc tab Quảng cáo trong Gmail.</li>
           <li>Mã OTP có hiệu lực trong <strong>15 phút</strong> kể từ khi gửi.</li>
-          <li>Nếu chưa nhận được mã sau vài phút, vui lòng nhấn nút <strong>Gửi lại mã OTP</strong>.</li>
+          <li>Chỉ khi nhập đúng mã OTP tài khoản mới được kích hoạt và cho phép đăng nhập.</li>
+          <li>Bản test demo hỗ trợ mã OTP nhanh: <strong className="text-blue-600 font-mono">123456</strong> hoặc <strong className="text-blue-600 font-mono">889922</strong>.</li>
         </ul>
       </div>
     </div>

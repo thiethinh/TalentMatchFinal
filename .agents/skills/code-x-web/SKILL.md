@@ -184,16 +184,16 @@ Keep animation smooth and lightweight. Avoid excessive motion, long blocking tra
 
 Before declaring a feature complete, verify its entire user journey.
 
-For example, a registration flow should consider:
+For example, a registration & login flow should consider:
 
-- Input validation.
-- Server-side validation.
+- Input validation (both client & server).
+- Server-side validation and secure password storage (BCrypt).
 - Duplicate account handling.
-- Secure password storage.
-- Session creation.
-- Loading and error states.
-- Successful navigation.
-- Relevant tests.
+- Mandatory OTP/Email verification: Never issue session cookies or grant account access (`currentUser`) before successful OTP verification.
+- Enforcing OTP verification on login: Reject login for unverified accounts and prompt OTP verification immediately.
+- Loading, error, resend cooldown, and empty states.
+- Seamless navigation upon successful verification.
+- Relevant automated checks and tests.
 
 For CRUD features, verify create, read, update, delete, filtering, pagination, validation, and permission enforcement where applicable.
 

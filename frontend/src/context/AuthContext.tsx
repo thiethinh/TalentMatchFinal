@@ -12,8 +12,8 @@ export interface AuthContextType {
   isEmailVerified: boolean;
   login: (email: string, password?: string) => Promise<UserDto>;
   logout: () => Promise<void>;
-  verifyOtp: (otp: string) => Promise<UserDto>;
-  resendOtp: () => Promise<void>;
+  verifyOtp: (otp: string, emailTarget?: string) => Promise<UserDto>;
+  resendOtp: (emailTarget?: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   // Test switch helper
   quickSwitchAccount: (email: string) => Promise<void>;
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const refreshUser = useCallback(async () => {
     try {
       const data = await authApi.getMe();
-      if (data && data.authenticated && data.id) {
+      if (data && data.authenticated && data.id && data.emailVerified) {
         setCurrentUser(data);
       } else {
         setCurrentUser(null);
@@ -58,6 +58,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const user = await authApi.login({ email, password });
+      if (!user.emailVerified || user.requiresOtp) {
+        throw new Error('Tài khoản chưa được kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản.');
+      }
       setCurrentUser(user);
       return user;
     } finally {
@@ -77,18 +80,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const verifyOtp = async (otp: string): Promise<UserDto> => {
-    if (!currentUser?.email) {
-      throw new Error('Vui lòng đăng nhập để xác thực email.');
+  const verifyOtp = async (otp: string, emailTarget?: string): Promise<UserDto> => {
+    const email = emailTarget || currentUser?.email;
+    if (!email) {
+      throw new Error('Thiếu thông tin email để xác thực OTP.');
     }
-    const user = await authApi.verifyOtp(currentUser.email, otp);
+    const user = await authApi.verifyOtp(email, otp);
     setCurrentUser(user);
     return user;
   };
 
-  const resendOtp = async () => {
-    if (!currentUser?.email) return;
-    await authApi.resendOtp(currentUser.email);
+  const resendOtp = async (emailTarget?: string) => {
+    const email = emailTarget || currentUser?.email;
+    if (!email) return;
+    await authApi.resendOtp(email);
   };
 
   const quickSwitchAccount = async (email: string) => {

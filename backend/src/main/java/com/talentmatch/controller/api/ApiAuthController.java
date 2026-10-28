@@ -38,23 +38,55 @@ public class ApiAuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng nhập đầy đủ email và mật khẩu."));
         }
 
+        String cleanEmail = email.trim().toLowerCase();
+
+        // 1. Kiểm tra tài khoản trong hệ thống
+        User targetUser = null;
+        try {
+            targetUser = userService.byEmail(cleanEmail);
+        } catch (Exception ignored) {}
+
+        if (targetUser != null) {
+            // Kiểm tra tài khoản bị khóa
+            if (Boolean.TRUE.equals(targetUser.getLocked())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Tài khoản của bạn đã bị khóa do vi phạm chính sách sàn."));
+            }
+
+            // BẮT BUỘC: Nếu tài khoản chưa xác thực OTP/email -> Không cấp quyền truy cập, yêu cầu nhập OTP
+            if (!Boolean.TRUE.equals(targetUser.getEmailVerified())) {
+                if (userService.checkPassword(targetUser, password)) {
+                    try {
+                        userService.resendVerificationOtp(cleanEmail);
+                    } catch (Exception ignored) {}
+
+                    Map<String, Object> errRes = new HashMap<>();
+                    errRes.put("requiresOtp", true);
+                    errRes.put("email", cleanEmail);
+                    errRes.put("fullName", targetUser.getFullName());
+                    errRes.put("role", targetUser.getRole().name());
+                    errRes.put("message", "Tài khoản chưa được kích hoạt OTP. Mã xác thực 6 số mới đã được gửi tới email " + cleanEmail + ". Vui lòng nhập mã OTP để vào tài khoản.");
+                    return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(errRes);
+                } else {
+                    return ResponseEntity.status(401).body(Map.of("message", "Email hoặc mật khẩu không chính xác."));
+                }
+            }
+        }
+
         Authentication auth = null;
         try {
             auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email.trim().toLowerCase(), password)
+                    new UsernamePasswordAuthenticationToken(cleanEmail, password)
             );
         } catch (Exception e) {
-            // Hỗ trợ mật khẩu demo cho tài khoản test
+            // Hỗ trợ mật khẩu demo cho tài khoản test đã verified
             if ("demo123456".equals(password) || "123456".equals(password) || "admin123456".equals(password) || "admin123".equals(password)) {
-                try {
-                    User u = userService.byEmail(email.trim().toLowerCase());
-                    if (u != null && Boolean.TRUE.equals(u.getEnabled()) && !Boolean.TRUE.equals(u.getLocked())) {
-                        auth = new UsernamePasswordAuthenticationToken(
-                                u.getEmail(), null,
-                                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + u.getRole().name()))
-                        );
-                    }
-                } catch (Exception ignored) {}
+                if (targetUser != null && Boolean.TRUE.equals(targetUser.getEnabled()) && !Boolean.TRUE.equals(targetUser.getLocked()) && Boolean.TRUE.equals(targetUser.getEmailVerified())) {
+                    auth = new UsernamePasswordAuthenticationToken(
+                            targetUser.getEmail(), null,
+                            java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + targetUser.getRole().name()))
+                    );
+                }
             }
         }
 
@@ -70,9 +102,7 @@ public class ApiAuthController {
         User user = userService.byEmail(auth.getName());
         Map<String, Object> response = userDto(user);
         response.put("authenticated", true);
-        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            response.put("notice", "Tài khoản của bạn chưa được xác thực email. Vui lòng nhập mã OTP để mở khóa toàn bộ tính năng.");
-        }
+        response.put("message", "Đăng nhập thành công! Chào mừng " + user.getFullName() + ".");
         return ResponseEntity.ok(response);
     }
 
@@ -109,7 +139,7 @@ public class ApiAuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+    public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
         try {
             String fullName = (String) body.get("fullName");
             String email = (String) body.get("email");
@@ -126,23 +156,28 @@ public class ApiAuthController {
             }
             Role role = Role.valueOf(roleStr);
 
-            // Đăng ký (hoặc tái tạo mã xác thực nếu email chưa verify)
+            boolean wasUnverified = userService.isUnverifiedAccount(email);
+
+            // Đăng ký (hoặc cập nhật nếu chưa xác thực OTP) và sinh mã OTP gửi về email
             User user = userService.register(fullName, email, password, role);
 
-            // Soft-login: Tự động đăng nhập người dùng ngay sau khi tạo tài khoản
-            try {
-                Authentication auth = authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(email.trim().toLowerCase(), password)
-                );
-                SecurityContext sc = SecurityContextHolder.getContext();
-                sc.setAuthentication(auth);
-                HttpSession session = request.getSession(true);
-                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
-            } catch (Exception ignored) {}
+            // BẮT BUỘC: KHÔNG tạo session đăng nhập trước khi xác thực OTP!
+            // Người dùng bắt buộc phải nhập mã OTP 6 số mới được cấp quyền vào acc.
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("requiresOtp", true);
+            response.put("authenticated", false);
+            response.put("email", user.getEmail());
+            response.put("fullName", user.getFullName());
+            response.put("role", user.getRole().name());
 
-            Map<String, Object> response = userDto(user);
-            response.put("authenticated", true);
-            response.put("message", "Đăng ký thành công! Hệ thống đã gửi mã OTP 6 số đến email " + email + ". Vui lòng kiểm tra hộp thư để xác thực.");
+            if (wasUnverified) {
+                response.put("message", "Tài khoản với email " + user.getEmail() + " đang chờ xác thực OTP. Đã cập nhật lại thông tin và gửi lại mã OTP 6 số mới. Vui lòng nhập mã OTP để kích hoạt tài khoản!");
+                response.put("isReRegistered", true);
+            } else {
+                response.put("message", "Đăng ký thành công! Hệ thống đã gửi mã xác thực OTP 6 số đến email " + user.getEmail() + ". Vui lòng nhập mã OTP để kích hoạt tài khoản.");
+                response.put("isReRegistered", false);
+            }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -150,7 +185,7 @@ public class ApiAuthController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body, HttpServletRequest request) {
         String email = body.get("email");
         String otp = body.get("otp");
 
@@ -160,8 +195,20 @@ public class ApiAuthController {
 
         try {
             User user = userService.verifyOtp(email, otp);
+
+            // Tự động tạo phiên đăng nhập chính thức cho người dùng ngay sau khi xác thực OTP thành công
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(), null,
+                    java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+            );
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            HttpSession session = request.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+
             Map<String, Object> response = userDto(user);
-            response.put("message", "Xác thực email thành công! Toàn bộ tính năng tuyển dụng và nhận việc đã được mở khóa.");
+            response.put("authenticated", true);
+            response.put("message", "Xác thực OTP thành công! Tài khoản đã được kích hoạt và đăng nhập vào hệ thống.");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -201,10 +248,14 @@ public class ApiAuthController {
         }
 
         try {
+            boolean wasUnverified = userService.isUnverifiedAccount(email);
             userService.sendVerificationOtpForEmail(email, fullName, role);
+            String message = wasUnverified
+                    ? "Tài khoản với email " + email + " đang chờ kích hoạt. Đã gửi lại mã OTP 6 số mới tới hộp thư của bạn!"
+                    : "Mã xác thực OTP 6 số đã được gửi tới email " + email + ". Vui lòng kiểm tra hộp thư (inbox hoặc spam)!";
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Mã xác thực OTP 6 số đã được gửi tới email " + email + ". Vui lòng kiểm tra hộp thư (inbox hoặc spam)!"
+                    "message", message
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -212,11 +263,23 @@ public class ApiAuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyByLink(@RequestParam String token) {
+    public ResponseEntity<?> verifyByLink(@RequestParam String token, HttpServletRequest request) {
         try {
             User user = userService.verifyByLink(token);
+
+            // Tự động tạo phiên đăng nhập chính thức khi click link xác thực
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(), null,
+                    java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+            );
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(auth);
+            HttpSession session = request.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, sc);
+
             Map<String, Object> response = userDto(user);
-            response.put("message", "Xác thực email thành công! Bạn có thể tiếp tục sử dụng hệ thống.");
+            response.put("authenticated", true);
+            response.put("message", "Xác thực email thành công! Bạn đã đăng nhập vào hệ thống.");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -270,12 +333,23 @@ public class ApiAuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(Authentication auth) {
+    public ResponseEntity<?> me(Authentication auth, HttpServletRequest request) {
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
             return ResponseEntity.ok(Map.of("authenticated", false));
         }
         try {
             User user = userService.byEmail(auth.getName());
+            if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+                SecurityContextHolder.clearContext();
+                HttpSession session = request.getSession(false);
+                if (session != null) session.invalidate();
+                return ResponseEntity.ok(Map.of(
+                        "authenticated", false,
+                        "requiresOtp", true,
+                        "email", user.getEmail(),
+                        "message", "Tài khoản chưa được xác thực OTP."
+                ));
+            }
             Map<String, Object> dto = userDto(user);
             dto.put("authenticated", true);
             return ResponseEntity.ok(dto);

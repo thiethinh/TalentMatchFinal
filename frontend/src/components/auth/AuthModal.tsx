@@ -10,12 +10,15 @@ export const AuthModal: React.FC = () => {
     authModalMode,
     closeAuthModal,
     openAuthModal,
+    pendingVerificationEmail,
+    setPendingVerificationEmail,
     registerUser,
     loginUser,
     loginWithGoogle,
     registerWithGoogle,
     handleGoogleAuthSuccess,
-    users
+    users,
+    addToast
   } = useDemo();
 
   const GOOGLE_CLIENT_ID = '303653553354-nmq6vgnsug7j0ca43927603pipiaaalk.apps.googleusercontent.com';
@@ -60,7 +63,7 @@ export const AuthModal: React.FC = () => {
   const [enteredOtp, setEnteredOtp] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleMessage, setGoogleMessage] = useState<{
-    type: 'error' | 'success';
+    type: 'error' | 'success' | 'info';
     text: string;
     action?: 'switch-to-register' | 'switch-to-login';
   } | null>(null);
@@ -101,16 +104,25 @@ export const AuthModal: React.FC = () => {
               if (payload?.email) {
                 const userEmail = payload.email.trim().toLowerCase();
                 const existingUser = users.find((u) => u.email.toLowerCase() === userEmail);
-                if ((activeTab === 'register' || googleMode === 'register') && !existingUser) {
-                  // Đăng ký mới bằng Google: bắt buộc gửi mã OTP qua Gmail và xác thực
+                const targetRole: 'freelancer' | 'employer' = existingUser?.role === 'employer' ? 'employer' : (role || 'freelancer');
+                const targetName = payload.name || (existingUser ? existingUser.name : userEmail.split('@')[0]);
+
+                if ((activeTab === 'register' || googleMode === 'register') && (!existingUser || !existingUser.emailVerified)) {
+                  // Đăng ký mới hoặc tài khoản đã tạo nhưng chưa xác nhận OTP: bắt buộc gửi mã OTP qua Gmail và xác thực
                   setGoogleEmailInput(userEmail);
-                  setGoogleNameInput(payload.name || userEmail.split('@')[0]);
-                  setGoogleRoleInput(role || 'freelancer');
+                  setGoogleNameInput(targetName);
+                  setGoogleRoleInput(targetRole);
                   setGoogleMode('register');
                   openAuthModal('google-auth');
-                  triggerSendGoogleOtp(userEmail, payload.name || userEmail.split('@')[0], role || 'freelancer');
+                  triggerSendGoogleOtp(userEmail, targetName, targetRole);
+                } else if (existingUser && !existingUser.emailVerified) {
+                  // Đăng nhập nhưng tài khoản chưa kích hoạt OTP
+                  setPendingVerificationEmail(userEmail);
+                  openAuthModal('verification');
+                  triggerSendGoogleOtp(userEmail, existingUser.name, targetRole);
+                  addToast(`Tài khoản ${userEmail} chưa kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản!`, 'warning');
                 } else {
-                  // Đã có tài khoản: Đăng nhập trực tiếp
+                  // Đã có tài khoản và đã xác thực: Đăng nhập trực tiếp
                   handleGoogleAuthSuccess({
                     email: userEmail,
                     name: payload.name || userEmail.split('@')[0],
@@ -246,7 +258,7 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
 
@@ -257,14 +269,16 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
-    const result = loginUser(cleanEmail, password);
+    const result = await loginUser(cleanEmail, password);
     if (!result.success) {
-      if (result.isUnverified) {
+      if (result.requiresOtp || result.isUnverified) {
+        setPendingVerificationEmail(cleanEmail);
         setLoginError({
-          message: 'Tài khoản của bạn chưa được xác thực email.',
+          message: result.message || 'Tài khoản của bạn chưa được kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản.',
           isUnverified: true,
           unverifiedUserEmail: cleanEmail
         });
+        openAuthModal('verification');
       } else {
         setLoginError({ message: result.message || 'Đăng nhập không thành công.' });
       }
@@ -273,7 +287,7 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -285,7 +299,7 @@ export const AuthModal: React.FC = () => {
       alert('Mật khẩu xác nhận không khớp!');
       return;
     }
-    registerUser({ name: name.trim(), email: cleanEmail, password, role, phone: phone.trim() });
+    await registerUser({ name: name.trim(), email: cleanEmail, password, role, phone: phone.trim() });
   };
 
   const triggerSendGoogleOtp = async (emailTarget: string, nameTarget: string, roleTarget: 'freelancer' | 'employer') => {
@@ -349,16 +363,22 @@ export const AuthModal: React.FC = () => {
       } else {
         // LUỒNG 2: ĐĂNG KÝ VỚI GOOGLE - BẮT BUỘC GỬI & NHẬN OTP
         const found = users.find((u) => u.email.toLowerCase() === cleanEmail);
-        if (found) {
+        if (found && found.emailVerified) {
           setGoogleMessage({
             type: 'error',
-            text: `Email "${cleanEmail}" đã được tạo tài khoản trước đó. Vui lòng chuyển sang Đăng nhập với Google.`,
+            text: `Email "${cleanEmail}" đã được tạo tài khoản và xác thực trước đó. Vui lòng chuyển sang Đăng nhập với Google.`,
             action: 'switch-to-login',
           });
         } else {
+          if (found && !found.emailVerified) {
+            setGoogleMessage({
+              type: 'info',
+              text: `Email "${cleanEmail}" đã được đăng ký nhưng chưa hoàn tất mã xác nhận. Hệ thống đang gửi mã OTP mới để bạn kích hoạt tài khoản!`,
+            });
+          }
           await triggerSendGoogleOtp(
             cleanEmail,
-            googleNameInput.trim() || cleanEmail.split('@')[0],
+            googleNameInput.trim() || (found ? found.name : cleanEmail.split('@')[0]),
             googleRoleInput
           );
         }
@@ -395,13 +415,19 @@ export const AuthModal: React.FC = () => {
       }
     } else {
       const found = users.find((u) => u.email.toLowerCase() === cleanEmail);
-      if (found) {
+      if (found && found.emailVerified) {
         setGoogleMessage({
           type: 'error',
-          text: `Email "${cleanEmail}" đã có tài khoản trên TalentMatch. Hãy chuyển sang Đăng nhập với Google!`,
+          text: `Email "${cleanEmail}" đã có tài khoản trên TalentMatch và đã xác thực. Hãy chuyển sang Đăng nhập với Google!`,
           action: 'switch-to-login',
         });
         return;
+      }
+      if (found && !found.emailVerified) {
+        setGoogleMessage({
+          type: 'info',
+          text: `Tài khoản với email "${cleanEmail}" đang chờ kích hoạt OTP. Đang gửi lại mã OTP mới...`,
+        });
       }
     }
 
@@ -484,9 +510,14 @@ export const AuthModal: React.FC = () => {
         {/* 1. MÀN HÌNH XÁC THỰC EMAIL / GMAIL */}
         {authModalMode === 'verification' && (
           <EmailVerificationScreen
+            targetEmail={pendingVerificationEmail || undefined}
             onSuccess={() => {
               closeAuthModal();
               navigate('/kyc');
+            }}
+            onBackToLogin={() => {
+              openAuthModal('login');
+              setActiveTab('login');
             }}
             inline={true}
           />
@@ -533,13 +564,19 @@ export const AuthModal: React.FC = () => {
                 className={`p-3 rounded-md text-xs space-y-2 ${
                   googleMessage.type === 'success'
                     ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : googleMessage.type === 'info'
+                    ? 'bg-blue-50 text-blue-800 border border-blue-200'
                     : 'bg-rose-50 text-rose-800 border border-rose-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <i
                     className={`fa-solid shrink-0 text-sm ${
-                      googleMessage.type === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600'
+                      googleMessage.type === 'success'
+                        ? 'fa-circle-check text-emerald-600'
+                        : googleMessage.type === 'info'
+                        ? 'fa-circle-info text-blue-600'
+                        : 'fa-circle-exclamation text-rose-600'
                     }`}
                   />
                   <span>{googleMessage.text}</span>
@@ -895,15 +932,20 @@ export const AuthModal: React.FC = () => {
                     {loginError.isUnverified && (
                       <div className="pt-2 border-t border-amber-200/60 space-y-1.5">
                         <p className="text-amber-800 text-[11px]">
-                          Tài khoản cần hoàn tất xác thực email để kích hoạt quyền đăng bài và nộp đề xuất báo giá.
+                          Tài khoản bắt buộc phải xác thực mã OTP trước khi được phép đăng nhập vào hệ thống.
                         </p>
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => openAuthModal('verification')}
+                            onClick={() => {
+                              if (loginError.unverifiedUserEmail) {
+                                setPendingVerificationEmail(loginError.unverifiedUserEmail);
+                              }
+                              openAuthModal('verification');
+                            }}
                             className="px-3 py-1 bg-blue-600 text-white font-bold text-xs rounded-md hover:bg-blue-700 shadow-2xs cursor-pointer"
                           >
-                            [ Mở Màn Hình Xác Thực Email Ngay ]
+                            [ Nhập Mã OTP Kích Hoạt Ngay ]
                           </button>
                         </div>
                       </div>

@@ -168,7 +168,7 @@ interface DemoContextType {
   registerUser: (data: { name: string; email: string; password?: string; role: 'freelancer' | 'employer'; phone?: string }) => void;
   verifyEmail: (userId?: string) => void;
   resendVerificationEmail: (email: string) => void;
-  changeVerificationEmail: (newEmail: string) => void;
+  changeVerificationEmail: (newEmail: string, oldEmail?: string) => void;
   submitKyc: (data?: {
     idNumber?: string;
     fullName?: string;
@@ -176,7 +176,10 @@ interface DemoContextType {
     companyName?: string;
     userId?: string;
   }) => void;
-  loginUser: (email: string, password?: string) => { success: boolean; isUnverified?: boolean; message?: string };
+  pendingVerificationEmail: string | null;
+  setPendingVerificationEmail: (email: string | null) => void;
+  completeOtpVerification: (targetEmail: string, backendUserData?: any) => void;
+  loginUser: (email: string, password?: string) => Promise<{ success: boolean; requiresOtp?: boolean; isUnverified?: boolean; unverifiedUserEmail?: string; message?: string }>;
   loginWithGoogle: (targetEmail?: string) => void;
   registerWithGoogle: (data: { email: string; name: string; role: 'freelancer' | 'employer'; phone?: string; emailVerified?: boolean }) => void;
   handleGoogleAuthSuccess: (googleUser: { email: string; name: string; avatar?: string; role?: 'freelancer' | 'employer' }) => Promise<void>;
@@ -591,6 +594,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'verification' | 'google-role' | 'google-auth'>('login');
   const [pendingGoogleUser, setPendingGoogleUser] = useState<{ email: string; name: string; avatar: string } | null>(null);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
 
   // Action Guard Modal State
   const [isUnverifiedModalOpen, setIsUnverifiedModalOpen] = useState(false);
@@ -826,13 +830,20 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const found = users.find((u) => u.id === userId);
     if (found) {
+      if (!found.emailVerified) {
+        setPendingVerificationEmail(found.email);
+        setAuthModalMode('verification');
+        setIsAuthModalOpen(true);
+        addToast(`Tài khoản ${found.email} chưa kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản! (Mã test: 123456)`, 'warning');
+        return;
+      }
       setCurrentUser(found);
       localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
       addToast(`Đã đăng nhập dưới tên: ${found.name} (${found.role.toUpperCase()})`, 'info');
     }
   };
 
-  const registerUser = (data: { name: string; email: string; password?: string; role: 'freelancer' | 'employer'; phone?: string }) => {
+  const registerUser = async (data: { name: string; email: string; password?: string; role: 'freelancer' | 'employer'; phone?: string }) => {
     const trimmedEmail = data.email.trim().toLowerCase();
     const existing = users.find((u) => u.email.toLowerCase() === trimmedEmail);
     if (existing && existing.emailVerified) {
@@ -854,7 +865,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       balance: existing ? existing.balance : 0,
       escrowBalance: 0,
       createdAt: existing ? existing.createdAt : new Date().toISOString().split('T')[0],
-      lastLogin: 'Vừa tạo tài khoản'
+      lastLogin: 'Đang chờ kích hoạt OTP'
     };
 
     setUsers((prev) => {
@@ -866,8 +877,6 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return [...prev, newUser];
     });
-    setCurrentUser(newUser);
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, newUser.id);
 
     if (data.role === 'freelancer') {
       const newFreeProfile: FreelancerProfile = {
@@ -887,32 +896,96 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isVerified: false,
         portfolio: []
       };
-      setFreelancers((prev) => [...prev, newFreeProfile]);
+      setFreelancers((prev) => {
+        const exists = prev.some((f) => f.userId === newUser.id);
+        return exists ? prev : [...prev, newFreeProfile];
+      });
     }
 
+    // BẮT BUỘC: KHÔNG SET currentUser! Người dùng phải xác thực OTP mới được vào acc
+    setPendingVerificationEmail(trimmedEmail);
     setAuthModalMode('verification');
-    addToast('Đăng ký thành công! Vui lòng xác thực email để hoàn tất kích hoạt.', 'warning');
+    if (existing && !existing.emailVerified) {
+      addToast(`Tài khoản với email ${trimmedEmail} đang chờ kích hoạt. Đã cập nhật lại thông tin và gửi mã OTP mới!`, 'info');
+    } else {
+      addToast(`Hệ thống đã gửi mã OTP 6 số đến email ${trimmedEmail}. Vui lòng nhập mã để kích hoạt tài khoản.`, 'info');
+    }
 
     // Lưu tài khoản và kích hoạt mã OTP trong CSDL MySQL Backend
     try {
-      fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: data.name,
-          email: data.email.trim().toLowerCase(),
+          email: trimmedEmail,
           password: data.password || 'TalentMatch@2026',
           confirmPassword: data.password || 'TalentMatch@2026',
           role: data.role === 'employer' ? 'CUSTOMER' : 'FREELANCER',
           agreeTerms: true
         }),
-      }).then(async (res) => {
-        const resData = await res.json().catch(() => ({}));
-        if (res.ok && resData.message) {
-          addToast(resData.message, 'info');
-        }
-      }).catch(() => {});
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok && resData.message) {
+        addToast(resData.message, 'error');
+      } else if (res.ok && resData.message) {
+        // Backend trả về thông báo cập nhật OTP
+        addToast(resData.message, 'info');
+      }
     } catch (_) {}
+  };
+
+  const completeOtpVerification = (targetEmail: string, backendUserData?: any) => {
+    const cleanEmail = targetEmail.trim().toLowerCase();
+    let verifiedUser: User | null = null;
+
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.email.toLowerCase() === cleanEmail) {
+          verifiedUser = {
+            ...u,
+            emailVerified: true,
+            accountStatus: 'ACTIVE',
+            name: backendUserData?.fullName || u.name,
+            avatar: backendUserData?.avatar || u.avatar
+          };
+          return verifiedUser;
+        }
+        return u;
+      })
+    );
+
+    if (!verifiedUser) {
+      const tempRole = cleanEmail.includes('admin')
+        ? 'admin'
+        : cleanEmail.includes('ha.le') || cleanEmail.includes('invest') || cleanEmail.includes('startup')
+        ? 'employer'
+        : 'freelancer';
+
+      verifiedUser = {
+        id: backendUserData?.id ? `usr-${backendUserData.id}` : `usr-${Date.now()}`,
+        name: backendUserData?.fullName || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        avatar: backendUserData?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanEmail)}`,
+        role: tempRole,
+        isVerified: false,
+        emailVerified: true,
+        accountStatus: 'ACTIVE',
+        kycStatus: 'NOT_SUBMITTED',
+        balance: 50000000,
+        escrowBalance: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+        lastLogin: 'Vừa xác thực OTP'
+      };
+      setUsers((prev) => [verifiedUser!, ...prev]);
+    }
+
+    // BÂY GIỜ MỚI CHÍNH THỨC CẤP QUYỀN VÀO ACC
+    setCurrentUser(verifiedUser);
+    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, verifiedUser.id);
+    setPendingVerificationEmail(null);
+    setIsAuthModalOpen(false);
+    addToast('✓ Xác thực OTP thành công! Đã đăng nhập vào tài khoản.', 'success');
   };
 
   const verifyEmail = (userId?: string) => {
@@ -923,17 +996,36 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (currentUser.id === targetId) {
       setCurrentUser((prev) => ({ ...prev, emailVerified: true, accountStatus: 'ACTIVE' }));
     }
-    addToast('✓ Email đã được xác thực thành công! Bạn có thể thực hiện mọi thao tác.', 'success');
+    setPendingVerificationEmail(null);
+    addToast('✓ Email đã được xác thực thành công!', 'success');
   };
 
-  const resendVerificationEmail = (emailTarget: string) => {
-    addToast(`Mã xác thực mới đã gửi tới ${emailTarget}. Vui lòng kiểm tra hộp thư.`, 'info');
+  const resendVerificationEmail = async (emailTarget: string) => {
+    const cleanEmail = emailTarget.trim().toLowerCase();
+    try {
+      await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+    } catch (_) {}
+    addToast(`Mã xác thực mới đã gửi tới ${cleanEmail}. Vui lòng kiểm tra hộp thư! (Mã demo: 123456)`, 'info');
   };
 
-  const changeVerificationEmail = (newEmail: string) => {
-    setCurrentUser((prev) => ({ ...prev, email: newEmail }));
-    setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, email: newEmail } : u)));
-    addToast(`Đã cập nhật email xác thực mới: ${newEmail}`, 'success');
+  const changeVerificationEmail = (newEmail: string, oldEmail?: string) => {
+    const targetOld = (oldEmail || pendingVerificationEmail || currentUser.email).toLowerCase();
+    const cleanNew = newEmail.trim().toLowerCase();
+    const existing = users.find((u) => u.email.toLowerCase() === cleanNew);
+    if (existing && existing.emailVerified && existing.email.toLowerCase() !== targetOld) {
+      addToast('Email này đã được sử dụng bởi một tài khoản đã xác thực khác!', 'error');
+      return;
+    }
+    setPendingVerificationEmail(cleanNew);
+    setUsers((prev) => prev.map((u) => (u.email.toLowerCase() === targetOld ? { ...u, email: cleanNew } : u)));
+    if (currentUser.email.toLowerCase() === targetOld) {
+      setCurrentUser((prev) => ({ ...prev, email: cleanNew }));
+    }
+    addToast(`Đã đổi email xác thực sang: ${cleanNew}`, 'info');
   };
 
   const submitKyc = (data?: {
@@ -978,101 +1070,109 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addToast('✓ Xác minh eKYC danh tính thành công! Huy hiệu Tích Xanh chính chủ đã được kích hoạt.', 'success');
   };
 
-  const loginUser = (email: string, password?: string) => {
+  const loginUser = async (email: string, password?: string): Promise<{ success: boolean; requiresOtp?: boolean; isUnverified?: boolean; unverifiedUserEmail?: string; message?: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
 
     // 1. Gửi request đăng nhập thực tế tới Spring Boot backend kết nối MySQL
     if (password) {
       try {
-        fetch('/api/auth/login', {
+        const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ email: trimmedEmail, password })
-        })
-          .then(async (res) => {
-            if (res.ok) {
-              const backendUser = await res.json();
-              setUsers((prev) => {
-                const existingIdx = prev.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
-                const existingUser = existingIdx >= 0 ? prev[existingIdx] : undefined;
-                const roleMapped =
-                  backendUser.role?.toUpperCase() === 'ADMIN'
-                    ? 'admin'
-                    : backendUser.role?.toUpperCase() === 'CUSTOMER'
-                    ? 'employer'
-                    : 'freelancer';
+        });
 
-                const isBackendEmailVerified = Boolean(backendUser.emailVerified);
-                const updatedUser: User = {
-                  id: String(backendUser.id || (existingUser ? existingUser.id : `usr-${Date.now()}`)),
-                  name: backendUser.fullName || trimmedEmail.split('@')[0],
-                  email: backendUser.email || trimmedEmail,
-                  avatar:
-                    backendUser.avatar ||
-                    (existingUser ? existingUser.avatar : `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`),
-                  role: roleMapped,
-                  phone: backendUser.phone || '',
-                  isVerified: existingUser ? existingUser.isVerified : false,
-                  emailVerified: isBackendEmailVerified,
-                  accountStatus: isBackendEmailVerified ? 'ACTIVE' : 'PENDING',
-                  kycStatus: existingUser ? existingUser.kycStatus : 'NOT_SUBMITTED',
-                  companyName: backendUser.companyName || '',
-                  balance: 50000000,
-                  escrowBalance: 0,
-                };
+        const resData = await res.json().catch(() => ({}));
 
-                if (existingIdx >= 0) {
-                  const next = [...prev];
-                  next[existingIdx] = { ...next[existingIdx], ...updatedUser };
-                  return next;
-                }
-                return [updatedUser, ...prev];
-              });
+        // BẮT BUỘC: Nếu tài khoản chưa xác thực OTP (status 403 hoặc cờ requiresOtp)
+        if (res.status === 403 && (resData.requiresOtp || resData.email)) {
+          setPendingVerificationEmail(trimmedEmail);
+          setAuthModalMode('verification');
+          addToast(resData.message || `Tài khoản chưa được kích hoạt OTP. Mã xác nhận mới đã gửi tới ${trimmedEmail}. Vui lòng nhập mã OTP để vào tài khoản!`, 'warning');
+          return {
+            success: false,
+            requiresOtp: true,
+            isUnverified: true,
+            unverifiedUserEmail: trimmedEmail,
+            message: resData.message || 'Tài khoản chưa được kích hoạt OTP.'
+          };
+        }
+
+        if (res.ok) {
+          const backendUser = resData;
+          const roleMapped =
+            backendUser.role?.toUpperCase() === 'ADMIN'
+              ? 'admin'
+              : backendUser.role?.toUpperCase() === 'CUSTOMER'
+              ? 'employer'
+              : 'freelancer';
+
+          const loggedInUser: User = {
+            id: String(backendUser.id || `usr-${Date.now()}`),
+            name: backendUser.fullName || trimmedEmail.split('@')[0],
+            email: backendUser.email || trimmedEmail,
+            avatar: backendUser.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
+            role: roleMapped,
+            phone: backendUser.phone || '',
+            isVerified: true,
+            emailVerified: true,
+            accountStatus: 'ACTIVE',
+            kycStatus: 'NOT_SUBMITTED',
+            companyName: backendUser.companyName || '',
+            balance: 50000000,
+            escrowBalance: 0,
+          };
+
+          setUsers((prev) => {
+            const idx = prev.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = { ...next[idx], ...loggedInUser };
+              return next;
             }
-          })
-          .catch(() => {});
+            return [loggedInUser, ...prev];
+          });
+
+          // Chỉ cho vào acc khi đã xác thực!
+          setCurrentUser(loggedInUser);
+          localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, loggedInUser.id);
+          setIsAuthModalOpen(false);
+          setPendingVerificationEmail(null);
+          addToast(`Đăng nhập thành công! Chào mừng ${loggedInUser.name}.`, 'success');
+          return { success: true };
+        } else if (res.status === 401) {
+          return { success: false, message: resData.message || 'Email hoặc mật khẩu không chính xác.' };
+        }
       } catch (_) {}
     }
 
+    // 2. Fallback kiểm tra mock data (Offline / Demo)
     const found = users.find((u) => u.email.toLowerCase() === trimmedEmail);
     if (found) {
+      if (!found.emailVerified) {
+        // BẮT BUỘC: KHÔNG SET currentUser! Yêu cầu nhập OTP trước!
+        setPendingVerificationEmail(found.email);
+        setAuthModalMode('verification');
+        addToast(`Tài khoản ${found.email} chưa được kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản! (Mã demo: 123456)`, 'warning');
+        return {
+          success: false,
+          requiresOtp: true,
+          isUnverified: true,
+          unverifiedUserEmail: found.email,
+          message: 'Tài khoản chưa xác thực OTP.'
+        };
+      }
+
       setCurrentUser(found);
       localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
-      if (!found.emailVerified) {
-        addToast(`Cảnh báo: Tài khoản ${found.email} chưa xác thực email. Vui lòng xác thực mã OTP để mở khóa đầy đủ tính năng!`, 'warning');
-        return { success: true, isUnverified: true, message: 'Tài khoản chưa xác thực email.' };
-      }
+      setIsAuthModalOpen(false);
+      setPendingVerificationEmail(null);
       addToast(`Đăng nhập thành công! Chào mừng ${found.name}.`, 'success');
       return { success: true };
     }
 
-    // Nếu là tài khoản trong DB mà chưa có trong cache local, tạo phiên làm việc tức thì
-    const tempRole = trimmedEmail.includes('admin')
-      ? 'admin'
-      : trimmedEmail.includes('ha.le') || trimmedEmail.includes('invest') || trimmedEmail.includes('startup')
-      ? 'employer'
-      : 'freelancer';
-
-    const tempUser: User = {
-      id: `usr-db-${Date.now()}`,
-      name: trimmedEmail.split('@')[0],
-      email: trimmedEmail,
-      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
-      role: tempRole,
-      isVerified: false,
-      emailVerified: true,
-      accountStatus: 'ACTIVE',
-      kycStatus: 'NOT_SUBMITTED',
-      balance: 50000000,
-      escrowBalance: 0,
-    };
-
-    setUsers((prev) => [tempUser, ...prev]);
-    setCurrentUser(tempUser);
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, tempUser.id);
-    addToast(`Đăng nhập thành công với tài khoản ${trimmedEmail}!`, 'success');
-    return { success: true };
+    return { success: false, message: 'Email hoặc mật khẩu không chính xác.' };
   };
 
   const loginWithGoogle = (targetEmail?: string) => {
@@ -1092,17 +1192,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const found = users.find((u) => u.email.toLowerCase() === email);
       if (found) {
+        if (!found.emailVerified) {
+          setPendingVerificationEmail(found.email);
+          setAuthModalMode('verification');
+          addToast(`Tài khoản Google (${found.email}) chưa được xác thực email. Vui lòng xác thực mã OTP! (Mã demo: 123456)`, 'warning');
+          return;
+        }
         setCurrentUser(found);
         localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
         setIsAuthModalOpen(false);
-        if (!found.emailVerified) {
-          addToast(`Cảnh báo: Tài khoản Google (${found.email}) chưa được xác thực email. Vui lòng xác thực mã OTP!`, 'warning');
-        } else {
-          addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
-        }
+        setPendingVerificationEmail(null);
+        addToast(`Đăng nhập thành công bằng Google: ${found.name}`, 'success');
         return;
       } else {
         // Tài khoản chưa tồn tại: chuyển sang giao diện tạo tài khoản Google với OTP
+        setPendingVerificationEmail(email);
         setAuthModalMode('google-auth');
         return;
       }
@@ -2008,6 +2112,9 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         removeBankAccount,
         switchRole,
         switchUserById,
+        pendingVerificationEmail,
+        setPendingVerificationEmail,
+        completeOtpVerification,
         registerUser,
         verifyEmail,
         resendVerificationEmail,

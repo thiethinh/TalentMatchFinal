@@ -2,7 +2,14 @@ import React from 'react';
 import { useDemo } from '../../context/DemoContext';
 
 export const UnverifiedRestrictionModal: React.FC = () => {
-  const { isUnverifiedModalOpen, unverifiedBlockedAction, closeUnverifiedModal, openAuthModal } = useDemo();
+  const {
+    currentUser,
+    isUnverifiedModalOpen,
+    unverifiedBlockedAction,
+    closeUnverifiedModal,
+    openAuthModal,
+    setPendingVerificationEmail,
+  } = useDemo();
 
   if (!isUnverifiedModalOpen) return null;
 
@@ -34,13 +41,16 @@ export const UnverifiedRestrictionModal: React.FC = () => {
         <div className="space-y-2.5">
           <button
             onClick={() => {
+              if (currentUser?.email) {
+                setPendingVerificationEmail(currentUser.email);
+              }
               closeUnverifiedModal();
               openAuthModal('verification');
             }}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-xs"
           >
             <i className="fa-solid fa-envelope-circle-check text-xs" />
-            <span>Xác thực email ngay</span>
+            <span>Nhập mã OTP kích hoạt ngay</span>
           </button>
 
           <button

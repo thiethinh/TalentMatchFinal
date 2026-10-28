@@ -37,20 +37,30 @@ export interface RegisterPayload {
   agreeTerms: boolean;
 }
 
+export interface RegisterResponse {
+  success?: boolean;
+  requiresOtp?: boolean;
+  authenticated?: boolean;
+  email?: string;
+  fullName?: string;
+  role?: string;
+  message?: string;
+}
+
 export const authApi = {
-  getMe: async (): Promise<UserDto & { authenticated: boolean }> => {
+  getMe: async (): Promise<UserDto & { authenticated: boolean; requiresOtp?: boolean }> => {
     return api.get('/auth/me');
   },
 
-  login: async (payload: LoginPayload): Promise<UserDto & { authenticated: boolean; message?: string }> => {
+  login: async (payload: LoginPayload): Promise<UserDto & { authenticated: boolean; message?: string; requiresOtp?: boolean }> => {
     return api.post('/auth/login', payload);
   },
 
-  register: async (payload: RegisterPayload): Promise<UserDto & { authenticated: boolean; message?: string }> => {
+  register: async (payload: RegisterPayload): Promise<RegisterResponse> => {
     return api.post('/auth/register', payload);
   },
 
-  verifyOtp: async (email: string, otp: string): Promise<UserDto & { message?: string }> => {
+  verifyOtp: async (email: string, otp: string): Promise<UserDto & { authenticated: boolean; message?: string }> => {
     return api.post('/auth/verify-otp', { email, otp });
   },
 

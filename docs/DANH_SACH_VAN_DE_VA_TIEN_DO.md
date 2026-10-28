@@ -36,6 +36,7 @@
   2. `9abdbd4`: Thêm trang Chi tiết công việc (`JobDetail.tsx`), trang Việc đã lưu riêng biệt (`SavedJobs.tsx`), form nộp đề xuất chi tiết có đính kèm file.
   3. `137af31`: Cho phép chỉnh sửa trực tiếp hồ sơ cá nhân, chuẩn hóa các trường rỗng mặc định, nâng cấp quy trình rút tiền Napas 24/7 và lịch sử giao dịch.
   4. `8dc4d56`: Thêm biểu đồ cột theo khoảng ngày & biểu đồ tròn tỷ lệ, xem chi tiết báo giá tuyển dụng của Employer, đồng bộ chat hợp đồng thời gian thực và quy trình nghiệm thu bàn giao Escrow.
+  5. `ae81633`: Tách riêng hoàn toàn Hợp Đồng & Nộp Bài (/contracts) và Việc Đã Lưu (/saved-jobs) thành các trang độc lập, sửa link sidebar chuẩn xác.
 * **Tình trạng build & kiểm thử:**
   - Frontend: `npm run build` (`tsc -b && vite build`) chạy thành công 100% với 0 lỗi.
   - Backend: `./gradlew.bat compileJava` & `./gradlew.bat test` chạy thành công 100% (UP-TO-DATE, BUILD SUCCESSFUL).

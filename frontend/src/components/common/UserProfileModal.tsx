@@ -88,44 +88,49 @@ export const UserProfileModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white rounded-xl max-w-2xl w-full shadow-xl border border-slate-200 relative my-8 max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200/90 relative my-8 max-h-[92vh] flex flex-col overflow-hidden">
         
         {/* Header Banner */}
-        <div className="relative bg-slate-900 h-28 px-6 pt-5 text-white shrink-0">
+        <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 h-24 sm:h-26 px-6 sm:px-8 pt-4 pb-3 text-white shrink-0 flex items-start justify-between">
+          <div className="flex items-center space-x-2.5 text-xs text-slate-300 font-semibold tracking-wider uppercase">
+            <span className="w-6 h-6 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">
+              <i className="fa-solid fa-user" />
+            </span>
+            <span className="text-white font-bold">Hồ Sơ Tài Khoản Cá Nhân</span>
+          </div>
+
           <button
             onClick={closeUserProfileModal}
-            className="absolute top-3.5 right-3.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white w-8 h-8 rounded-md flex items-center justify-center transition-colors cursor-pointer"
+            className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
             title="Đóng"
           >
             <i className="fa-solid fa-xmark text-sm" />
           </button>
-          <div className="flex items-center space-x-2 text-xs text-slate-300 font-semibold tracking-wider uppercase">
-            <i className="fa-solid fa-user text-blue-400" />
-            <span>Hồ Sơ Tài Khoản Cá Nhân</span>
-          </div>
         </div>
 
         {/* Profile Card Header with Avatar */}
-        <div className="px-6 sm:px-8 -mt-10 shrink-0">
+        <div className="px-6 sm:px-8 pt-0 pb-4 bg-white border-b border-slate-100 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="flex items-end space-x-4">
-              <div className="relative">
+            <div className="flex items-end gap-4">
+              {/* Only the avatar wrapper has negative margin to overlap the banner smoothly */}
+              <div className="relative -mt-10 sm:-mt-12 shrink-0 z-10">
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-20 h-20 rounded-lg object-cover border-4 border-white shadow-md bg-white ring-1 ring-slate-200"
+                  className="w-20 h-20 sm:w-22 sm:h-22 rounded-xl object-cover border-4 border-white shadow-md bg-white ring-1 ring-slate-200"
                 />
                 {currentUser.isVerified && (
-                  <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white w-5 h-5 rounded-full ring-2 ring-white flex items-center justify-center text-[10px]" title="Đã xác thực eKYC">
+                  <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white w-6 h-6 rounded-full ring-2 ring-white flex items-center justify-center text-[10px] shadow-xs" title="Đã xác thực eKYC">
                     <i className="fa-solid fa-shield-halved" />
                   </div>
                 )}
               </div>
 
-              <div className="mb-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl font-bold text-slate-900">{currentUser.name}</h2>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-sm uppercase ${
+              {/* Name & Role: rendered completely on white background with generous breathing room */}
+              <div className="pt-2 sm:pt-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-snug">{currentUser.name}</h2>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                     currentUser.role === 'employer'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : currentUser.role === 'freelancer'
@@ -137,20 +142,28 @@ export const UserProfileModal: React.FC = () => {
                     {currentUser.role === 'employer' ? 'Nhà Tuyển Dụng' : currentUser.role === 'freelancer' ? 'Freelancer' : currentUser.role === 'admin' ? 'Quản Trị Viên' : 'Khách'}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 font-mono mt-0.5">ID: {currentUser.id}</div>
+                <div className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2 flex-wrap">
+                  <span>ID: {currentUser.id}</span>
+                  {currentUser.role === 'employer' && currentUser.companyName && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-600 font-sans font-medium">{currentUser.companyName}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Verification Status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pb-1 sm:pb-0 shrink-0">
               {currentUser.emailVerified ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg shadow-2xs">
                   <i className="fa-solid fa-circle-check text-emerald-600 text-xs" />
                   <span>Email Đã Xác Thực</span>
                 </span>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-md">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-lg">
                     <i className="fa-solid fa-circle-exclamation text-amber-600 text-xs" />
                     <span>Chưa Xác Thực Email</span>
                   </span>
@@ -158,7 +171,7 @@ export const UserProfileModal: React.FC = () => {
                     onClick={() => {
                       verifyEmail(currentUser.id);
                     }}
-                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium px-2.5 py-1 rounded-md transition-colors shadow-xs cursor-pointer"
+                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium px-3 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer"
                   >
                     Xác thực ngay
                   </button>
@@ -169,18 +182,18 @@ export const UserProfileModal: React.FC = () => {
         </div>
 
         {/* Scrollable Body Content */}
-        <div className="p-6 sm:p-8 space-y-5 overflow-y-auto flex-1 text-xs">
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
           
           {/* Financial Wallet Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                  <i className="fa-solid fa-wallet text-sm" />
+            <div className="bg-slate-50/90 p-4 sm:p-5 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center shrink-0">
+                  <i className="fa-solid fa-wallet text-base" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-semibold text-slate-500 uppercase">Số dư khả dụng trong ví</div>
-                  <div className="text-base font-bold text-emerald-700">
+                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Số dư khả dụng trong ví</div>
+                  <div className="text-base sm:text-lg font-bold text-emerald-700 font-mono">
                     {(currentUser.balance || 0).toLocaleString('vi-VN')} đ
                   </div>
                 </div>
@@ -190,19 +203,19 @@ export const UserProfileModal: React.FC = () => {
                   closeUserProfileModal();
                   openWithdrawModal();
                 }}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] rounded-md transition-colors shadow-xs cursor-pointer shrink-0"
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs cursor-pointer shrink-0"
               >
                 Rút tiền
               </button>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-lock text-sm" />
+            <div className="bg-slate-50/90 p-4 sm:p-5 rounded-xl border border-slate-200/90 flex items-center gap-3.5 shadow-2xs">
+              <div className="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-700 flex items-center justify-center shrink-0">
+                <i className="fa-solid fa-lock text-base" />
               </div>
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase">Tiền phong tỏa Escrow VNPAY</div>
-                <div className="text-base font-bold text-blue-700">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Tiền phong tỏa Escrow VNPAY</div>
+                <div className="text-base sm:text-lg font-bold text-blue-700 font-mono">
                   {(currentUser.escrowBalance || 0).toLocaleString('vi-VN')} đ
                 </div>
               </div>
@@ -210,44 +223,72 @@ export const UserProfileModal: React.FC = () => {
           </div>
 
           {/* Contact & Account Security Info */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-              <i className="fa-solid fa-user text-blue-600 text-xs" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                <i className="fa-solid fa-address-card" />
+              </span>
               <span>Thông Tin Liên Hệ & Định Danh</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="flex items-center space-x-2 text-slate-700">
-                <i className="fa-solid fa-envelope text-slate-400 w-4 text-center shrink-0" />
-                <span className="font-medium text-slate-500">Email:</span>
-                <span className="font-semibold text-slate-900">{currentUser.email || 'Chưa cập nhật'}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-white text-slate-500 flex items-center justify-center shadow-2xs shrink-0 text-xs">
+                  <i className="fa-solid fa-envelope" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-medium text-slate-400">Email liên hệ</div>
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800 truncate" title={currentUser.email}>
+                    {currentUser.email || 'Chưa cập nhật'}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-2 text-slate-700">
-                <i className="fa-solid fa-phone text-slate-400 w-4 text-center shrink-0" />
-                <span className="font-medium text-slate-500">Số điện thoại:</span>
-                <span className="font-semibold text-slate-900">{currentUser.phone || 'Chưa cập nhật'}</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-white text-slate-500 flex items-center justify-center shadow-2xs shrink-0 text-xs">
+                  <i className="fa-solid fa-phone" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-medium text-slate-400">Số điện thoại</div>
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                    {currentUser.phone || 'Chưa cập nhật'}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-2 text-slate-700">
-                <i className="fa-solid fa-calendar text-slate-400 w-4 text-center shrink-0" />
-                <span className="font-medium text-slate-500">Ngày tham gia:</span>
-                <span className="font-semibold text-slate-900">{currentUser.createdAt || '2026-01-15'}</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-white text-slate-500 flex items-center justify-center shadow-2xs shrink-0 text-xs">
+                  <i className="fa-solid fa-calendar-days" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-medium text-slate-400">Ngày tham gia hệ thống</div>
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                    {currentUser.createdAt || '2026-01-15'}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-2 text-slate-700">
-                <i className="fa-solid fa-clock text-slate-400 w-4 text-center shrink-0" />
-                <span className="font-medium text-slate-500">Đăng nhập cuối:</span>
-                <span className="font-semibold text-slate-900">{currentUser.lastLogin || 'Vừa truy cập'}</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-white text-slate-500 flex items-center justify-center shadow-2xs shrink-0 text-xs">
+                  <i className="fa-solid fa-clock-rotate-left" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-medium text-slate-400">Thời gian đăng nhập cuối</div>
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                    {currentUser.lastLogin || 'Vừa truy cập'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* eKYC Identity & Business Verification Section */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <i className="fa-solid fa-shield-halved text-blue-600 text-xs" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                  <i className="fa-solid fa-shield-halved" />
+                </span>
                 <span>
                   {currentUser.role === 'employer'
                     ? 'Xác Minh Doanh Nghiệp eKYC (Pháp Nhân & MST)'
@@ -256,12 +297,12 @@ export const UserProfileModal: React.FC = () => {
               </h3>
 
               {currentUser.isVerified ? (
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-sm flex items-center gap-1">
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
                   <i className="fa-solid fa-circle-check text-emerald-600 text-xs" />
                   <span>Đã Xác Minh Chính Chủ</span>
                 </span>
               ) : (
-                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-sm flex items-center gap-1">
+                <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
                   <i className="fa-solid fa-circle-exclamation text-amber-600 text-xs" />
                   <span>Chưa Xác Minh</span>
                 </span>
@@ -270,22 +311,22 @@ export const UserProfileModal: React.FC = () => {
 
             {/* Case 1: Already Verified Banner */}
             {currentUser.isVerified && !showKycForm ? (
-              <div className="p-3.5 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-                <div className="flex items-start justify-between">
+              <div className="p-4 bg-slate-50/90 rounded-xl border border-slate-200/90 space-y-3.5">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <i className="fa-solid fa-file-circle-check text-sm" />
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <i className="fa-solid fa-file-circle-check text-base" />
                     </div>
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
                         <span>
                           {currentUser.role === 'employer'
                             ? 'Pháp Nhân Doanh Nghiệp Đã Được Thẩm Định Hợp Chuẩn'
                             : 'Căn Cước Công Dân Gắn Chip Đã Xác Thực'}
                         </span>
-                        <i className="fa-solid fa-shield-halved text-emerald-600 text-[11px]" />
+                        <i className="fa-solid fa-shield-halved text-emerald-600 text-xs" />
                       </div>
-                      <div className="text-[11px] text-slate-600 mt-0.5">
+                      <div className="text-xs text-slate-600 mt-0.5">
                         Tích Xanh uy tín đã kích hoạt trên toàn sàn TalentMatch & Cổng ký quỹ Escrow VNPAY.
                       </div>
                     </div>
@@ -294,26 +335,26 @@ export const UserProfileModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowKycForm(true)}
-                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-white border border-slate-300 px-2.5 py-1 rounded-md transition-colors cursor-pointer shrink-0"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-white border border-slate-300 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs hover:bg-slate-50"
                   >
                     Xem / Cập nhật
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-[11px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200 text-xs">
                   {currentUser.role === 'employer' ? (
                     <>
-                      <div>Tên công ty: <strong className="text-slate-800">{currentUser.companyName || 'Công ty TNHH Giải Pháp Số'}</strong></div>
-                      <div>Mã số thuế: <strong className="font-mono text-slate-800">{currentUser.taxCode || '0101234567'}</strong></div>
-                      <div>Đại diện pháp luật: <strong className="text-slate-800">{currentUser.name}</strong></div>
-                      <div>Trạng thái: <span className="text-emerald-700 font-semibold">Đối soát Tổng Cục Thuế hợp lệ</span></div>
+                      <div><span className="text-slate-500">Tên công ty:</span> <strong className="text-slate-800 ml-1.5 font-semibold">{currentUser.companyName || 'Công ty TNHH Giải Pháp Số'}</strong></div>
+                      <div><span className="text-slate-500">Mã số thuế:</span> <strong className="font-mono text-slate-800 ml-1.5 font-semibold">{currentUser.taxCode || '0101234567'}</strong></div>
+                      <div><span className="text-slate-500">Đại diện pháp luật:</span> <strong className="text-slate-800 ml-1.5 font-semibold">{currentUser.name}</strong></div>
+                      <div><span className="text-slate-500">Trạng thái:</span> <span className="text-emerald-700 font-semibold ml-1.5">Đối soát Tổng Cục Thuế hợp lệ</span></div>
                     </>
                   ) : (
                     <>
-                      <div>Loại giấy tờ: <strong className="text-slate-800">CCCD 12 Số (Gắn chip)</strong></div>
-                      <div>Số định danh: <strong className="font-mono text-slate-800">001202****** (Đã ẩn)</strong></div>
-                      <div>Họ và tên: <strong className="text-slate-800">{currentUser.name.toUpperCase()}</strong></div>
-                      <div>Cấp độ định danh: <span className="text-emerald-700 font-semibold">eKYC Cấp độ 2 (Full quyền)</span></div>
+                      <div><span className="text-slate-500">Loại giấy tờ:</span> <strong className="text-slate-800 ml-1.5 font-semibold">CCCD 12 Số (Gắn chip)</strong></div>
+                      <div><span className="text-slate-500">Số định danh:</span> <strong className="font-mono text-slate-800 ml-1.5 font-semibold">001202****** (Đã ẩn)</strong></div>
+                      <div><span className="text-slate-500">Họ và tên:</span> <strong className="text-slate-800 ml-1.5 font-semibold">{currentUser.name.toUpperCase()}</strong></div>
+                      <div><span className="text-slate-500">Cấp độ định danh:</span> <span className="text-emerald-700 font-semibold ml-1.5">eKYC Cấp độ 2 (Full quyền)</span></div>
                     </>
                   )}
                 </div>
@@ -487,16 +528,18 @@ export const UserProfileModal: React.FC = () => {
           </div>
 
           {/* Bank Accounts for Withdrawal Section */}
-          <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <i className="fa-solid fa-credit-card text-emerald-600 text-xs" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                  <i className="fa-solid fa-building-columns" />
+                </span>
                 <span>Tài Khoản Ngân Hàng Thụ Hưởng (Rút Tiền)</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddBank(!showAddBank)}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <i className="fa-solid fa-plus text-xs" />
                 <span>{showAddBank ? 'Hủy thêm' : '+ Thêm tài khoản'}</span>
@@ -505,50 +548,52 @@ export const UserProfileModal: React.FC = () => {
 
             {/* List of Registered Bank Accounts */}
             {(currentUser.bankAccounts || []).length === 0 ? (
-              <div className="p-3 bg-amber-50 rounded-md border border-amber-200 text-amber-800 flex items-start space-x-2.5">
-                <i className="fa-solid fa-circle-exclamation text-amber-600 text-sm mt-0.5" />
+              <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 flex items-start space-x-3">
+                <i className="fa-solid fa-circle-exclamation text-amber-600 text-base mt-0.5" />
                 <div>
-                  <div className="font-semibold text-xs">Chưa có tài khoản ngân hàng nào được liên kết</div>
-                  <div className="text-[11px] text-amber-700 mt-0.5">
+                  <div className="font-semibold text-xs text-amber-900">Chưa có tài khoản ngân hàng nào được liên kết</div>
+                  <div className="text-xs text-amber-700 mt-0.5">
                     Để thực hiện rút tiền về tài khoản, bạn cần đăng ký số tài khoản ngân hàng chính chủ tại đây trước.
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {(currentUser.bankAccounts || []).map((acc) => (
                   <div
                     key={acc.id}
-                    className="p-3 bg-slate-50 rounded-md border border-slate-200 flex items-center justify-between hover:border-slate-300 transition-colors"
+                    className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3 hover:border-slate-300 transition-colors shadow-2xs"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs">
+                    <div className="flex items-center space-x-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-base shadow-2xs shrink-0">
                         🏛️
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                        <div className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
                           <span>{acc.bankName}</span>
                           {acc.isDefault && (
-                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-xs">
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
                               Mặc định
                             </span>
                           )}
                         </div>
-                        <div className="font-mono text-slate-700 font-semibold text-xs tracking-wider mt-0.5">
-                          {acc.accountNumber} — <span className="text-slate-500 font-sans">{acc.accountHolder}</span>
+                        <div className="font-mono text-slate-700 font-semibold text-xs tracking-wider mt-1 flex items-center gap-2">
+                          <span>{acc.accountNumber}</span>
+                          <span className="text-slate-300 font-sans">•</span>
+                          <span className="text-slate-500 font-sans uppercase font-medium">{acc.accountHolder}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-sm font-semibold border border-emerald-200">
-                        <i className="fa-solid fa-circle-check text-[9px]" />
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
+                        <i className="fa-solid fa-circle-check text-xs" />
                         <span>Napas 24/7</span>
                       </span>
                       <button
                         type="button"
                         onClick={() => removeBankAccount(acc.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                        className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Xóa liên kết"
                       >
                         <i className="fa-solid fa-trash-can text-xs" />
@@ -635,31 +680,35 @@ export const UserProfileModal: React.FC = () => {
 
           {/* Role-Specific Profile Details: EMPLOYER */}
           {currentUser.role === 'employer' && (
-            <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                <i className="fa-solid fa-building text-emerald-600 text-xs" />
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                  <i className="fa-solid fa-building" />
+                </span>
                 <span>Thông Tin Doanh Nghiệp Tuyển Dụng</span>
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="text-slate-500 font-medium mb-0.5">Tên công ty / Tổ chức:</div>
-                  <div className="font-bold text-slate-900 text-xs">{currentUser.companyName || 'Doanh nghiệp tư nhân'}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                  <div className="text-[11px] font-medium text-slate-400 mb-0.5">Tên công ty / Tổ chức</div>
+                  <div className="font-bold text-slate-900 text-xs sm:text-sm">{currentUser.companyName || 'Doanh nghiệp tư nhân'}</div>
                 </div>
 
-                <div>
-                  <div className="text-slate-500 font-medium mb-0.5">Mã số thuế:</div>
-                  <div className="font-mono font-bold text-slate-800 text-xs">{currentUser.taxCode || '0101234567'}</div>
+                <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-100">
+                  <div className="text-[11px] font-medium text-slate-400 mb-0.5">Mã số thuế</div>
+                  <div className="font-mono font-bold text-slate-800 text-xs sm:text-sm">{currentUser.taxCode || '0101234567'}</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-2 border-t border-slate-100 text-slate-600 text-xs">
-                <div>
-                  Tin tuyển dụng đã đăng: <span className="font-bold text-blue-700">{postedProjectsCount}</span>
+              <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-slate-600 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500">Tin tuyển dụng đã đăng:</span>
+                  <span className="font-bold text-blue-700 font-mono">{postedProjectsCount}</span>
                 </div>
-                <div>•</div>
-                <div>
-                  Hợp đồng đang thực hiện: <span className="font-bold text-emerald-700">{activeOrdersCount}</span>
+                <div className="text-slate-300">•</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500">Hợp đồng đang thực hiện:</span>
+                  <span className="font-bold text-emerald-700 font-mono">{activeOrdersCount}</span>
                 </div>
               </div>
             </div>
@@ -667,51 +716,53 @@ export const UserProfileModal: React.FC = () => {
 
           {/* Role-Specific Profile Details: FREELANCER */}
           {currentUser.role === 'freelancer' && freelancerProfile && (
-            <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
-                <i className="fa-solid fa-award text-blue-600 text-xs" />
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                  <i className="fa-solid fa-award" />
+                </span>
                 <span>Năng Lực Chuyên Môn & Điểm Tín Nhiệm TalentCredit</span>
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-amber-50 p-2.5 rounded-md border border-amber-200 text-center">
-                  <div className="text-[10px] font-bold text-amber-800 uppercase">Điểm Tín Nhiệm</div>
-                  <div className="text-base font-bold text-amber-900 mt-0.5">{freelancerProfile.talentCreditScore} / 1000</div>
-                  <div className="text-[10px] font-medium text-amber-700">Hạng: {freelancerProfile.talentCreditBadge}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 text-center shadow-2xs">
+                  <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Điểm Tín Nhiệm</div>
+                  <div className="text-lg font-bold text-amber-900 mt-1 font-mono">{freelancerProfile.talentCreditScore} / 1000</div>
+                  <div className="text-[11px] font-medium text-amber-700 mt-0.5">Hạng: {freelancerProfile.talentCreditBadge}</div>
                 </div>
 
-                <div className="bg-blue-50 p-2.5 rounded-md border border-blue-200 text-center">
-                  <div className="text-[10px] font-bold text-blue-800 uppercase">Đánh Giá Trung Bình</div>
-                  <div className="text-base font-bold text-blue-900 mt-0.5 flex items-center justify-center gap-1">
+                <div className="bg-blue-50/80 p-3.5 rounded-xl border border-blue-200 text-center shadow-2xs">
+                  <div className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Đánh Giá Trung Bình</div>
+                  <div className="text-lg font-bold text-blue-900 mt-1 flex items-center justify-center gap-1.5 font-mono">
                     <span>{freelancerProfile.rating}</span>
                     <i className="fa-solid fa-star text-amber-500 text-xs" />
                   </div>
-                  <div className="text-[10px] text-blue-700">({freelancerProfile.reviewCount} đánh giá)</div>
+                  <div className="text-[11px] text-blue-700 mt-0.5">({freelancerProfile.reviewCount} đánh giá)</div>
                 </div>
 
-                <div className="bg-emerald-50 p-2.5 rounded-md border border-emerald-200 text-center">
-                  <div className="text-[10px] font-bold text-emerald-800 uppercase">Dự Án Hoàn Thành</div>
-                  <div className="text-base font-bold text-emerald-900 mt-0.5">{freelancerProfile.completedOrders}</div>
-                  <div className="text-[10px] text-emerald-700">Đơn hàng Escrow</div>
+                <div className="bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 text-center shadow-2xs">
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Dự Án Hoàn Thành</div>
+                  <div className="text-lg font-bold text-emerald-900 mt-1 font-mono">{freelancerProfile.completedOrders}</div>
+                  <div className="text-[11px] text-emerald-700 mt-0.5">Đơn hàng Escrow</div>
                 </div>
               </div>
 
               <div>
-                <div className="font-semibold text-slate-800 mb-1 flex items-center gap-1.5">
+                <div className="font-semibold text-slate-800 text-xs mb-1.5 flex items-center gap-1.5">
                   <i className="fa-solid fa-briefcase text-blue-600 text-xs" />
                   <span>Mô Tả Năng Lực & Kinh Nghiệm Bản Thân:</span>
                 </div>
-                <p className="text-slate-600 bg-slate-50 p-2.5 rounded-md border border-slate-200 leading-relaxed">
+                <p className="text-slate-600 text-xs bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed">
                   {freelancerProfile.bio}
                 </p>
               </div>
 
               {/* Skills */}
               <div>
-                <div className="font-semibold text-slate-800 mb-1.5">Kỹ năng chuyên môn thành thạo:</div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="font-semibold text-slate-800 text-xs mb-2">Kỹ năng chuyên môn thành thạo:</div>
+                <div className="flex flex-wrap gap-2">
                   {freelancerProfile.skills.map((sk) => (
-                    <span key={sk} className="bg-blue-50 text-blue-700 border border-blue-200 font-medium px-2 py-0.5 rounded-sm text-[11px]">
+                    <span key={sk} className="bg-blue-50 text-blue-700 border border-blue-200 font-medium px-2.5 py-1 rounded-lg text-xs shadow-2xs">
                       {sk}
                     </span>
                   ))}
@@ -720,13 +771,13 @@ export const UserProfileModal: React.FC = () => {
 
               {/* Portfolio Link */}
               {freelancerProfile.portfolioUrl && (
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-700">Link Portfolio trực tiếp:</span>
                   <a
                     href={freelancerProfile.portfolioUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 underline"
+                    className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1.5 underline"
                   >
                     <span>{freelancerProfile.portfolioUrl}</span>
                     <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
@@ -739,7 +790,7 @@ export const UserProfileModal: React.FC = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="bg-slate-50/90 border-t border-slate-200 px-6 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center space-x-2">
             <button
               onClick={() => {
@@ -747,19 +798,19 @@ export const UserProfileModal: React.FC = () => {
                 logout();
                 navigate('/');
               }}
-              className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <i className="fa-solid fa-right-from-bracket text-xs" />
               <span>Đăng Xuất Tài Khoản</span>
             </button>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             {currentUser.role === 'employer' && (
               <Link
                 to="/employer/dashboard"
                 onClick={closeUserProfileModal}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
               >
                 Đến Dashboard Tuyển Dụng
               </Link>
@@ -769,7 +820,7 @@ export const UserProfileModal: React.FC = () => {
               <Link
                 to="/freelancer/dashboard"
                 onClick={closeUserProfileModal}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
               >
                 Đến Dashboard Freelancer
               </Link>
@@ -779,7 +830,7 @@ export const UserProfileModal: React.FC = () => {
               <Link
                 to="/admin/dashboard"
                 onClick={closeUserProfileModal}
-                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-md transition-colors shadow-xs"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
               >
                 Đến Cổng Admin
               </Link>
@@ -787,7 +838,7 @@ export const UserProfileModal: React.FC = () => {
 
             <button
               onClick={closeUserProfileModal}
-              className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium text-xs rounded-md transition-colors cursor-pointer"
+              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium text-xs rounded-lg transition-colors cursor-pointer shadow-2xs"
             >
               Đóng
             </button>

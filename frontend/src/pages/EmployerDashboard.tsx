@@ -1,3 +1,4 @@
+import { isSameProject } from '../utils/matching';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -130,7 +131,7 @@ export const EmployerDashboard: React.FC = () => {
   );
 
   const pendingProposals = proposals.filter((prop) =>
-    myProjects.some((p) => p.id === prop.projectId) && prop.status === 'PENDING'
+    myProjects.some((p) => isSameProject(p.id, prop.projectId)) && prop.status === 'PENDING'
   );
 
   const handleOpenAccept = (ord: Order) => {
@@ -292,7 +293,7 @@ export const EmployerDashboard: React.FC = () => {
 
           <div className="space-y-2.5">
             {pendingProposals.map((prop) => {
-              const projectTitle = prop.projectTitle || projects.find((p) => p.id === prop.projectId)?.title || 'Dự án tuyển dụng';
+              const projectTitle = prop.projectTitle || projects.find((p) => isSameProject(p.id, prop.projectId))?.title || 'Dự án tuyển dụng';
               return (
               <div key={prop.id} className="bg-white p-4 rounded-md border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="space-y-2 flex-1">
@@ -813,7 +814,7 @@ export const EmployerDashboard: React.FC = () => {
 
             {/* List of Proposals */}
             <div className="overflow-y-auto space-y-3.5 flex-1 pr-1">
-              {proposals.filter((p) => p.projectId === selectedProjectForProposals.id).length === 0 ? (
+              {proposals.filter((p) => isSameProject(p.projectId, selectedProjectForProposals.id)).length === 0 ? (
                 <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                   <i className="fa-solid fa-file-circle-question text-3xl text-slate-300 mx-auto block" />
                   <div className="font-semibold text-slate-700">Chưa có đề xuất báo giá nào</div>
@@ -823,7 +824,7 @@ export const EmployerDashboard: React.FC = () => {
                 </div>
               ) : (
                 proposals
-                  .filter((p) => p.projectId === selectedProjectForProposals.id)
+                  .filter((p) => isSameProject(p.projectId, selectedProjectForProposals.id))
                   .map((prop) => (
                     <div
                       key={prop.id}

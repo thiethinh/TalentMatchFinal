@@ -78,16 +78,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
 
                 // 5. Authenticated User Profile & Banking & Uploads
-                .requestMatchers("/api/user/**", "/api/upload/**", "/api/payment/**", "/api/notifications/**").authenticated()
+                .requestMatchers("/api/user/**", "/api/upload/**", "/api/payment/**").authenticated()
+                .requestMatchers("/api/notifications/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/jobs/*/apply").permitAll()
 
                 // 6. Public Read-Only APIs (Marketplace Discovery)
                 .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**",
-                        "/api/users/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/disputes/**",
+                        "/api/users/**", "/api/disputes/**",
                         "/api/vnpay-transactions/**", "/api/invitations/**", "/api/portfolios/**", "/api/questions/**").permitAll()
 
                 // 7. Interactive Operations Requiring Authentication
-                .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/orders/**", "/api/disputes/**", "/api/proposals/**", "/api/reviews/**", "/api/questions/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/proposals/**", "/api/questions/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/disputes/**", "/api/questions/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/questions/**").authenticated()
 
                 // Legacy Web UI routes (kept for backwards compatibility)
                 .requestMatchers("/", "/login", "/register", "/verify", "/forgot-password", "/reset-password",

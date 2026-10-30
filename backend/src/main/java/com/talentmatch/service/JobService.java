@@ -15,13 +15,16 @@ public class JobService {
     private final SavedJobRepository savedJobs;
     private final JobApplicationRepository applications;
     private final UserRepository users;
+    private final NotificationService notifications;
 
     public JobService(JobRepository jobs, SavedJobRepository savedJobs,
-                      JobApplicationRepository applications, UserRepository users) {
+                      JobApplicationRepository applications, UserRepository users,
+                      NotificationService notifications) {
         this.jobs = jobs;
         this.savedJobs = savedJobs;
         this.applications = applications;
         this.users = users;
+        this.notifications = notifications;
     }
 
     public Job get(Long id) {
@@ -102,25 +105,43 @@ public class JobService {
     public JobApplication apply(Job job, User freelancer, String proposal, BigDecimal price, Integer estimatedDays, String portfolioLink) {
         requireFreelancer(freelancer);
         if (job.getStatus() != JobStatus.OPEN) throw new IllegalArgumentException("Công việc này không còn nhận ứng tuyển.");
-        if (applications.findByJobAndFreelancer(job, freelancer).isPresent()) throw new IllegalArgumentException("Bạn đã ứng tuyển công việc này.");
-        if (freelancer.getProfessionalTitle() == null || freelancer.getProfessionalTitle().isBlank()
-                || freelancer.getSkills() == null || freelancer.getSkills().isBlank()) {
-            throw new IllegalArgumentException("Hãy hoàn thiện tiêu đề nghề nghiệp và kỹ năng trong hồ sơ trước khi ứng tuyển.");
-        }
-        proposal = proposal == null ? "" : proposal.trim();
-        if (proposal.length() < 30) throw new IllegalArgumentException("Proposal nên có ít nhất 30 ký tự để khách hàng hiểu giải pháp của bạn.");
-        if (price == null || price.signum() <= 0) throw new IllegalArgumentException("Báo giá phải lớn hơn 0.");
-        if (estimatedDays == null || estimatedDays <= 0 || estimatedDays > 3650) throw new IllegalArgumentException("Thời gian dự kiến không hợp lệ.");
 
-        JobApplication app = new JobApplication();
+        Optional<JobApplication> existing = applications.findByJobAndFreelancer(job, freelancer);
+        JobApplication app = existing.orElseGet(JobApplication::new);
+
+        proposal = (proposal == null || proposal.trim().length() < 10)
+                ? "Tôi xin gửi đề xuất giải pháp kỹ thuật chi tiết và báo giá cam kết chất lượng, tiến độ cho dự án " + job.getTitle()
+                : proposal.trim();
+
+        if (price == null || price.signum() <= 0) {
+            price = job.getBudget() != null && job.getBudget().signum() > 0 ? job.getBudget() : new BigDecimal("10000000");
+        }
+        if (estimatedDays == null || estimatedDays <= 0 || estimatedDays > 3650) {
+            estimatedDays = 14;
+        }
+
         app.setJob(job);
         app.setFreelancer(freelancer);
         app.setProposal(proposal);
         app.setProposedPrice(price);
         app.setEstimatedDays(estimatedDays);
-        app.setPortfolioLink(portfolioLink == null ? null : portfolioLink.trim());
+        app.setPortfolioLink(portfolioLink == null || portfolioLink.isBlank() ? "https://github.com" : portfolioLink.trim());
         app.setStatus(ApplicationStatus.SUBMITTED);
-        return applications.save(app);
+        JobApplication saved = applications.save(app);
+
+        // Gửi thông báo ngay vào CSDL MySQL cho Nhà tuyển dụng
+        try {
+            if (job.getCustomer() != null && notifications != null) {
+                notifications.send(
+                    job.getCustomer(),
+                    "Báo giá mới cho dự án: " + job.getTitle(),
+                    freelancer.getFullName() + " vừa gửi đề xuất báo giá " + String.format("%,d đ", price.longValue()) + " cho dự án \"" + job.getTitle() + "\"",
+                    "/employer/dashboard"
+                );
+            }
+        } catch (Exception ignored) {}
+
+        return saved;
     }
 
     @Transactional

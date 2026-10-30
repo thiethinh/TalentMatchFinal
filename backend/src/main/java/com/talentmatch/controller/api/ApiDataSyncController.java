@@ -118,7 +118,8 @@ public class ApiDataSyncController {
         for (Map<String, Object> r : rows) {
             Map<String, Object> p = new HashMap<>();
             p.put("id", "prop-" + r.get("id"));
-            p.put("projectId", "prj-" + r.get("job_id"));
+            p.put("projectId", String.valueOf(r.get("job_id")));
+            p.put("jobId", r.get("job_id"));
             p.put("projectTitle", r.get("job_title"));
             p.put("freelancerId", "free-" + r.get("freelancer_id"));
             p.put("freelancerName", r.get("freelancer_name"));
@@ -208,7 +209,7 @@ public class ApiDataSyncController {
             ord.put("orderNumber", pr.get("order_number") != null ? pr.get("order_number") : "TM-2026-00" + pid);
             ord.put("serviceTitle", pr.get("service_title") != null ? pr.get("service_title") : "Dự án Hợp đồng");
             ord.put("title", pr.get("service_title") != null ? pr.get("service_title") : "Dự án Hợp đồng");
-            ord.put("projectId", "prj-" + pr.get("job_id"));
+            ord.put("projectId", String.valueOf(pr.get("job_id")));
             ord.put("freelancerId", "free-" + pr.get("freelancer_id"));
             ord.put("freelancerName", pr.get("freelancer_name"));
             ord.put("freelancerAvatar", pr.get("freelancer_avatar"));
@@ -421,14 +422,32 @@ public class ApiDataSyncController {
             String demoUrl = (String) body.getOrDefault("demoUrl", "");
             String note = (String) body.getOrDefault("note", "Bàn giao sản phẩm hoàn thiện.");
 
+            Map<String, Object> proj = jdbc.queryForMap("SELECT * FROM projects WHERE id = ?", pid);
+            Long customerId = ((Number) proj.get("customer_id")).longValue();
+            Long freelancerId = ((Number) proj.get("freelancer_id")).longValue();
+
+            Integer maxVer = jdbc.queryForObject("SELECT COALESCE(MAX(version), 0) FROM project_deliveries WHERE project_id = ?", Integer.class, pid);
+            int nextVer = (maxVer != null ? maxVer : 0) + 1;
+
             String insertSql = """
-                INSERT INTO project_deliveries (project_id, file_name, file_url, file_size, demo_url, note, submitted_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, NOW(6), NOW(6))
+                INSERT INTO project_deliveries (project_id, file_name, file_url, file_size, demo_url, note, version, submitter_id, submitted_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(6), NOW(6))
             """;
-            jdbc.update(insertSql, pid, fileName, fileUrl, fileSize, demoUrl, note);
+            jdbc.update(insertSql, pid, fileName, fileUrl, fileSize, demoUrl, note, nextVer, freelancerId);
 
             // Cập nhật trạng thái dự án sang DELIVERED (hoặc chờ nghiệm thu)
             jdbc.update("UPDATE projects SET status = 'DELIVERED', auto_accept_days_remaining = 3, updated_at = NOW(6) WHERE id = ?", pid);
+
+            // Tạo thông báo cho Nhà tuyển dụng
+            String freeName = jdbc.queryForObject("SELECT full_name FROM users WHERE id = ?", String.class, freelancerId);
+
+            jdbc.update("""
+                INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+                VALUES (?, ?, ?, ?, 0, 'CONTRACT', NOW(6))
+            """, customerId,
+               "Sản phẩm đã được bàn giao: " + proj.get("service_title"),
+               "Freelancer " + (freeName != null ? freeName : "") + " đã nộp sản phẩm bàn giao cho đơn hàng " + proj.get("order_number") + ". Vui lòng kiểm tra và nghiệm thu trong 72 giờ.",
+               "/orders/ord-" + pid);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã nộp bài bàn giao thành công vào CSDL!"));
         } catch (Exception e) {
@@ -454,6 +473,30 @@ public class ApiDataSyncController {
 
             // 3. Cộng tiền vào ví Freelancer trong bảng users
             jdbc.update("UPDATE users SET balance = balance + ?, completed_projects = completed_projects + 1 WHERE id = ?", payout, freelancerId);
+
+            // 4. Ghi nhận giao dịch giải ngân (PAYOUT) vào vnpay_transactions
+            String txNo = "VNPAY-PAYOUT-" + System.currentTimeMillis();
+            String freeEmail = jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, freelancerId);
+            jdbc.update("""
+                INSERT INTO vnpay_transactions (
+                    transaction_no, project_id, order_number, user_id, user_email,
+                    amount, bank_code, card_type, pay_date, status, type, description, created_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, 'BANK_TRANSFER', 'PAYOUT', NOW(6), 'SUCCESS', 'PAYOUT', ?, NOW(6)
+                )
+            """, txNo, pid, proj.get("order_number"), freelancerId, freeEmail != null ? freeEmail : "",
+               payout, "Giải ngân tiền công dự án " + proj.get("service_title"));
+
+            // 5. Tạo thông báo giải ngân cho Freelancer
+            String custName = jdbc.queryForObject("SELECT COALESCE(company_name, full_name) FROM users WHERE id = ?", String.class, proj.get("customer_id"));
+            jdbc.update("""
+                INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+                VALUES (?, ?, ?, ?, 0, 'ESCROW', NOW(6))
+            """, freelancerId,
+               "Nghiệm thu thành công & Giải ngân tiền công!",
+               "Khách hàng " + (custName != null ? custName : "Nhà tuyển dụng") + " đã nghiệm thu đơn hàng " + proj.get("order_number") + ". Tiền công " + String.format("%,.0f đ", payout) + " đã được giải ngân vào ví!",
+               "/orders/ord-" + pid);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã nghiệm thu và giải ngân tiền công thành công!"));
         } catch (Exception e) {
@@ -529,6 +572,120 @@ public class ApiDataSyncController {
             }
             jdbc.update("UPDATE job_applications SET status = 'WITHDRAWN', updated_at = NOW(6) WHERE id = ?", propId);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã rút hồ sơ ứng tuyển thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 12b. POST /api/proposals/{id}/accept: Duyệt đề xuất báo giá, ký hợp đồng & kích hoạt Escrow
+     */
+    @PostMapping("/proposals/{id}/accept")
+    @Transactional
+    public ResponseEntity<?> acceptProposalEndpoint(
+            @PathVariable String id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        try {
+            Long propId = parseId(id);
+            List<Map<String, Object>> appRows = jdbc.queryForList("SELECT a.*, j.title as job_title, j.customer_id as job_customer_id, j.category FROM job_applications a JOIN jobs j ON a.job_id = j.id WHERE a.id = ?", propId);
+            if (appRows.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Không tìm thấy hồ sơ báo giá"));
+            }
+            Map<String, Object> app = appRows.get(0);
+            Long jobId = ((Number) app.get("job_id")).longValue();
+            Long freelancerId = ((Number) app.get("freelancer_id")).longValue();
+            Long customerId = ((Number) app.get("job_customer_id")).longValue();
+            BigDecimal totalAmount = (BigDecimal) app.get("proposed_price");
+            int estimatedDays = ((Number) app.get("estimated_days")).intValue();
+            String jobTitle = (String) app.get("job_title");
+
+            // 1. Cập nhật trạng thái job_applications
+            jdbc.update("UPDATE job_applications SET status = 'ACCEPTED', updated_at = NOW(6) WHERE id = ?", propId);
+            jdbc.update("UPDATE job_applications SET status = 'REJECTED', updated_at = NOW(6) WHERE job_id = ? AND id != ?", jobId, propId);
+
+            // 2. Đổi trạng thái job sang IN_PROGRESS
+            jdbc.update("UPDATE jobs SET status = 'IN_PROGRESS', updated_at = NOW(6) WHERE id = ?", jobId);
+
+            // 3. Tính phí sàn 10%
+            BigDecimal platformFee = totalAmount.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal freelancerPayout = totalAmount.subtract(platformFee);
+            String orderNumber = (body != null && body.get("orderNumber") != null) ? body.get("orderNumber").toString() : ("TM-2026-" + (1000 + (int)(Math.random() * 9000)));
+            String vnpTxId = (body != null && body.get("vnpayTransactionId") != null) ? body.get("vnpayTransactionId").toString() : ("VNPAY-" + System.currentTimeMillis());
+
+            // 4. Tạo hoặc cập nhật record trong bảng projects (Hợp đồng đang thực hiện)
+            List<Map<String, Object>> existProj = jdbc.queryForList("SELECT id FROM projects WHERE application_id = ?", propId);
+            Long projectId;
+            if (!existProj.isEmpty()) {
+                projectId = ((Number) existProj.get(0).get("id")).longValue();
+                jdbc.update("""
+                    UPDATE projects SET
+                        status = 'IN_PROGRESS', total_price = ?, platform_fee = ?,
+                        freelancer_payout_amount = ?, order_number = ?, service_title = ?,
+                        payment_method = 'VNPAY_QR', vnpay_transaction_id = ?, updated_at = NOW(6)
+                    WHERE id = ?
+                """, totalAmount, platformFee, freelancerPayout, orderNumber, jobTitle, vnpTxId, projectId);
+            } else {
+                java.time.LocalDate deadline = java.time.LocalDate.now().plusDays(estimatedDays);
+                jdbc.update("""
+                    INSERT INTO projects (
+                        application_id, customer_id, freelancer_id, order_number, service_title,
+                        total_price, platform_fee, freelancer_payout_amount, deadline,
+                        revision_count, max_revisions_allowed, auto_accept_days_remaining,
+                        agreement_version, sow_requirements, notes, payment_method,
+                        vnpay_transaction_id, status, credit_awarded, created_at, updated_at
+                    ) VALUES (
+                        ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        0, 3, 3,
+                        1, ?, 'Hợp đồng dự án đã được ký kết & nạp tiền Escrow qua Cổng VNPAY.', 'VNPAY_QR',
+                        ?, 'IN_PROGRESS', 0, NOW(6), NOW(6)
+                    )
+                """, propId, customerId, freelancerId, orderNumber, jobTitle,
+                   totalAmount, platformFee, freelancerPayout, deadline,
+                   "Hoàn thành công việc theo mô tả Đề xuất; Thời hạn bàn giao trong " + estimatedDays + " ngày",
+                   vnpTxId);
+                projectId = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+            }
+
+            // 5. Tạo Milestone ban đầu nếu chưa có
+            List<Map<String, Object>> existMs = jdbc.queryForList("SELECT id FROM milestones WHERE project_id = ?", projectId);
+            if (existMs.isEmpty()) {
+                jdbc.update("""
+                    INSERT INTO milestones (project_id, title, description, amount, status, deadline, created_at)
+                    VALUES (?, 'Cột mốc hoàn thành dự án theo Đề xuất', 'Nghiệm thu toàn bộ sản phẩm bàn giao', ?, 'PAID', DATE_ADD(CURDATE(), INTERVAL ? DAY), NOW(6))
+                """, projectId, totalAmount, estimatedDays);
+            }
+
+            // 6. Ghi nhận giao dịch Escrow vào vnpay_transactions
+            String empEmail = jdbc.queryForObject("SELECT email FROM users WHERE id = ?", String.class, customerId);
+            jdbc.update("""
+                INSERT INTO vnpay_transactions (
+                    transaction_no, project_id, order_number, user_id, user_email,
+                    amount, bank_code, card_type, pay_date, status, type, description, created_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, 'VNPAYQR', 'QR_CODE', NOW(6), 'SUCCESS', 'ESCROW_DEPOSIT', ?, NOW(6)
+                )
+            """, vnpTxId, projectId, orderNumber, customerId, empEmail != null ? empEmail : "",
+               totalAmount, "Nạp cọc Escrow cho dự án " + jobTitle);
+
+            // 7. Tạo thông báo cho Freelancer trong bảng notifications
+            String empName = jdbc.queryForObject("SELECT COALESCE(company_name, full_name) FROM users WHERE id = ?", String.class, customerId);
+            jdbc.update("""
+                INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+                VALUES (?, ?, ?, ?, 0, 'CONTRACT', NOW(6))
+            """, freelancerId,
+               "Dự án đã được kích hoạt: " + jobTitle,
+               "Nhà tuyển dụng " + (empName != null ? empName : "Khách hàng") + " đã chấp nhận báo giá và nạp cọc Escrow " + String.format("%,.0f đ", totalAmount) + ". Bạn có thể bắt đầu làm việc ngay!",
+               "/orders/ord-" + projectId);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "orderId", "ord-" + projectId,
+                "projectId", projectId,
+                "orderNumber", orderNumber,
+                "message", "Đã duyệt báo giá, ký hợp đồng và kích hoạt Escrow thành công!"
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -705,6 +862,18 @@ public class ApiDataSyncController {
                     updated_at = NOW(6)
                 WHERE id = ?
             """, targetId, targetId);
+
+            // Tạo thông báo cho người nhận đánh giá
+            List<Map<String, Object>> pRows = jdbc.queryForList("SELECT service_title, order_number FROM projects WHERE id = ?", projectId);
+            String orderNum = !pRows.isEmpty() ? String.valueOf(pRows.get(0).get("order_number")) : "";
+            String authorName = jdbc.queryForObject("SELECT COALESCE(company_name, full_name) FROM users WHERE id = ?", String.class, authorId);
+            jdbc.update("""
+                INSERT INTO notifications (recipient_id, title, message, target_url, is_read, type, created_at)
+                VALUES (?, ?, ?, ?, 0, 'REVIEW', NOW(6))
+            """, targetId,
+               "Đánh giá mới ⭐ " + rating + "/5 từ " + (authorName != null ? authorName : "Đối tác"),
+               "Bạn vừa nhận được đánh giá " + rating + " sao: \"" + comment + "\"" + (!orderNum.isBlank() ? " cho đơn hàng " + orderNum : ""),
+               "/orders/ord-" + projectId);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã lưu đánh giá thành công vào CSDL!"));
         } catch (Exception e) {

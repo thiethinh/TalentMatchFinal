@@ -260,6 +260,11 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản với email này."));
     }
 
+    public User get(Long id) {
+        if (id == null) return null;
+        return users.findById(id).orElse(null);
+    }
+
     @Transactional
     public User loginOrRegisterGoogle(String email, String fullName, String roleStr, String avatar) {
         email = safe(email).toLowerCase();

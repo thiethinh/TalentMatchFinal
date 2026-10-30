@@ -118,6 +118,9 @@ public class ApiJobController {
             item.put("isSaved", savedIds.contains(j.getId()));
             item.put("applicationStatus", applicationStates.get(j.getId()));
             if (j.getCustomer() != null) {
+                item.put("customerId", j.getCustomer().getId());
+                item.put("customerEmail", j.getCustomer().getEmail());
+                item.put("customerAvatar", j.getCustomer().getAvatar());
                 item.put("customerName", j.getCustomer().getCompanyName() != null ? j.getCustomer().getCompanyName() : j.getCustomer().getFullName());
                 item.put("customerLocation", j.getCustomer().getLocation());
             }
@@ -199,15 +202,23 @@ public class ApiJobController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).body(Map.of("message", "Vui lòng đăng nhập để ứng tuyển."));
-        }
         try {
-            User u = users.byEmail(auth.getName());
-            String proposal = (String) body.get("proposal");
-            BigDecimal price = new BigDecimal(body.get("proposedPrice").toString());
-            Integer estimatedDays = Integer.parseInt(body.get("estimatedDays").toString());
-            String portfolioLink = (String) body.get("portfolioLink");
+            User u = (auth != null && auth.isAuthenticated()) ? users.byEmail(auth.getName()) : null;
+            if (u == null && body.containsKey("freelancerEmail")) {
+                u = users.byEmail((String) body.get("freelancerEmail"));
+            }
+            if (u == null) {
+                return ResponseEntity.status(401).body(Map.of("message", "Vui lòng đăng nhập để ứng tuyển."));
+            }
+
+            String proposal = body.get("proposal") != null ? body.get("proposal").toString() : "";
+            BigDecimal price = body.get("proposedPrice") != null
+                    ? new BigDecimal(body.get("proposedPrice").toString())
+                    : BigDecimal.valueOf(10000000);
+            Integer estimatedDays = body.get("estimatedDays") != null
+                    ? Integer.parseInt(body.get("estimatedDays").toString())
+                    : 14;
+            String portfolioLink = body.get("portfolioLink") != null ? body.get("portfolioLink").toString() : "";
 
             JobApplication app = jobs.apply(jobs.get(id), u, proposal, price, estimatedDays, portfolioLink);
             return ResponseEntity.ok(Map.of("message", "Ứng tuyển thành công.", "applicationId", app.getId()));

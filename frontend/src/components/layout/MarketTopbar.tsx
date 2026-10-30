@@ -1,4 +1,5 @@
 import { resolveAvatarUrl } from '../../utils/avatar';
+import { isUserMatching } from '../../utils/matching';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -87,7 +88,7 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
 
   // Filter notifications for current user
   const userNotifications = notifications.filter(
-    (n) => n.userId === currentUser.id || n.userId === 'all'
+    (n) => isUserMatching(n.userId, currentUser.id)
   );
 
   const getNotifIcon = (type: string) => {

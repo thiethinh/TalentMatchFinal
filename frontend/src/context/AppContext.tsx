@@ -1,4 +1,6 @@
 export { resolveAvatarUrl } from '../utils/avatar';
+export { isSameProject, isUserMatching } from '../utils/matching';
+import { isSameProject, isUserMatching } from '../utils/matching';
 /**
  * AppContext.tsx - Global State Store & API Synchronization Layer
  * 
@@ -392,6 +394,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       if (res.ok) {
         await fetchJobQuestions(projectId);
+        const proj = projects.find((p) => isSameProject(p.id, projectId));
+        if (proj) {
+          addNotification({
+            userId: proj.employerId,
+            title: `Câu hỏi thảo luận mới: ${proj.title}`,
+            message: `${currentUser.name} vừa đặt câu hỏi thảo luận về dự án "${proj.title}".`,
+            type: 'SYSTEM',
+            link: `/jobs/${projectId}`
+          });
+        }
         addToast('Đã gửi câu hỏi thảo luận thành công!', 'success');
       }
     } catch {
@@ -409,6 +421,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       if (res.ok) {
         await fetchJobQuestions(projectId);
+        const qList = jobQuestions[projectId] || [];
+        const targetQ = qList.find((q) => q.id === questionId);
+        if (targetQ) {
+          addNotification({
+            userId: targetQ.authorId,
+            title: `Nhà tuyển dụng đã phản hồi câu hỏi của bạn`,
+            message: `${currentUser.name} vừa phản hồi câu hỏi của bạn trong dự án.`,
+            type: 'SYSTEM',
+            link: `/jobs/${projectId}`
+          });
+        }
         addToast('Đã giải đáp câu hỏi thành công!', 'success');
       }
     } catch {
@@ -574,7 +597,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: String(j.id),
             title: j.title || 'Dự án tuyển dụng',
             category: cat,
-            employerId: j.customerId ? `usr-emp-${j.customerId}` : (j.customer ? `usr-emp-${j.customer.id}` : 'usr-emp-2'),
+            employerId: j.customerId ? `usr-emp-${j.customerId}` : (j.customer ? `usr-emp-${j.customer.id}` : (j.employerId || '')),
             employerName: j.customerName || (j.customer ? (j.customer.companyName || j.customer.fullName) : 'Nhà tuyển dụng'),
             employerAvatar: j.customerAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(j.customerName || 'employer')}`,
             employerCompany: j.customerName || undefined,
@@ -786,7 +809,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Notifications calculation and actions
   const unreadNotificationsCount = notifications.filter(
-    (n) => (n.userId === currentUser.id || n.userId === 'all') && !n.isRead
+    (n) => isUserMatching(n.userId, currentUser.id) && !n.isRead
   ).length;
 
   const markNotificationAsRead = (id: string) => {
@@ -809,7 +832,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const markAllNotificationsAsRead = () => {
     setNotifications((prev) =>
       prev.map((n) =>
-        n.userId === currentUser.id || n.userId === 'all' ? { ...n, isRead: true } : n
+        isUserMatching(n.userId, currentUser.id) ? { ...n, isRead: true } : n
       )
     );
     addToast('Đã đánh dấu tất cả thông báo là đã đọc', 'info');
@@ -818,12 +841,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addNotification = (notif: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'>) => {
     const newNotif: AppNotification = {
       ...notif,
-      id: `notif-${Date.now()}`,
+      id: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: new Date().toLocaleString('vi-VN'),
       timeAgo: 'Vừa xong',
       isRead: false
     };
     setNotifications((prev) => [newNotif, ...prev]);
+
+    // Lưu thông báo trực tiếp vào MySQL bảng notifications
+    try {
+      fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipientId: notif.userId,
+          title: notif.title,
+          message: notif.message,
+          targetUrl: notif.link || '/dashboard'
+        })
+      }).catch(() => {});
+    } catch (_) {}
   };
 
   // User Profile Detail Modal State
@@ -1712,21 +1750,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     setProposals((prev) => [proposal, ...prev]);
     setProjects((prev) =>
-      prev.map((p) => (p.id === proposalData.projectId ? { ...p, proposalsCount: p.proposalsCount + 1 } : p))
+      prev.map((p) => (isSameProject(p.id, proposalData.projectId) ? { ...p, proposalsCount: p.proposalsCount + 1 } : p))
     );
 
-    // Lưu đề xuất ứng tuyển vào CSDL MySQL nếu là jobId số
-    const numericJobId = parseInt(proposalData.projectId, 10);
+    // Tìm dự án để gửi thông báo cho Nhà tuyển dụng
+    const proj = projects.find((p) => isSameProject(p.id, proposalData.projectId));
+    if (proj) {
+      addNotification({
+        userId: proj.employerId,
+        title: `Báo giá mới cho dự án: ${proj.title}`,
+        message: `${currentUser.name} vừa gửi đề xuất báo giá ${proposalData.bidAmount.toLocaleString('vi-VN')} đ cho dự án "${proj.title}".`,
+        type: 'PROPOSAL',
+        link: '/employer/dashboard'
+      });
+    }
+
+    // Lưu đề xuất ứng tuyển vào CSDL MySQL
+    const numStr = String(proposalData.projectId).replace(/\D+/g, '');
+    const numericJobId = parseInt(numStr, 10);
     if (!isNaN(numericJobId)) {
       try {
         fetch(`/api/jobs/${numericJobId}/apply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             proposal: proposalData.coverLetter,
             proposedPrice: proposalData.bidAmount,
             estimatedDays: proposalData.estimatedDays,
-            portfolioLink: proposalData.freelancerPortfolioUrl || ''
+            portfolioLink: proposalData.freelancerPortfolioUrl || '',
+            freelancerEmail: currentUser.email
           })
         }).catch(() => {});
       } catch (_) {}
@@ -1741,7 +1794,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const prop = proposals.find((p) => p.id === proposalId);
     if (!prop) return;
 
-    const proj = projects.find((p) => p.id === prop.projectId);
+    const proj = projects.find((p) => isSameProject(p.id, prop.projectId));
     const totalAmount = prop.bidAmount;
     const orderNumber = `TM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -1805,8 +1858,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setProposals((prev) => prev.map((p) => (p.id === proposalId ? { ...p, status: 'ACCEPTED' } : p)));
 
         if (proj) {
-          setProjects((prev) => prev.map((p) => (p.id === proj.id ? { ...p, status: 'IN_PROGRESS' } : p)));
+          setProjects((prev) => prev.map((p) => (isSameProject(p.id, proj.id) ? { ...p, status: 'IN_PROGRESS' } : p)));
         }
+
+        // Thông báo cho Freelancer về việc hợp đồng đã được ký & Escrow kích hoạt
+        addNotification({
+          userId: prop.freelancerId,
+          title: `Dự án đã được kích hoạt: ${newOrder.serviceTitle}`,
+          message: `Nhà tuyển dụng ${currentUser.name} đã chấp nhận báo giá và nạp cọc Escrow ${totalAmount.toLocaleString('vi-VN')} đ. Bạn có thể bắt đầu làm việc ngay!`,
+          type: 'CONTRACT',
+          link: `/orders/${newOrder.id}`
+        });
 
         // Record VNPay Transaction
         const newVnpayTx: VNPayTransaction = {
@@ -1825,21 +1887,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
         setVnpayTransactions((prev) => [newVnpayTx, ...prev]);
 
-        // Đồng bộ lưu thanh toán Escrow xuống CSDL MySQL Backend
-        const numMatch = proj ? proj.id.match(/\d+/) : null;
-        const numericProjectId = numMatch ? parseInt(numMatch[0], 10) : 1;
-        try {
-          fetch(`/api/payment/project/${numericProjectId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              method: 'VNPAY_ESCROW',
-              amount: totalAmount,
-              description: `Nạp cọc Escrow cho dự án ${newOrder.serviceTitle}`
-            })
-          }).catch(() => {});
-        } catch (_) {}
+        // Đồng bộ lưu duyệt báo giá & thanh toán Escrow xuống CSDL MySQL Backend
+        fetch(`/api/proposals/${prop.id}/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            orderNumber,
+            vnpayTransactionId: newOrder.vnpayTransactionId
+          })
+        }).then(r => r.json()).then(data => {
+          if (data && data.orderId) {
+            newOrder.id = data.orderId;
+            setOrders((prev) => prev.map((o) => (o.orderNumber === orderNumber ? { ...o, id: data.orderId } : o)));
+          }
+        }).catch(() => {});
 
         closeVNPayModal();
         addToast(`Thanh toán VNPAY ${totalAmount.toLocaleString('vi-VN')}đ thành công! Đã ký hợp đồng & khóa tiền Escrow.`, 'success');
@@ -1913,6 +1975,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return o;
       })
     );
+
+    // Gửi thông báo cho Nhà tuyển dụng kiểm tra & nghiệm thu
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (targetOrder) {
+      addNotification({
+        userId: targetOrder.employerId,
+        title: `Sản phẩm đã được bàn giao: ${targetOrder.serviceTitle}`,
+        message: `Freelancer ${targetOrder.freelancerName} đã nộp sản phẩm bàn giao cho đơn hàng ${targetOrder.orderNumber}. Vui lòng kiểm tra và nghiệm thu trong 72 giờ.`,
+        type: 'CONTRACT',
+        link: `/orders/${targetOrder.id}`
+      });
+    }
+
+    // Đồng bộ nộp bài bàn giao vào MySQL Backend
+    fetch(`/api/orders/${orderId}/deliver`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        fileName: finalTitle,
+        fileUrl: finalUrl,
+        demoUrl: finalDemoUrl || '',
+        note: finalNote
+      })
+    }).catch(() => {});
+
     addToast('Đã nộp link sản phẩm bàn giao thành công! Đếm ngược 72 giờ tự động nghiệm thu đã kích hoạt.', 'success');
   };
 
@@ -1930,6 +2018,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return o;
       })
     );
+
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (targetOrder) {
+      addNotification({
+        userId: targetOrder.freelancerId,
+        title: `Yêu cầu chỉnh sửa đơn hàng: ${targetOrder.orderNumber}`,
+        message: `Khách hàng ${targetOrder.employerName} yêu cầu chỉnh sửa: "${note.substring(0, 80)}"`,
+        type: 'CONTRACT',
+        link: `/orders/${targetOrder.id}`
+      });
+    }
+
     addToast('Đã gửi yêu cầu Chỉnh sửa (Revision) cho Freelancer!', 'warning');
   };
 
@@ -1972,7 +2072,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           f.name === targetOrder.freelancerName ? { ...f, completedOrders: f.completedOrders + 1 } : f
         )
       );
+
+      // Thông báo giải ngân cho Freelancer
+      addNotification({
+        userId: targetOrder.freelancerId,
+        title: `Nghiệm thu thành công & Giải ngân tiền công!`,
+        message: `Khách hàng ${targetOrder.employerName} đã nghiệm thu đơn hàng ${targetOrder.orderNumber}. Tiền công ${targetOrder.freelancerPayoutAmount.toLocaleString('vi-VN')} đ đã được giải ngân vào ví của bạn!`,
+        type: 'ESCROW',
+        link: `/orders/${targetOrder.id}`
+      });
     }
+
+    // Đồng bộ nghiệm thu & giải ngân tiền công vào MySQL Backend
+    fetch(`/api/orders/${orderId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    }).catch(() => {});
 
     addToast('Nghiệm thu thành công! Đã giải ngân tiền công cho Freelancer & cập nhật TalentCredit.', 'success');
   };
@@ -2023,6 +2139,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return f;
       })
     );
+
+    // Gửi thông báo đánh giá cho đối phương
+    const targetOrder = orders.find((o) => o.id === reviewData.orderId);
+    if (targetOrder) {
+      const isReviewerEmployer = isUserMatching(currentUser.id, targetOrder.employerId);
+      const recipientId = isReviewerEmployer ? targetOrder.freelancerId : targetOrder.employerId;
+      addNotification({
+        userId: recipientId,
+        title: `Đánh giá mới ⭐ ${reviewData.rating}/5 từ ${currentUser.name}`,
+        message: `${currentUser.name} vừa gửi đánh giá ${reviewData.rating} sao: "${reviewData.comment.substring(0, 80)}"`,
+        type: 'REVIEW',
+        link: `/orders/${reviewData.orderId}`
+      });
+
+      // Đồng bộ đánh giá hai chiều vào MySQL Backend
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          orderId: reviewData.orderId,
+          authorId: currentUser.id,
+          targetId: recipientId,
+          rating: reviewData.rating,
+          qualityRating: reviewData.qualityRating,
+          deadlineRating: reviewData.deadlineRating,
+          communicationRating: reviewData.communicationRating,
+          comment: reviewData.comment
+        })
+      }).catch(() => {});
+    }
 
     addToast('Đã gửi đánh giá review thành công! Điểm TalentCredit của freelancer đã được cập nhật.', 'success');
   };
@@ -2208,6 +2355,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         [orderId]: [...prevMsgs, newMsg]
       };
     });
+
+    // Thông báo tin nhắn mới cho bên đối tác trong hợp đồng
+    const targetOrder = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    if (targetOrder) {
+      const isSenderEmployer = isUserMatching(currentUser.id, targetOrder.employerId);
+      const recipientId = isSenderEmployer ? targetOrder.freelancerId : targetOrder.employerId;
+      addNotification({
+        userId: recipientId,
+        title: `Tin nhắn mới từ ${currentUser.name}`,
+        message: `${currentUser.name} vừa gửi tin nhắn trong hợp đồng ${targetOrder.orderNumber}: "${filteredText.substring(0, 80)}"`,
+        type: 'CONTRACT',
+        link: `/orders/${targetOrder.id}`
+      });
+    }
   };
 
   const updateFreelancerBioAndPortfolio = (data: {

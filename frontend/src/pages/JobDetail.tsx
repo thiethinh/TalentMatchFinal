@@ -1,3 +1,4 @@
+import { isSameProject } from '../utils/matching';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -62,7 +63,7 @@ export const JobDetail: React.FC = () => {
   }
 
   const isSaved = savedProjectIds.includes(project.id);
-  const projectProposals = proposals.filter((p) => p.projectId === project.id);
+  const projectProposals = proposals.filter((p) => isSameProject(p.projectId, project.id));
   const myProposal = projectProposals.find(
     (p) => p.freelancerId === currentUser.id || p.freelancerName === currentUser.name
   );

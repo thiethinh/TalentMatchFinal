@@ -27,7 +27,8 @@ import type {
   ProjectInvitation,
   DeliveryFile,
   OrderChatMessage,
-  JobQuestion
+  JobQuestion,
+  JobCategory
 } from '../types';
 export const GUEST_USER: User = {
   id: 'usr-guest',
@@ -240,6 +241,11 @@ export interface AppContextType {
   sendProjectInvitation: (params: { projectId: string; freelancerId: string; message?: string }) => void;
   acceptInvitation: (invitationId: string, responseNote?: string, customBid?: number) => void;
   declineInvitation: (invitationId: string, reason?: string) => void;
+  // Dynamic Categories & Professions
+  categories: JobCategory[];
+  fetchCategories: () => Promise<void>;
+  saveCategory: (cat: Partial<JobCategory>) => Promise<boolean>;
+  deleteCategory: (id: number) => Promise<boolean>;
 }
 
 export type DemoContextType = AppContextType;
@@ -303,6 +309,59 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const INITIAL_ORDER_MESSAGES: Record<string, OrderChatMessage[]> = {};
 
   const [jobQuestions, setJobQuestions] = useState<Record<string, JobQuestion[]>>({});
+  const [categories, setCategories] = useState<JobCategory[]>([]);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setCategories(data);
+      }
+    } catch {}
+  };
+
+  const saveCategory = async (cat: Partial<JobCategory>): Promise<boolean> => {
+    try {
+      const isEdit = Boolean(cat.id);
+      const url = isEdit ? '/api/categories/' + cat.id : '/api/categories';
+      const method = isEdit ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cat)
+      });
+      if (res.ok) {
+        addToast(isEdit ? 'Đã cập nhật nhóm ngành!' : 'Đã thêm nhóm ngành mới!', 'success');
+        await fetchCategories();
+        return true;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        addToast(err.message || 'Lỗi khi lưu nhóm ngành', 'error');
+        return false;
+      }
+    } catch {
+      addToast('Lỗi kết nối máy chủ', 'error');
+      return false;
+    }
+  };
+
+  const deleteCategory = async (id: number): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/categories/' + id, { method: 'DELETE' });
+      if (res.ok) {
+        addToast('Đã xóa nhóm ngành khỏi CSDL!', 'success');
+        await fetchCategories();
+        return true;
+      } else {
+        addToast('Không thể xóa nhóm ngành này', 'error');
+        return false;
+      }
+    } catch {
+      addToast('Lỗi kết nối máy chủ', 'error');
+      return false;
+    }
+  };
 
   const fetchJobQuestions = async (projectId: string): Promise<JobQuestion[]> => {
     try {
@@ -628,6 +687,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (Array.isArray(data)) setInvitations(data);
+      })
+      .catch(() => {});
+
+    // 11. Đồng bộ Nhóm ngành & Nghề nghiệp liên quan từ MySQL (/api/categories)
+    fetch('/api/categories')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data)) setCategories(data);
       })
       .catch(() => {});
 
@@ -2060,6 +2127,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: currentUser.id,
+        email: currentUser.email,
         name: data.name,
         phone: data.phone,
         title: data.title,
@@ -2084,6 +2152,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
           }
           return f;
+        })
+      );
+    } else if (currentUser.role === 'employer') {
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.employerId === currentUser.id || p.employerName === currentUser.name) {
+            return {
+              ...p,
+              employerName: data.name !== undefined ? data.name : p.employerName,
+              employerCompany: data.companyName !== undefined ? data.companyName : p.employerCompany
+            };
+          }
+          return p;
         })
       );
     }
@@ -2436,7 +2517,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         invitations,
         sendProjectInvitation,
         acceptInvitation,
-        declineInvitation
+        declineInvitation,
+        categories,
+        fetchCategories,
+        saveCategory,
+        deleteCategory
       }}
     >
       {children}

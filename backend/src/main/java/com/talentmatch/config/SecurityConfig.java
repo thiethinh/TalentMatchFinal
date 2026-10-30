@@ -2,6 +2,7 @@ package com.talentmatch.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -59,19 +61,35 @@ public class SecurityConfig {
             .cors(c -> c.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
             .authorizeHttpRequests(auth -> auth
-                // REST API public routes
-                .requestMatchers("/api/auth/**", "/api/images/**", "/api/upload/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**", "/api/admin/dashboard",
-                        "/api/users/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/disputes/**",
-                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/notifications/**", "/api/portfolios/**", "/api/questions/**", "/api/images/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/orders/**", "/api/user/**", "/api/disputes/**", "/api/proposals/**", "/api/reviews/**", "/api/questions/**").permitAll()
-                .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/proposals/**", "/api/user/**", "/api/questions/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
-                .requestMatchers("/api/projects/**", "/api/payment/**", "/api/notifications/**").authenticated()
+                // 1. Authentication & Static Assets (Public)
+                .requestMatchers("/api/auth/**", "/api/images/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
-                // Legacy Thymeleaf routes (kept during transition)
+                // 2. Admin Strictly Restricted Endpoints (ROLE_ADMIN)
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
+
+                // 3. Customer Role Restricted Endpoints (ROLE_CUSTOMER)
+                .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
+
+                // 4. Freelancer Role Restricted Endpoints (ROLE_FREELANCER)
+                .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
+
+                // 5. Authenticated User Profile & Banking & Uploads
+                .requestMatchers("/api/user/**", "/api/upload/**", "/api/payment/**", "/api/notifications/**").authenticated()
+
+                // 6. Public Read-Only APIs (Marketplace Discovery)
+                .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**",
+                        "/api/users/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/disputes/**",
+                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/portfolios/**", "/api/questions/**").permitAll()
+
+                // 7. Interactive Operations Requiring Authentication
+                .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/orders/**", "/api/disputes/**", "/api/proposals/**", "/api/reviews/**", "/api/questions/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/proposals/**", "/api/questions/**").authenticated()
+
+                // Legacy Web UI routes (kept for backwards compatibility)
                 .requestMatchers("/", "/login", "/register", "/verify", "/forgot-password", "/reset-password",
                         "/css/**", "/js/**", "/images/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/jobs/**", "/freelancers/**", "/hire", "/projects").permitAll()

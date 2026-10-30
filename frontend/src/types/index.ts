@@ -296,3 +296,14 @@ export interface OrderChatMessage {
   createdAt: string;
   isSystem?: boolean;
 }
+
+export interface JobCategory {
+  id: number;
+  name: string;
+  code: string;
+  icon?: string;
+  professions: string[];
+  suggestedSkills?: string;
+  displayOrder?: number;
+  status?: string;
+}

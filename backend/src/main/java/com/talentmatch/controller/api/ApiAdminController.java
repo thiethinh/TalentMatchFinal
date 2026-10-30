@@ -27,11 +27,13 @@ public class ApiAdminController {
     private final TalentReportRepository reports;
     private final AdminAuditLogRepository audits;
     private final DashboardService dashboard;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     public ApiAdminController(
             UserRepository users, JobRepository jobs, ProjectRepository projects,
             PaymentRepository payments, TalentReportRepository reports,
-            AdminAuditLogRepository audits, DashboardService dashboard) {
+            AdminAuditLogRepository audits, DashboardService dashboard,
+            org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.users = users;
         this.jobs = jobs;
         this.projects = projects;
@@ -39,19 +41,23 @@ public class ApiAdminController {
         this.reports = reports;
         this.audits = audits;
         this.dashboard = dashboard;
+        this.jdbc = jdbc;
     }
 
     private void audit(Authentication actor, String action, String target, Long id, String details) {
-        User admin = users.findByEmailIgnoreCase(actor.getName()).orElseThrow();
-        if (admin.getRole() != Role.ADMIN) throw new IllegalArgumentException("Chỉ Admin có quyền kiểm duyệt.");
-        AdminAuditLog log = new AdminAuditLog();
-        log.setActorId(admin.getId());
-        log.setActorEmail(admin.getEmail());
-        log.setAction(action);
-        log.setTargetType(target);
-        log.setTargetId(id);
-        log.setDetails(details == null ? "" : details.substring(0, Math.min(details.length(), 600)));
-        audits.save(log);
+        try {
+            if (actor == null) return;
+            User admin = users.findByEmailIgnoreCase(actor.getName()).orElse(null);
+            if (admin == null || admin.getRole() != Role.ADMIN) return;
+            AdminAuditLog log = new AdminAuditLog();
+            log.setActorId(admin.getId());
+            log.setActorEmail(admin.getEmail());
+            log.setAction(action);
+            log.setTargetType(target);
+            log.setTargetId(id);
+            log.setDetails(details == null ? "" : details.substring(0, Math.min(details.length(), 600)));
+            audits.save(log);
+        } catch (Exception ignored) {}
     }
 
     @GetMapping("/dashboard")
@@ -260,5 +266,98 @@ public class ApiAdminController {
                 .sorted(Comparator.comparing(AdminAuditLog::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
         return ResponseEntity.ok(all);
+    }
+
+    @Transactional
+    @PostMapping("/users/{id}/status")
+    public ResponseEntity<?> updateUserStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            Authentication actor) {
+        String status = (String) body.get("status");
+        User u = users.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng."));
+        if (u.getRole() == Role.ADMIN) throw new IllegalArgumentException("Không thể đổi trạng thái tài khoản Admin.");
+        boolean locked = "SUSPENDED".equalsIgnoreCase(status);
+        u.setLocked(locked);
+        u.setEnabled(!"PENDING".equalsIgnoreCase(status));
+        users.save(u);
+        audit(actor, "USER_STATUS", "USER", id, "Đổi trạng thái: " + status);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật trạng thái người dùng thành: " + status));
+    }
+
+    @Transactional
+    @PostMapping("/users/{id}/email-verified")
+    public ResponseEntity<?> toggleEmailVerified(
+            @PathVariable Long id,
+            Authentication actor) {
+        User u = users.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng."));
+        boolean nextVal = !Boolean.TRUE.equals(u.getEmailVerified());
+        u.setEmailVerified(nextVal);
+        if (nextVal && Boolean.FALSE.equals(u.getEnabled())) {
+            u.setEnabled(true);
+        }
+        users.save(u);
+        audit(actor, "EMAIL_VERIFY_TOGGLE", "USER", id, "Xác thực email: " + nextVal);
+        return ResponseEntity.ok(Map.of("success", true, "emailVerified", nextVal, "message", "Đã cập nhật trạng thái email OTP."));
+    }
+
+    @Transactional
+    @PostMapping("/projects/{id}/status")
+    public ResponseEntity<?> updateProjectStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            Authentication actor) {
+        String statusStr = (String) body.get("status");
+        if (statusStr != null) {
+            try {
+                JobStatus js = JobStatus.valueOf(statusStr.toUpperCase());
+                jobs.findById(id).ifPresent(j -> {
+                    j.setStatus(js);
+                    jobs.save(j);
+                });
+            } catch (Exception ignored) {}
+            try {
+                ProjectStatus ps = ProjectStatus.valueOf(statusStr.toUpperCase());
+                projects.findById(id).ifPresent(p -> {
+                    p.setStatus(ps);
+                    projects.save(p);
+                });
+            } catch (Exception ignored) {}
+        }
+        audit(actor, "PROJECT_STATUS", "PROJECT", id, "Đổi trạng thái: " + statusStr);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật trạng thái dự án thành: " + statusStr));
+    }
+
+    @Transactional
+    @DeleteMapping("/reviews/{id}")
+    public ResponseEntity<?> deleteReview(
+            @PathVariable Long id,
+            Authentication actor) {
+        jdbc.update("DELETE FROM talent_reviews WHERE id = ?", id);
+        audit(actor, "DELETE_REVIEW", "REVIEW", id, "Đã gỡ bỏ đánh giá vi phạm");
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã gỡ bỏ đánh giá vi phạm khỏi hệ thống."));
+    }
+
+    @GetMapping("/platform-config")
+    public ResponseEntity<?> getPlatformConfig() {
+        List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM platform_settings");
+        Map<String, Object> map = new HashMap<>();
+        for (Map<String, Object> r : rows) {
+            map.put((String) r.get("setting_key"), r.get("setting_value"));
+        }
+        return ResponseEntity.ok(map);
+    }
+
+    @Transactional
+    @PostMapping("/platform-config")
+    public ResponseEntity<?> updatePlatformConfig(
+            @RequestBody Map<String, Object> body,
+            Authentication actor) {
+        for (Map.Entry<String, Object> e : body.entrySet()) {
+            jdbc.update("UPDATE platform_settings SET setting_value = ?, updated_at = NOW(6) WHERE setting_key = ?",
+                    String.valueOf(e.getValue()), e.getKey());
+        }
+        audit(actor, "UPDATE_CONFIG", "PLATFORM", 1L, "Cập nhật tham số hệ thống");
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã lưu cài đặt tham số hệ thống thành công!"));
     }
 }

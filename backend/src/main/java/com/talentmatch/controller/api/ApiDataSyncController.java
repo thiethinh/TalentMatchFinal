@@ -71,6 +71,14 @@ public class ApiDataSyncController {
             userDto.put("phone", u.get("phone") != null ? u.get("phone") : "");
             userDto.put("companyName", u.get("company_name"));
             userDto.put("taxCode", u.get("tax_code"));
+            userDto.put("title", u.get("professional_title") != null ? u.get("professional_title") : "");
+            userDto.put("bio", u.get("bio") != null ? u.get("bio") : "");
+            userDto.put("field", u.get("field") != null ? u.get("field") : "");
+            String skillsStr = (String) u.get("skills");
+            List<String> skillsList = skillsStr != null && !skillsStr.isBlank()
+                    ? Arrays.stream(skillsStr.split("[,;/]")).map(String::trim).filter(sk -> !sk.isEmpty()).toList()
+                    : List.of();
+            userDto.put("skills", skillsList);
             userDto.put("isVerified", isVerified);
             userDto.put("emailVerified", emailVerified);
             userDto.put("accountStatus", u.get("account_status") != null ? u.get("account_status") : "ACTIVE");
@@ -852,5 +860,117 @@ public class ApiDataSyncController {
         return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
                 .header(org.springframework.http.HttpHeaders.LOCATION, targetUrl)
                 .build();
+    }
+
+    /**
+     * 23. GET /api/categories: Lấy toàn bộ nhóm ngành và nghề nghiệp liên quan từ MySQL
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<?> getAllCategories() {
+        String sql = "SELECT * FROM job_categories WHERE status = 'ACTIVE' ORDER BY display_order ASC, id ASC";
+        List<Map<String, Object>> rows = jdbc.queryForList(sql);
+        List<Map<String, Object>> result = new ArrayList<>();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        for (Map<String, Object> r : rows) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", r.get("id"));
+            item.put("name", r.get("name"));
+            item.put("code", r.get("code"));
+            item.put("icon", r.get("icon") != null ? r.get("icon") : "fa-briefcase");
+            item.put("displayOrder", r.get("display_order"));
+            item.put("status", r.get("status"));
+            item.put("suggestedSkills", r.get("suggested_skills"));
+
+            String profJson = (String) r.get("professions");
+            List<String> profList = new ArrayList<>();
+            if (profJson != null && !profJson.isBlank()) {
+                try {
+                    profList = mapper.readValue(profJson, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    profList = Arrays.stream(profJson.replace("[", "").replace("]", "").replace("\"", "").split(","))
+                            .map(String::trim).filter(s -> !s.isEmpty()).toList();
+                }
+            }
+            item.put("professions", profList);
+            result.add(item);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 24. POST /api/categories: Admin thêm nhóm ngành và nghề nghiệp mới
+     */
+    @PostMapping("/categories")
+    @Transactional
+    public ResponseEntity<?> createCategory(@RequestBody Map<String, Object> body) {
+        try {
+            String name = (String) body.get("name");
+            String code = (String) body.get("code");
+            if (code == null || code.isBlank()) {
+                code = "cat-" + System.currentTimeMillis();
+            }
+            String icon = (String) body.getOrDefault("icon", "fa-briefcase");
+            Object profObj = body.get("professions");
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String profJson = profObj instanceof List ? mapper.writeValueAsString(profObj) : String.valueOf(profObj);
+            String suggestedSkills = (String) body.get("suggestedSkills");
+            int order = body.get("displayOrder") != null ? ((Number) body.get("displayOrder")).intValue() : 0;
+
+            jdbc.update("""
+                INSERT INTO job_categories (name, code, icon, professions, suggested_skills, display_order, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', NOW(6), NOW(6))
+            """, name, code, icon, profJson, suggestedSkills, order);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã thêm nhóm ngành mới vào CSDL!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Lỗi: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 25. PUT /api/categories/{id}: Admin cập nhật nhóm ngành và danh sách nghề nghiệp
+     */
+    @PutMapping("/categories/{id}")
+    @Transactional
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        try {
+            String name = (String) body.get("name");
+            String icon = (String) body.get("icon");
+            Object profObj = body.get("professions");
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String profJson = profObj instanceof List ? mapper.writeValueAsString(profObj) : (profObj != null ? String.valueOf(profObj) : null);
+            String suggestedSkills = (String) body.get("suggestedSkills");
+            Integer order = body.get("displayOrder") != null ? ((Number) body.get("displayOrder")).intValue() : null;
+
+            jdbc.update("""
+                UPDATE job_categories
+                SET name = COALESCE(?, name),
+                    icon = COALESCE(?, icon),
+                    professions = COALESCE(?, professions),
+                    suggested_skills = COALESCE(?, suggested_skills),
+                    display_order = COALESCE(?, display_order),
+                    updated_at = NOW(6)
+                WHERE id = ?
+            """, name, icon, profJson, suggestedSkills, order, id);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật nhóm ngành vào CSDL!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Lỗi: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 26. DELETE /api/categories/{id}: Admin xóa nhóm ngành
+     */
+    @DeleteMapping("/categories/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        try {
+            jdbc.update("DELETE FROM job_categories WHERE id = ?", id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa nhóm ngành khỏi CSDL!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Lỗi: " + e.getMessage()));
+        }
     }
 }

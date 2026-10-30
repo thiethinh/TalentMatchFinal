@@ -32,7 +32,8 @@ export const UserProfileModal: React.FC = () => {
     logout,
     freelancers,
     projects,
-    orders
+    orders,
+    categories
   } = useApp();
 
   // Active view tab
@@ -48,6 +49,7 @@ export const UserProfileModal: React.FC = () => {
   const [editSkills, setEditSkills] = useState('');
   const [editCompanyName, setEditCompanyName] = useState('');
   const [editTaxCode, setEditTaxCode] = useState('');
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState('it-dev');
 
   // Bank Form State (empty by default)
   const [showAddBank, setShowAddBank] = useState(false);
@@ -228,7 +230,7 @@ export const UserProfileModal: React.FC = () => {
                 <label
                   htmlFor="avatar-upload-file-input"
                   className="absolute inset-0 bg-slate-900/60 rounded-xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-2xs"
-                  title="Tải ảnh mới từ máy tính (Cloudinary)"
+                  title="Tải ảnh đại diện mới từ máy tính"
                 >
                   <i className="fa-solid fa-camera text-base" />
                   <span className="text-[9px] font-bold mt-0.5">Đổi ảnh</span>
@@ -617,7 +619,7 @@ export const UserProfileModal: React.FC = () => {
                     <span className="text-[11px] text-slate-500">Cập nhật ngay vào hệ thống</span>
                   </div>
 
-                  {/* Cloudinary Avatar Upload Banner */}
+                  {/* Avatar Upload Banner */}
                   <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-3">
                       <img
@@ -627,11 +629,11 @@ export const UserProfileModal: React.FC = () => {
                       />
                       <div>
                         <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                          <i className="fa-solid fa-cloud-arrow-up text-blue-600 text-xs" />
-                          <span>Ảnh đại diện (Upload Cloudinary)</span>
+                          <i className="fa-solid fa-camera text-blue-600 text-xs" />
+                          <span>Ảnh đại diện tài khoản</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate max-w-xs">
-                          Tên file trong DB: <strong className="text-blue-700">{currentUser.avatar || 'Chưa có ảnh tải lên'}</strong>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          Hỗ trợ định dạng JPG, PNG, WEBP (tối đa 10MB)
                         </div>
                       </div>
                     </div>
@@ -655,7 +657,13 @@ export const UserProfileModal: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Họ và tên hiển thị:</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        {currentUser.role === 'admin'
+                          ? 'Họ và tên Quản trị viên:'
+                          : currentUser.role === 'employer'
+                          ? 'Họ và tên người đại diện:'
+                          : 'Họ và tên hiển thị:'}
+                      </label>
                       <input
                         type="text"
                         value={editName}
@@ -676,59 +684,149 @@ export const UserProfileModal: React.FC = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        {currentUser.role === 'employer' ? 'Tên Doanh Nghiệp / Tổ Chức:' : 'Chức danh / Tiêu đề chuyên môn:'}
-                      </label>
-                      {currentUser.role === 'employer' ? (
-                        <input
-                          type="text"
-                          value={editCompanyName}
-                          onChange={(e) => setEditCompanyName(e.target.value)}
-                          placeholder="VD: Công ty TNHH Giải Pháp Số"
-                          className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="VD: Senior Full-Stack Web Developer"
-                          className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                        />
-                      )}
-                    </div>
+                    {/* FREELANCER: DYNAMIC CATEGORY & PROFESSION DROPDOWNS */}
+                    {currentUser.role === 'freelancer' && (
+                      <>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Nhóm ngành nghề chuyên môn:
+                          </label>
+                          <select
+                            value={selectedCategoryCode}
+                            onChange={(e) => {
+                              const code = e.target.value;
+                              setSelectedCategoryCode(code);
+                              const cat = categories.find((c) => c.code === code);
+                              if (cat && cat.professions && cat.professions.length > 0) {
+                                setEditTitle(cat.professions[0]);
+                                if (cat.suggestedSkills && (!editSkills || editSkills.trim() === '')) {
+                                  setEditSkills(cat.suggestedSkills);
+                                }
+                              }
+                            }}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          >
+                            {categories.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.name} ({c.professions?.length || 0} nghề)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        {currentUser.role === 'employer' ? 'Mã Số Thuế Doanh Nghiệp (MST):' : 'Kỹ năng chuyên môn (cách nhau dấu phẩy):'}
-                      </label>
-                      {currentUser.role === 'employer' ? (
-                        <input
-                          type="text"
-                          value={editTaxCode}
-                          onChange={(e) => setEditTaxCode(e.target.value)}
-                          placeholder="VD: 0101234567"
-                          className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={editSkills}
-                          onChange={(e) => setEditSkills(e.target.value)}
-                          placeholder="ReactJS, Node.js, TypeScript, Flutter"
-                          className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                        />
-                      )}
-                    </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Vị trí / Nghề nghiệp liên quan:
+                          </label>
+                          <select
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full p-2.5 bg-blue-50/50 border border-blue-300 rounded-lg text-xs font-bold text-blue-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          >
+                            {(categories.find((c) => c.code === selectedCategoryCode)?.professions || [
+                              'Full-Stack Web Developer',
+                              'Frontend Developer (React/Vue)',
+                              'Backend Developer (Node.js/Java/Go)',
+                              'Mobile App Developer'
+                            ]).map((prof) => (
+                              <option key={prof} value={prof}>
+                                {prof}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Kỹ năng chuyên môn (cách nhau bởi dấu phẩy):
+                          </label>
+                          <input
+                            type="text"
+                            value={editSkills}
+                            onChange={(e) => setEditSkills(e.target.value)}
+                            placeholder="ReactJS, Node.js, TypeScript, Flutter..."
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* EMPLOYER FIELDS */}
+                    {currentUser.role === 'employer' && (
+                      <>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Tên Doanh Nghiệp / Tổ Chức:
+                          </label>
+                          <input
+                            type="text"
+                            value={editCompanyName}
+                            onChange={(e) => setEditCompanyName(e.target.value)}
+                            placeholder="VD: Công ty Cổ phần TechStartup Việt Nam"
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Chức vụ người đại diện:
+                          </label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="VD: Giám Đốc Tuyển Dụng / HR Manager"
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Mã Số Thuế Doanh Nghiệp (MST):
+                          </label>
+                          <input
+                            type="text"
+                            value={editTaxCode}
+                            onChange={(e) => setEditTaxCode(e.target.value)}
+                            placeholder="VD: 0101234567"
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* ADMIN FIELDS */}
+                    {currentUser.role === 'admin' && (
+                      <>
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Chức danh quản trị hệ thống:
+                          </label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="VD: Hệ Thống Trọng Tài & Quản Trị TalentMatch"
+                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-purple-900 focus:ring-1 focus:ring-purple-600 focus:outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* BIO / RESPONSIBILITY */}
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Giới thiệu bản thân / Năng lực công ty:</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        {currentUser.role === 'admin'
+                          ? 'Mô tả phạm vi quản trị & trách nhiệm hệ thống:'
+                          : currentUser.role === 'employer'
+                          ? 'Giới thiệu doanh nghiệp & năng lực tuyển dụng:'
+                          : 'Giới thiệu bản thân & năng lực thực hiện:'}
+                      </label>
                       <textarea
                         rows={3}
                         value={editBio}
                         onChange={(e) => setEditBio(e.target.value)}
-                        placeholder="Mô tả kinh nghiệm, thế mạnh, các sản phẩm tiêu biểu..."
+                        placeholder="Mô tả kinh nghiệm, năng lực..."
                         className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none leading-relaxed"
                       />
                     </div>
@@ -1012,19 +1110,71 @@ export const UserProfileModal: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                     <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-100">
                       <div className="text-[11px] font-medium text-slate-400 mb-0.5">Tên công ty / Doanh nghiệp</div>
-                      <div className="font-bold text-slate-900 text-xs sm:text-sm">{currentUser.companyName || 'Doanh nghiệp tư nhân'}</div>
+                      <div className="font-bold text-slate-900 text-xs sm:text-sm">{currentUser.companyName || 'Doanh nghiệp tuyển dụng'}</div>
                     </div>
 
                     <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-100">
                       <div className="text-[11px] font-medium text-slate-400 mb-0.5">Mã số thuế doanh nghiệp</div>
                       <div className="font-mono font-bold text-slate-800 text-xs sm:text-sm">{currentUser.taxCode || 'Chưa cập nhật'}</div>
                     </div>
+
+                    {currentUser.title && (
+                      <div className="p-3 rounded-lg bg-slate-50/80 border border-slate-100 sm:col-span-2">
+                        <div className="text-[11px] font-medium text-slate-400 mb-0.5">Chức vụ đại diện</div>
+                        <div className="font-semibold text-slate-900 text-xs">{currentUser.title}</div>
+                      </div>
+                    )}
                   </div>
+
+                  {currentUser.bio && (
+                    <div>
+                      <div className="text-[11px] font-semibold text-slate-700 mb-1">Giới thiệu doanh nghiệp:</div>
+                      <p className="text-slate-600 text-xs bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed">
+                        {currentUser.bio}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-slate-600 text-xs">
                     <div>Tin tuyển dụng đã đăng: <strong className="text-blue-700 font-mono font-bold">{postedProjectsCount}</strong></div>
                     <div className="text-slate-300">•</div>
                     <div>Hợp đồng đang thực hiện: <strong className="text-emerald-700 font-mono font-bold">{activeOrdersCount}</strong></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Specific Details */}
+              {currentUser.role === 'admin' && (
+                <div className="bg-white rounded-xl border border-purple-200 p-5 space-y-4 shadow-2xs">
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5 border-b border-purple-100 pb-3">
+                    <span className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+                      <i className="fa-solid fa-crown" />
+                    </span>
+                    <span>Quyền Hạn & Phạm Vi Quản Trị Hệ Thống</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                    <div className="p-3 rounded-lg bg-purple-50/60 border border-purple-100">
+                      <div className="text-[11px] font-medium text-purple-600 mb-0.5">Chức danh quản trị</div>
+                      <div className="font-bold text-purple-950 text-xs sm:text-sm">
+                        {currentUser.title || 'Hệ Thống Trọng Tài & Quản Trị TalentMatch'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-100">
+                      <div className="text-[11px] font-medium text-emerald-600 mb-0.5">Cấp bậc phân quyền</div>
+                      <div className="font-bold text-emerald-800 text-xs sm:text-sm flex items-center gap-1.5">
+                        <i className="fa-solid fa-shield-halved text-emerald-600" />
+                        <span>Super Administrator (Toàn Quyền Sàn)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-700 mb-1">Nhiệm vụ & Phạm vi quản trị:</div>
+                    <p className="text-slate-600 text-xs bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed">
+                      {currentUser.bio || 'Giám sát toàn diện hệ thống: Quản lý người dùng, kiểm duyệt dự án, trọng tài giải quyết tranh chấp Escrow, kiểm soát dòng tiền VNPay và quản lý danh mục nhóm ngành nghề trên toàn bộ sàn TalentMatch.'}
+                    </p>
                   </div>
                 </div>
               )}

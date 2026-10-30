@@ -18,7 +18,14 @@ import { Freelancers } from './pages/Freelancers';
 import { CreateProject } from './pages/CreateProject';
 import { FreelancerDashboard } from './pages/FreelancerDashboard';
 import { EmployerDashboard } from './pages/EmployerDashboard';
-import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminProjects } from './pages/admin/AdminProjects';
+import { AdminTransactions } from './pages/admin/AdminTransactions';
+import { AdminDisputes } from './pages/admin/AdminDisputes';
+import { AdminReviews } from './pages/admin/AdminReviews';
+import { AdminCategories } from './pages/admin/AdminCategories';
+import { AdminSettings } from './pages/admin/AdminSettings';
 import { Contracts } from './pages/Contracts';
 import { OrderWorkManagement } from './pages/OrderWorkManagement';
 import { KycVerification } from './pages/KycVerification';
@@ -49,7 +56,17 @@ const AppContent: React.FC = () => {
         <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
         <Route path="/employer/dashboard" element={<EmployerDashboard />} />
         <Route path="/customer/dashboard" element={<Navigate to="/employer/dashboard" replace />} />
+        
+        {/* Admin Dedicated Route Pages */}
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/projects" element={<AdminProjects />} />
+        <Route path="/admin/transactions" element={<AdminTransactions />} />
+        <Route path="/admin/disputes" element={<AdminDisputes />} />
+        <Route path="/admin/reviews" element={<AdminReviews />} />
+        <Route path="/admin/categories" element={<AdminCategories />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
 
         {/* Contract & Escrow Order LifeCycle */}
         <Route path="/contracts" element={<Contracts />} />

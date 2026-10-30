@@ -59,6 +59,8 @@ export const FreelancerDashboard: React.FC = () => {
     updateProposal,
     uploadAvatar,
     openAuthModal,
+    categories,
+    updateUserProfile,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'proposals' | 'invitations' | 'profile'>(initialTab);
@@ -126,6 +128,22 @@ export const FreelancerDashboard: React.FC = () => {
   );
   const [customSkillInput, setCustomSkillInput] = useState('');
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<'all' | 'dev' | 'design' | 'marketing' | 'ai'>('all');
+  const [profTitle, setProfTitle] = useState(myProfile?.title || currentUser.title || '');
+  const [profCategoryCode, setProfCategoryCode] = useState('it-dev');
+
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      const cur = myProfile?.title || currentUser.title || '';
+      const found = categories.find((c) => c.professions?.includes(cur));
+      if (found) {
+        setProfCategoryCode(found.code);
+        if (!profTitle) setProfTitle(cur);
+      } else if (!profTitle && categories[0].professions && categories[0].professions.length > 0) {
+        setProfCategoryCode(categories[0].code);
+        setProfTitle(categories[0].professions[0]);
+      }
+    }
+  }, [categories, myProfile?.title, currentUser.title]);
 
   const myOrders = orders.filter((o) => {
     if (currentUser.role === 'guest' || !currentUser.id || currentUser.id === 'guest') return false;
@@ -232,6 +250,11 @@ export const FreelancerDashboard: React.FC = () => {
       portfolioUrl,
       skills: selectedSkills,
       portfolio: myProfile.portfolio
+    });
+    updateUserProfile({
+      title: profTitle,
+      bio,
+      skills: selectedSkills
     });
   };
 
@@ -762,7 +785,7 @@ export const FreelancerDashboard: React.FC = () => {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4 max-w-3xl text-xs">
-            {/* Avatar Upload Cloudinary */}
+            {/* Avatar Section */}
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <img
@@ -772,11 +795,11 @@ export const FreelancerDashboard: React.FC = () => {
                 />
                 <div>
                   <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                    <i className="fa-solid fa-cloud-arrow-up text-blue-600" />
-                    <span>Ảnh Đại Diện Freelancer (Cloudinary)</span>
+                    <i className="fa-solid fa-camera text-blue-600" />
+                    <span>Ảnh Đại Diện Freelancer</span>
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Hệ thống lưu tên ảnh vào CSDL (ví dụ: {currentUser.avatar?.startsWith('http') ? 'image.png' : currentUser.avatar || 'image.png'}), tự động hiển thị qua Cloudinary CDN.
+                    Ảnh đại diện hiển thị công khai trên hồ sơ và danh sách tìm kiếm của nhà tuyển dụng.
                   </p>
                 </div>
               </div>
@@ -798,10 +821,61 @@ export const FreelancerDashboard: React.FC = () => {
               </label>
             </div>
 
+            {/* Nhóm ngành & Vị trí chuyên môn */}
+            <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200/80 space-y-3">
+              <div className="font-bold text-blue-900 text-xs flex items-center gap-2">
+                <i className="fa-solid fa-layer-group text-blue-600" />
+                <span>1. Lĩnh Vực Chuyên Môn & Vị Trí Nghề Nghiệp</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nhóm ngành nghề:</label>
+                  <select
+                    value={profCategoryCode}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      setProfCategoryCode(code);
+                      const cat = categories.find((c) => c.code === code);
+                      if (cat && cat.professions && cat.professions.length > 0) {
+                        setProfTitle(cat.professions[0]);
+                      }
+                    }}
+                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none cursor-pointer"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name} ({c.professions?.length || 0} nghề)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Vị trí / Nghề nghiệp liên quan:</label>
+                  <select
+                    value={profTitle}
+                    onChange={(e) => setProfTitle(e.target.value)}
+                    className="w-full p-2 bg-blue-50/70 border border-blue-300 rounded-lg text-xs font-bold text-blue-950 focus:ring-1 focus:ring-blue-600 focus:outline-none cursor-pointer"
+                  >
+                    {(categories.find((c) => c.code === profCategoryCode)?.professions || [
+                      'Full-Stack Web Developer',
+                      'Frontend Developer (React/Vue)',
+                      'Backend Developer (Node.js/Java/Go)',
+                      'Mobile App Developer'
+                    ]).map((prof) => (
+                      <option key={prof} value={prof}>
+                        {prof}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Bio */}
             <div>
               <label className="block font-semibold text-slate-800 mb-1">
-                1. Mô tả bản thân & Năng lực kinh nghiệm (Bio):
+                2. Mô tả bản thân & Năng lực kinh nghiệm (Bio):
               </label>
               <textarea
                 rows={4}
@@ -816,7 +890,7 @@ export const FreelancerDashboard: React.FC = () => {
             {/* Portfolio Link */}
             <div>
               <label className="block font-semibold text-slate-800 mb-1">
-                2. Liên kết Portfolio trực tiếp (Github / Behance / Website cá nhân / Figma):
+                3. Liên kết Portfolio trực tiếp (Github / Behance / Website cá nhân / Figma):
               </label>
               <div className="relative">
                 <i className="fa-solid fa-arrow-up-right-from-square text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs" />
@@ -836,7 +910,7 @@ export const FreelancerDashboard: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                   <i className="fa-solid fa-tag text-blue-600 text-xs" />
                   <span className="font-bold text-slate-900 text-xs">
-                    3. Kỹ Năng Chuyên Môn Của Bạn ({selectedSkills.length})
+                    4. Kỹ Năng Chuyên Môn Của Bạn ({selectedSkills.length})
                   </span>
                 </div>
 

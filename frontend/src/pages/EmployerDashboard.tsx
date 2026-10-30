@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { Order, Project } from '../types';
 import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 import { ReviewModal } from '../components/common/ReviewModal';
@@ -24,7 +24,7 @@ export const EmployerDashboard: React.FC = () => {
     jobQuestions,
     fetchJobQuestions,
     answerJobQuestion
-  } = useDemo();
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'projects' | 'saved_freelancers'>('orders');
 

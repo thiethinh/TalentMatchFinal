@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 const VIETNAM_BANKS = [
   { id: 'VCB', name: 'Vietcombank (Ngoại Thương Việt Nam)', shortName: 'Vietcombank', logo: '🏛️' },
@@ -30,7 +30,7 @@ export const UserProfileModal: React.FC = () => {
     freelancers,
     projects,
     orders
-  } = useDemo();
+  } = useApp();
 
   // Active view tab
   const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'bank'>('profile');

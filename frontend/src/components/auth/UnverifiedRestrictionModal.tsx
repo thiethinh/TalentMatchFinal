@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 export const UnverifiedRestrictionModal: React.FC = () => {
   const {
@@ -9,7 +9,7 @@ export const UnverifiedRestrictionModal: React.FC = () => {
     closeUnverifiedModal,
     openAuthModal,
     setPendingVerificationEmail,
-  } = useDemo();
+  } = useApp();
 
   if (!isUnverifiedModalOpen) return null;
 

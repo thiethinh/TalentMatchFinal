@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { ProjectInvitation, Proposal } from '../types';
 import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 
@@ -56,7 +56,7 @@ export const FreelancerDashboard: React.FC = () => {
     declineInvitation,
     withdrawProposal,
     updateProposal,
-  } = useDemo();
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState<'proposals' | 'invitations' | 'profile'>(initialTab);
 

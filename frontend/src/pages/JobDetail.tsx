@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 
 export const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +19,7 @@ export const JobDetail: React.FC = () => {
     answerJobQuestion,
     openAuthModal,
     addToast
-  } = useDemo();
+  } = useApp();
 
   // Find project by ID
   const project = projects.find((p) => p.id === id);

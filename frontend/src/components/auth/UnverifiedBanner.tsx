@@ -1,8 +1,8 @@
 import React from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 export const UnverifiedBanner: React.FC = () => {
-  const { currentUser, openAuthModal } = useDemo();
+  const { currentUser, openAuthModal } = useApp();
 
   if (currentUser.role === 'guest' || currentUser.emailVerified) {
     return null;

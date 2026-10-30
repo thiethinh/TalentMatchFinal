@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 interface MarketSidebarProps {
   isOpenMobile: boolean;
@@ -20,7 +20,7 @@ export const MarketSidebar: React.FC<MarketSidebarProps> = ({
     openVNPayModal,
     openUserProfileModal,
     logout
-  } = useDemo();
+  } = useApp();
 
   const role = currentUser.role; // 'guest' | 'freelancer' | 'employer' | 'admin'
 

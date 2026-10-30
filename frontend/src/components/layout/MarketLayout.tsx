@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MarketSidebar } from './MarketSidebar';
 import { MarketTopbar } from './MarketTopbar';
 import { Footer } from './Footer';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 interface MarketLayoutProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface MarketLayoutProps {
 
 export const MarketLayout: React.FC<MarketLayoutProps> = ({ children }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { currentUser, openAuthModal, openUserProfileModal } = useDemo();
+  const { currentUser, openAuthModal, openUserProfileModal } = useApp();
   const isEmailVerified = currentUser.role === 'guest' || Boolean(currentUser.emailVerified);
 
   return (

@@ -1,8 +1,8 @@
 import React from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 export const ToastContainer: React.FC = () => {
-  const { toasts, removeToast } = useDemo();
+  const { toasts, removeToast } = useApp();
 
   if (toasts.length === 0) return null;
 

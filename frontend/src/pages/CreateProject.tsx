@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { ProjectMilestone } from '../types';
 
 interface MilestoneDraft {
@@ -38,7 +38,7 @@ const SUGGESTED_SKILLS = [
 ];
 
 export const CreateProject: React.FC = () => {
-  const { createProject, currentUser, addToast } = useDemo();
+  const { createProject, currentUser, addToast } = useApp();
   const navigate = useNavigate();
 
   // Core Project Fields (All blank by default for user customization)

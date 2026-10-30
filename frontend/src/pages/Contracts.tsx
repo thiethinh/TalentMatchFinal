@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { Order } from '../types';
 import { ReviewModal } from '../components/common/ReviewModal';
 
@@ -13,7 +13,7 @@ export const Contracts: React.FC = () => {
     requestRevision,
     submitReview,
     addToast
-  } = useDemo();
+  } = useApp();
 
   // Status Filter
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ORDER_IN_PROGRESS' | 'DELIVERED' | 'REVISION_REQUESTED' | 'COMPLETED' | 'DISPUTED'>('ALL');

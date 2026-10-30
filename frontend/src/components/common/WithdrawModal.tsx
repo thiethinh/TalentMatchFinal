@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 const VIETNAM_BANKS = [
   { id: 'VCB', name: 'Vietcombank (Ngoại Thương Việt Nam)', shortName: 'Vietcombank', logo: '🏛️' },
@@ -20,7 +20,7 @@ export const WithdrawModal: React.FC = () => {
     openUserProfileModal,
     withdrawMoney,
     vnpayTransactions
-  } = useDemo();
+  } = useApp();
 
   const registeredAccounts = currentUser.bankAccounts || [];
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');

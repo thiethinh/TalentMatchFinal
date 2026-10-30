@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { FreelancerProfile, PortfolioItem, Project } from '../types';
 
 interface CategoryConfig {
@@ -95,7 +95,7 @@ export const Freelancers: React.FC = () => {
     toggleSaveFreelancer,
     isFreelancerSaved,
     sendProjectInvitation
-  } = useDemo();
+  } = useApp();
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import { ReviewModal } from '../components/common/ReviewModal';
 import type { DeliveryFile } from '../types';
 
@@ -17,7 +17,7 @@ export const OrderWorkManagement: React.FC = () => {
     addToast,
     orderMessages,
     sendOrderMessage
-  } = useDemo();
+  } = useApp();
 
   const order = orders.find((o) => o.id === id) || orders[0];
 

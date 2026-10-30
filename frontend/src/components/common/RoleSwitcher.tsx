@@ -1,8 +1,8 @@
 import React from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 export const RoleSwitcher: React.FC = () => {
-  const { currentUser, switchRole, switchUserById, users, adminToggleEmailVerified, resetAllDemoData } = useDemo();
+  const { currentUser, switchRole, switchUserById, users, adminToggleEmailVerified, resetAllDemoData } = useApp();
 
   return (
     <div className="bg-slate-900 text-white border-b border-slate-800 text-xs py-2 px-4 shadow-sm sticky top-0 z-50">

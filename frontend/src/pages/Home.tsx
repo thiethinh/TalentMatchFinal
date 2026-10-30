@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 
 export const Home: React.FC = () => {
-  const { projects, freelancers, currentUser, openAuthModal } = useDemo();
+  const { projects, freelancers, currentUser, openAuthModal } = useApp();
   const navigate = useNavigate();
 
   const getCatCount = (query: string) => {

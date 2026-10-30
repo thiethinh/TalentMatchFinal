@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 export const Navbar: React.FC = () => {
   const {
@@ -14,7 +14,7 @@ export const Navbar: React.FC = () => {
     unreadNotificationsCount,
     markNotificationAsRead,
     markAllNotificationsAsRead
-  } = useDemo();
+  } = useApp();
 
   const location = useLocation();
   const navigate = useNavigate();

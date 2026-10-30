@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { DemoProvider, useDemo } from './context/DemoContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { MarketLayout } from './components/layout/MarketLayout';
 import { ToastContainer } from './components/common/ToastContainer';
 import { AuthModal } from './components/auth/AuthModal';
@@ -24,7 +24,7 @@ import { OrderWorkManagement } from './pages/OrderWorkManagement';
 import { KycVerification } from './pages/KycVerification';
 
 const AppContent: React.FC = () => {
-  const { isVNPayModalOpen, vnpayModalParams, closeVNPayModal } = useDemo();
+  const { isVNPayModalOpen, vnpayModalParams, closeVNPayModal } = useApp();
 
   return (
     <MarketLayout>
@@ -87,11 +87,11 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <DemoProvider>
+      <AppProvider>
         <Router>
           <AppContent />
         </Router>
-      </DemoProvider>
+      </AppProvider>
     </AuthProvider>
   );
 };

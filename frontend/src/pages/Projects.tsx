@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { Project } from '../types';
 
 interface CategoryConfig {
@@ -92,7 +92,7 @@ export const Projects: React.FC = () => {
     currentUser,
     toggleSaveProject,
     isProjectSaved,
-  } = useDemo();
+  } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter States

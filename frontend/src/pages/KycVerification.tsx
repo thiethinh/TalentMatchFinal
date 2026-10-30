@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 
 export const KycVerification: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export const KycVerification: React.FC = () => {
     switchUserById,
     submitKyc,
     openUserProfileModal
-  } = useDemo();
+  } = useApp();
 
   const isGuestOrPlaceholder = !currentUser.name || currentUser.name === 'Khách' || currentUser.name.startsWith('usr-');
   const initialName = isGuestOrPlaceholder ? '' : currentUser.name.toUpperCase();

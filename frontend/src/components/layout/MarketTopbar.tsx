@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 interface MarketTopbarProps {
   onOpenMobileSidebar: () => void;
@@ -23,7 +23,7 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
     openUserProfileModal: demoOpenUserProfileModal,
     openWithdrawModal,
     openVNPayModal
-  } = useDemo();
+  } = useApp();
   const navigate = useNavigate();
 
   const role = currentUser.role; // 'guest' | 'freelancer' | 'employer' | 'admin'

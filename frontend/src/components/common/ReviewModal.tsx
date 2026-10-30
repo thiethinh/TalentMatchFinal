@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Order } from '../../types';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   order,
   onSubmitReview
 }) => {
-  const { currentUser } = useDemo();
+  const { currentUser } = useApp();
   const isFreelancer = currentUser.role === 'freelancer';
 
   const [rating, setRating] = useState<number>(5);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 
 export const SavedJobs: React.FC = () => {
   const {
@@ -8,7 +8,7 @@ export const SavedJobs: React.FC = () => {
     savedProjectIds,
     toggleSaveProject,
     addToast
-  } = useDemo();
+  } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');

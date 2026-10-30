@@ -1,3 +1,10 @@
+/**
+ * AppContext.tsx - Global State Store & API Synchronization Layer
+ * 
+ * Toàn bộ dữ liệu hiển thị trên ứng dụng được đồng bộ trực tiếp từ CSDL MySQL (talentmatch_pro)
+ * thông qua các REST API endpoints của Spring Boot Backend (/api/jobs, /api/orders, /api/users, /api/auth...).
+ * File này KHÔNG CHỨA DỮ LIỆU TĨNH / MOCK DATA.
+ */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type {
@@ -77,7 +84,7 @@ const DEFAULT_CONFIG: PlatformConfig = {
   disputeResolutionDays: 3
 };
 
-interface DemoContextType {
+export interface AppContextType {
   currentUser: User;
   users: User[];
   projects: Project[];
@@ -233,9 +240,12 @@ interface DemoContextType {
   declineInvitation: (invitationId: string, reason?: string) => void;
 }
 
-const DemoContext = createContext<DemoContextType | undefined>(undefined);
+export type DemoContextType = AppContextType;
 
-export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AppContext = createContext<AppContextType | undefined>(undefined);
+export const DemoContext = AppContext;
+
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(() => loadFromStorage(STORAGE_KEY_USERS, []));
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const savedUserId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID) : null;
@@ -2266,7 +2276,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <DemoContext.Provider
+    <AppContext.Provider
       value={{
         currentUser,
         users,
@@ -2365,14 +2375,18 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }}
     >
       {children}
-    </DemoContext.Provider>
+    </AppContext.Provider>
   );
 };
 
-export const useDemo = () => {
-  const context = useContext(DemoContext);
+export const useApp = () => {
+  const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useDemo must be used within a DemoProvider');
+    throw new Error('useApp must be used within an AppProvider');
   }
   return context;
 };
+
+// Aliases for seamless backward compatibility across components
+export const DemoProvider = AppProvider;
+export const useDemo = useApp;

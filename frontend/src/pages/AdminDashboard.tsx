@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useDemo } from '../context/DemoContext';
+import { useApp } from '../context/AppContext';
 import type { AccountStatus } from '../types';
 
 export const AdminDashboard: React.FC = () => {
@@ -19,7 +19,7 @@ export const AdminDashboard: React.FC = () => {
     resolveDispute,
     deleteReview,
     resetAllDemoData
-  } = useDemo();
+  } = useApp();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const validTabs = ['analytics', 'users', 'projects', 'transactions', 'disputes', 'reviews', 'settings'] as const;

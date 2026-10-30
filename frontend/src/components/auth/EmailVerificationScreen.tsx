@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 
 interface EmailVerificationScreenProps {
   onSuccess?: () => void;
@@ -21,7 +21,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
     resendVerificationEmail,
     changeVerificationEmail,
     openAuthModal,
-  } = useDemo();
+  } = useApp();
 
   const activeEmail = (
     targetEmail ||

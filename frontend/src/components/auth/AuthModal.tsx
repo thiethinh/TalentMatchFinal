@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDemo } from '../../context/DemoContext';
+import { useApp } from '../../context/AppContext';
 import { EmailVerificationScreen } from './EmailVerificationScreen';
 
 export const AuthModal: React.FC = () => {
@@ -19,7 +19,7 @@ export const AuthModal: React.FC = () => {
     handleGoogleAuthSuccess,
     users,
     addToast
-  } = useDemo();
+  } = useApp();
 
   const GOOGLE_CLIENT_ID = '303653553354-nmq6vgnsug7j0ca43927603pipiaaalk.apps.googleusercontent.com';
 

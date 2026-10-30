@@ -124,12 +124,34 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
         percent: Math.round((item.count / total) * 100)
       }));
     } else {
-      // By project categories (dynamic from real MySQL projects)
+      // By order categories (or posted projects for employers)
       const catCounts: Record<string, number> = {};
-      projects.forEach((prj) => {
-        const cat = prj.category?.trim() || 'Chưa phân loại';
-        catCounts[cat] = (catCounts[cat] || 0) + 1;
-      });
+
+      if (orders.length > 0) {
+        // Group the user's actual orders by category
+        orders.forEach((ord) => {
+          const numericJobId = ord.projectId ? ord.projectId.replace(/\D/g, '') : '';
+          const matchedPrj = projects.find((p) => p.id === ord.projectId || p.id === numericJobId);
+          let cat = matchedPrj?.category?.trim();
+          if (!cat) {
+            const title = (ord.serviceTitle || '').toLowerCase();
+            if (title.includes('lập trình') || title.includes('app') || title.includes('web') || title.includes('kho hàng')) cat = 'IT & Lập trình';
+            else if (title.includes('logo') || title.includes('banner') || title.includes('thiết kế')) cat = 'Thiết kế & Đồ họa';
+            else if (title.includes('marketing') || title.includes('quảng cáo')) cat = 'Digital Marketing';
+            else if (title.includes('video') || title.includes('animation')) cat = 'Video & Animation';
+            else if (title.includes('dịch thuật')) cat = 'Dịch thuật & Đào tạo';
+            else if (title.includes('kế toán') || title.includes('tài chính')) cat = 'Tài chính & Kế toán';
+            else cat = 'Lĩnh vực khác';
+          }
+          catCounts[cat] = (catCounts[cat] || 0) + 1;
+        });
+      } else if (userRole === 'employer' && projects.length > 0) {
+        // For employer who posted projects but has no active orders yet
+        projects.forEach((prj) => {
+          const cat = prj.category?.trim() || 'Chưa phân loại';
+          catCounts[cat] = (catCounts[cat] || 0) + 1;
+        });
+      }
 
       const sorted = Object.entries(catCounts)
         .sort((a, b) => b[1] - a[1])

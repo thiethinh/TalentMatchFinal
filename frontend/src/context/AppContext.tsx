@@ -249,13 +249,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [users, setUsers] = useState<User[]>(() => loadFromStorage(STORAGE_KEY_USERS, []));
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const savedUserId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID) : null;
-    if (savedUserId === 'usr-guest') return GUEST_USER;
+    if (!savedUserId || savedUserId === 'usr-guest') return GUEST_USER;
     const savedUsers = loadFromStorage(STORAGE_KEY_USERS, [] as User[]);
-    if (savedUserId && savedUsers.length > 0) {
+    if (savedUsers.length > 0) {
       const found = savedUsers.find((u: User) => u.id === savedUserId);
       if (found) return found;
     }
-    return savedUsers[0] || GUEST_USER;
+    return GUEST_USER;
   });
   const [projects, setProjects] = useState<Project[]>(() => loadFromStorage(STORAGE_KEY_PROJECTS, []));
   const [proposals, setProposals] = useState<Proposal[]>(() => loadFromStorage(STORAGE_KEY_PROPOSALS, []));
@@ -276,16 +276,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Saved Bookmarks (Freelancers, Employers, Projects)
-  const [savedFreelancerIds, setSavedFreelancerIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_FREELANCERS, ['free-8', 'free-9'])
-  );
-  const [savedEmployerIds, setSavedEmployerIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_EMPLOYERS, ['usr-emp-2', 'usr-emp-3'])
-  );
-  const [savedProjectIds, setSavedProjectIds] = useState<string[]>(() =>
-    loadFromStorage(STORAGE_KEY_SAVED_PROJECTS, ['1', '2'])
-  );
+  // Saved Bookmarks (Freelancers, Employers, Projects) - KHÔNG DÙNG DỮ LIỆU MOCK
+  const [savedFreelancerIds, setSavedFreelancerIds] = useState<string[]>(() => {
+    const raw = loadFromStorage(STORAGE_KEY_SAVED_FREELANCERS, [] as string[]);
+    // Lọc bỏ id mock 'free-8', 'free-9' nếu còn lưu trong localStorage cũ của trình duyệt
+    return Array.isArray(raw) ? raw.filter((id) => id !== 'free-8' && id !== 'free-9') : [];
+  });
+  const [savedEmployerIds, setSavedEmployerIds] = useState<string[]>(() => {
+    const raw = loadFromStorage(STORAGE_KEY_SAVED_EMPLOYERS, [] as string[]);
+    // Lọc bỏ id mock 'usr-emp-2', 'usr-emp-3'
+    return Array.isArray(raw) ? raw.filter((id) => id !== 'usr-emp-2' && id !== 'usr-emp-3') : [];
+  });
+  const [savedProjectIds, setSavedProjectIds] = useState<string[]>(() => {
+    const raw = loadFromStorage(STORAGE_KEY_SAVED_PROJECTS, [] as string[]);
+    // Lọc bỏ id mock '1', '2'
+    return Array.isArray(raw) ? raw.filter((id) => id !== '1' && id !== '2') : [];
+  });
 
   // Project Invitations State
   const [invitations, setInvitations] = useState<ProjectInvitation[]>(() =>
@@ -657,15 +663,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               emailVerified: isEmailVerified,
               accountStatus: status,
               kycStatus: 'NOT_SUBMITTED',
-              balance: 10000000,
+              balance: meData.balance !== undefined ? Number(meData.balance) : 0,
               escrowBalance: 0,
-              createdAt: '2026-10-01',
+              createdAt: new Date().toISOString().split('T')[0],
               lastLogin: 'Vừa đăng nhập'
             };
             setCurrentUser(newUser);
             return [...prevUsers, newUser];
           }
         });
+
+        // Đồng bộ danh sách công việc đã lưu thực tế từ backend MySQL nếu là Freelancer
+        if (meData.role === 'FREELANCER') {
+          fetch('/api/freelancer/saved-jobs', { credentials: 'include' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (Array.isArray(data)) {
+                const dbSavedIds = data
+                  .map((item: any) => item.job ? String(item.job.id) : (item.jobId ? String(item.jobId) : null))
+                  .filter(Boolean) as string[];
+                setSavedProjectIds(dbSavedIds);
+              }
+            })
+            .catch(() => {});
+        }
 
         // Đồng bộ danh sách thông báo thực từ backend MySQL
         fetch('/api/notifications', { credentials: 'include' })
@@ -1116,7 +1137,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         emailVerified: true,
         accountStatus: 'ACTIVE',
         kycStatus: 'NOT_SUBMITTED',
-        balance: 50000000,
+        balance: backendUserData?.balance !== undefined ? Number(backendUserData.balance) : 0,
         escrowBalance: 0,
         createdAt: new Date().toISOString().split('T')[0],
         lastLogin: 'Vừa xác thực OTP'
@@ -1267,7 +1288,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             accountStatus: 'ACTIVE',
             kycStatus: matchedDbUser?.kycStatus || 'NOT_SUBMITTED',
             companyName: backendUser.companyName || matchedDbUser?.companyName || '',
-            balance: matchedDbUser?.balance ?? 50000000,
+            balance: backendUser?.balance !== undefined ? Number(backendUser.balance) : (matchedDbUser?.balance ?? 0),
             escrowBalance: matchedDbUser?.escrowBalance ?? 0,
           };
 

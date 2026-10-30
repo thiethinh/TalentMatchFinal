@@ -60,10 +60,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
             .authorizeHttpRequests(auth -> auth
                 // REST API public routes
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/images/**", "/api/upload/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**", "/api/admin/dashboard",
                         "/api/users/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/disputes/**",
-                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/notifications/**", "/api/portfolios/**", "/api/questions/**").permitAll()
+                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/notifications/**", "/api/portfolios/**", "/api/questions/**", "/api/images/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/orders/**", "/api/user/**", "/api/disputes/**", "/api/proposals/**", "/api/reviews/**", "/api/questions/**").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/proposals/**", "/api/user/**", "/api/questions/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -1,3 +1,4 @@
+export { resolveAvatarUrl } from '../utils/avatar';
 /**
  * AppContext.tsx - Global State Store & API Synchronization Layer
  * 
@@ -206,6 +207,7 @@ export interface AppContextType {
     comment: string;
   }) => void;
   updateUserProfile: (data: Partial<User>) => void;
+  uploadAvatar: (file: File) => Promise<{ success: boolean; fileName: string; avatarUrl: string }>;
   withdrawProposal: (proposalId: string) => Promise<void>;
   updateProposal: (proposalId: string, bidAmount: number, estimatedDays: number, coverLetter: string) => Promise<void>;
   updateProject: (projectId: string, projectData: Partial<Project>) => Promise<void>;
@@ -2002,6 +2004,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addToast(`Admin đã ban hành phán quyết tranh chấp: ${resolution}`, 'info');
   };
 
+
+  const uploadAvatar = async (file: File): Promise<{ success: boolean; fileName: string; avatarUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (currentUser?.id) {
+      formData.append('userId', currentUser.id);
+    }
+    if (currentUser?.email) {
+      formData.append('email', currentUser.email);
+    }
+
+    try {
+      const res = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.fileName) {
+        // Cập nhật tên ảnh vào currentUser (lưu tên ảnh vào state/DB, vd image.png)
+        setCurrentUser((prev) => ({
+          ...prev,
+          avatar: data.fileName
+        }));
+        setUsers((prev) =>
+          prev.map((u) => (u.id === currentUser.id ? { ...u, avatar: data.fileName } : u))
+        );
+        setFreelancers((prev) =>
+          prev.map((f) => (f.userId === currentUser.id || f.name === currentUser.name ? { ...f, avatar: data.fileName } : f))
+        );
+        addToast('Tải ảnh đại diện lên Cloudinary thành công!', 'success');
+        return { success: true, fileName: data.fileName, avatarUrl: data.avatarUrl };
+      } else {
+        addToast(data.message || 'Lỗi khi tải ảnh lên.', 'error');
+        return { success: false, fileName: '', avatarUrl: '' };
+      }
+    } catch (err: any) {
+      addToast('Không thể kết nối đến máy chủ để tải ảnh.', 'error');
+      return { success: false, fileName: '', avatarUrl: '' };
+    }
+  };
+
   const updateUserProfile = (data: Partial<User>) => {
     setCurrentUser((prev) => ({
       ...prev,
@@ -2370,6 +2413,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         resolveDispute,
         submitReview,
         updateUserProfile,
+        uploadAvatar,
         withdrawProposal,
         updateProposal,
         updateProject,

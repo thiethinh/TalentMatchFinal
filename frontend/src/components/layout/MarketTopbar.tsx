@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from '../../utils/avatar';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -329,7 +330,7 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
               >
                 {currentUser.avatar ? (
                   <img
-                    src={currentUser.avatar}
+                    src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
                     alt={currentUser.name}
                     className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-100"
                   />
@@ -351,7 +352,7 @@ export const MarketTopbar: React.FC<MarketTopbarProps> = ({
                     <div className="flex items-center gap-3">
                       {currentUser.avatar ? (
                         <img
-                          src={currentUser.avatar}
+                          src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
                           alt={currentUser.name}
                           className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100 shrink-0"
                         />

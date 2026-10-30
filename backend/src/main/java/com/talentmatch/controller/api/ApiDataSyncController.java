@@ -60,7 +60,13 @@ public class ApiDataSyncController {
             userDto.put("dbId", id);
             userDto.put("name", u.get("full_name"));
             userDto.put("email", u.get("email"));
-            userDto.put("avatar", u.get("avatar") != null ? u.get("avatar") : "https://api.dicebear.com/7.x/identicon/svg?seed=" + u.get("email"));
+            String rawAvatar = (String) u.get("avatar");
+            String avatarVal = rawAvatar != null ? rawAvatar : "https://api.dicebear.com/7.x/identicon/svg?seed=" + u.get("email");
+            String avatarUrl = (avatarVal.startsWith("http://") || avatarVal.startsWith("https://"))
+                    ? avatarVal
+                    : com.talentmatch.config.CloudinaryConfig.IMAGE_BASE_URL + avatarVal;
+            userDto.put("avatar", avatarVal);
+            userDto.put("avatarUrl", avatarUrl);
             userDto.put("role", clientRole);
             userDto.put("phone", u.get("phone") != null ? u.get("phone") : "");
             userDto.put("companyName", u.get("company_name"));
@@ -747,5 +753,104 @@ public class ApiDataSyncController {
         if (obj instanceof Number n) return n.intValue() == 1;
         if (obj instanceof byte[] bytes && bytes.length > 0) return bytes[0] == 1;
         return "true".equalsIgnoreCase(obj.toString()) || "1".equals(obj.toString());
+    }
+
+    /**
+     * 20. POST /api/user/avatar: Upload ảnh đại diện lên Cloudinary và chỉ lưu TÊN ẢNH vào DB (users.avatar)
+     */
+    @PostMapping(value = "/user/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
+    public ResponseEntity<?> uploadUserAvatar(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "userId", required = false) String userId,
+            @RequestParam(value = "email", required = false) String email
+    ) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Vui lòng chọn file ảnh để tải lên!"));
+        }
+
+        try {
+            Long uid = null;
+            if (userId != null && !userId.isBlank()) {
+                uid = parseId(userId);
+            } else if (email != null && !email.isBlank()) {
+                List<Long> ids = jdbc.query("SELECT id FROM users WHERE LOWER(email) = ?", (rs, rowNum) -> rs.getLong("id"), email.trim().toLowerCase());
+                if (!ids.isEmpty()) uid = ids.get(0);
+            }
+            if (uid == null) uid = 1L;
+
+            // Xử lý tên ảnh: Chỉ lưu tên ảnh (vd image.png, avatar_2_1740928374.png) vào DB, KHÔNG lưu link
+            String originalFileName = file.getOriginalFilename();
+            if (originalFileName == null || originalFileName.isBlank()) {
+                originalFileName = "image.png";
+            }
+            String extension = "";
+            int dotIdx = originalFileName.lastIndexOf('.');
+            if (dotIdx >= 0) {
+                extension = originalFileName.substring(dotIdx);
+            } else {
+                extension = ".png";
+            }
+            String baseName = dotIdx >= 0 ? originalFileName.substring(0, dotIdx) : originalFileName;
+            String cleanBaseName = baseName.replaceAll("[^a-zA-Z0-9_-]", "_");
+            String storedFileName = "avatar_" + uid + "_" + System.currentTimeMillis() + "_" + cleanBaseName + extension;
+
+            // 1. Upload lên Cloudinary
+            com.talentmatch.service.CloudinaryService.upload(file, storedFileName);
+
+            // 2. Lưu vào DB MySQL: CHỈ LƯU TÊN ẢNH (storedFileName, vd avatar_2_1740928374_image.png)
+            jdbc.update("UPDATE users SET avatar = ?, updated_at = NOW(6) WHERE id = ?", storedFileName, uid);
+
+            String fullUrl = com.talentmatch.config.CloudinaryConfig.IMAGE_BASE_URL + storedFileName;
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã tải lên ảnh đại diện và lưu tên ảnh vào CSDL thành công!",
+                    "fileName", storedFileName,
+                    "avatar", storedFileName,
+                    "avatarUrl", fullUrl
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "Lỗi tải ảnh đại diện: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 21. POST /api/upload/image: Upload ảnh tổng quát lên Cloudinary và trả về tên ảnh cùng URL
+     */
+    @PostMapping(value = "/upload/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadGenericImage(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Vui lòng chọn file ảnh để tải lên!"));
+        }
+
+        try {
+            String originalFileName = file.getOriginalFilename();
+            if (originalFileName == null || originalFileName.isBlank()) originalFileName = "image.png";
+            String cleanName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String storedFileName = System.currentTimeMillis() + "_" + cleanName;
+
+            com.talentmatch.service.CloudinaryService.upload(file, storedFileName);
+            String fullUrl = com.talentmatch.config.CloudinaryConfig.IMAGE_BASE_URL + storedFileName;
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "fileName", storedFileName,
+                    "url", fullUrl
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "Lỗi tải ảnh: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 22. GET /api/images/{fileName}: Chuyển hướng trực tiếp tới Cloudinary Image Base URL
+     */
+    @GetMapping("/images/{fileName:.+}")
+    public ResponseEntity<?> getImageRedirect(@PathVariable("fileName") String fileName) {
+        String targetUrl = com.talentmatch.config.CloudinaryConfig.IMAGE_BASE_URL + fileName;
+        return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                .header(org.springframework.http.HttpHeaders.LOCATION, targetUrl)
+                .build();
     }
 }

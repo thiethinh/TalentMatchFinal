@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from '../../utils/avatar';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -25,6 +26,8 @@ export const UserProfileModal: React.FC = () => {
     addBankAccount,
     removeBankAccount,
     updateUserProfile,
+    uploadAvatar,
+    addToast,
     vnpayTransactions,
     logout,
     freelancers,
@@ -59,6 +62,31 @@ export const UserProfileModal: React.FC = () => {
   const [kycCompanyName, setKycCompanyName] = useState('');
   const [kycTaxCode, setKycTaxCode] = useState('');
   const [isVerifyingKyc, setIsVerifyingKyc] = useState(false);
+
+  // Avatar upload state
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      addToast('Vui lòng chọn file hình ảnh (PNG, JPG, JPEG, WEBP)', 'warning');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('Kích thước ảnh không được vượt quá 10MB', 'warning');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      await uploadAvatar(file);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
 
   // Matching Freelancer profile
   const freelancerProfile = freelancers.find(
@@ -189,14 +217,46 @@ export const UserProfileModal: React.FC = () => {
         <div className="px-6 sm:px-8 pt-0 pb-4 bg-white border-b border-slate-100 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="flex items-end gap-4">
-              <div className="relative -mt-10 sm:-mt-12 shrink-0 z-10">
+              <div className="relative -mt-10 sm:-mt-12 shrink-0 z-10 group">
                 <img
-                  src={currentUser.avatar}
+                  src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
                   alt={currentUser.name}
                   className="w-20 h-20 sm:w-22 sm:h-22 rounded-xl object-cover border-4 border-white shadow-md bg-white ring-1 ring-slate-200"
                 />
+                
+                {/* Hover overlay button to change avatar */}
+                <label
+                  htmlFor="avatar-upload-file-input"
+                  className="absolute inset-0 bg-slate-900/60 rounded-xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-2xs"
+                  title="Tải ảnh mới từ máy tính (Cloudinary)"
+                >
+                  <i className="fa-solid fa-camera text-base" />
+                  <span className="text-[9px] font-bold mt-0.5">Đổi ảnh</span>
+                  <input
+                    id="avatar-upload-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileSelect}
+                    disabled={isUploadingAvatar}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Badge button bottom-right for easy click */}
+                <label
+                  htmlFor="avatar-upload-file-input"
+                  className="absolute -bottom-1.5 -right-1.5 bg-blue-600 hover:bg-blue-700 text-white w-7 h-7 rounded-full ring-2 ring-white flex items-center justify-center text-xs shadow-sm cursor-pointer transition-colors"
+                  title="Tải ảnh đại diện từ máy tính"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <i className="fa-solid fa-camera" />
+                  )}
+                </label>
+
                 {currentUser.isVerified && (
-                  <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white w-6 h-6 rounded-full ring-2 ring-white flex items-center justify-center text-[10px] shadow-xs" title="Đã xác thực eKYC">
+                  <div className="absolute -top-1.5 -left-1.5 bg-blue-600 text-white w-5 h-5 rounded-full ring-2 ring-white flex items-center justify-center text-[9px] shadow-xs" title="Đã xác thực eKYC">
                     <i className="fa-solid fa-shield-halved" />
                   </div>
                 )}
@@ -555,6 +615,42 @@ export const UserProfileModal: React.FC = () => {
                       <span>Chỉnh Sửa Trực Tiếp Thông Tin Hồ Sơ Cá Nhân</span>
                     </h3>
                     <span className="text-[11px] text-slate-500">Cập nhật ngay vào hệ thống</span>
+                  </div>
+
+                  {/* Cloudinary Avatar Upload Banner */}
+                  <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
+                        alt={currentUser.name}
+                        className="w-11 h-11 rounded-lg object-cover border border-blue-300 shrink-0"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <i className="fa-solid fa-cloud-arrow-up text-blue-600 text-xs" />
+                          <span>Ảnh đại diện (Upload Cloudinary)</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate max-w-xs">
+                          Tên file trong DB: <strong className="text-blue-700">{currentUser.avatar || 'Chưa có ảnh tải lên'}</strong>
+                        </div>
+                      </div>
+                    </div>
+                    <label
+                      htmlFor="avatar-upload-file-input"
+                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs flex items-center justify-center gap-1.5"
+                    >
+                      {isUploadingAvatar ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Đang tải lên...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-upload text-[11px]" />
+                          <span>Chọn Ảnh Từ Máy Tính</span>
+                        </>
+                      )}
+                    </label>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">

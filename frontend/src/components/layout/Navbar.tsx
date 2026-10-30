@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from '../../utils/avatar';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -332,7 +333,7 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="relative">
                     <img
-                      src={currentUser.avatar}
+                      src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
                       alt={currentUser.name}
                       className="w-8 h-8 rounded-md object-cover border border-neutral-700 ring-1 ring-blue-500/40"
                     />
@@ -358,7 +359,7 @@ export const Navbar: React.FC = () => {
                     {/* Top User Card */}
                     <div className="px-4 pb-3 border-b border-neutral-800 flex items-center space-x-3">
                       <img
-                        src={currentUser.avatar}
+                        src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
                         alt={currentUser.name}
                         className="w-11 h-11 rounded-md object-cover border border-neutral-700"
                       />
@@ -546,7 +547,7 @@ export const Navbar: React.FC = () => {
                 className="p-1 rounded-md border border-neutral-800 bg-neutral-900 cursor-pointer"
                 title="Xem hồ sơ cá nhân"
               >
-                <img src={currentUser.avatar} alt={currentUser.name} className="w-8 h-8 rounded-md object-cover" />
+                <img src={resolveAvatarUrl(currentUser.avatar, currentUser.name)} alt={currentUser.name} className="w-8 h-8 rounded-md object-cover" />
               </button>
             ) : (
               <button

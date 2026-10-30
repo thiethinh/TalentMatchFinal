@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from '../utils/avatar';
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -56,6 +57,7 @@ export const FreelancerDashboard: React.FC = () => {
     declineInvitation,
     withdrawProposal,
     updateProposal,
+    uploadAvatar,
     openAuthModal,
   } = useApp();
 
@@ -760,6 +762,42 @@ export const FreelancerDashboard: React.FC = () => {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4 max-w-3xl text-xs">
+            {/* Avatar Upload Cloudinary */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <img
+                  src={resolveAvatarUrl(currentUser.avatar, currentUser.name)}
+                  alt={currentUser.name}
+                  className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-sm ring-1 ring-slate-300 shrink-0"
+                />
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <i className="fa-solid fa-cloud-arrow-up text-blue-600" />
+                    <span>Ảnh Đại Diện Freelancer (Cloudinary)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Hệ thống lưu tên ảnh vào CSDL (ví dụ: {currentUser.avatar?.startsWith('http') ? 'image.png' : currentUser.avatar || 'image.png'}), tự động hiển thị qua Cloudinary CDN.
+                  </p>
+                </div>
+              </div>
+              <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 flex items-center gap-2">
+                <i className="fa-solid fa-camera" />
+                <span>Tải Ảnh Mới</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      await uploadAvatar(file);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
             {/* Bio */}
             <div>
               <label className="block font-semibold text-slate-800 mb-1">

@@ -56,6 +56,7 @@ export const FreelancerDashboard: React.FC = () => {
     declineInvitation,
     withdrawProposal,
     updateProposal,
+    openAuthModal,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'proposals' | 'invitations' | 'profile'>(initialTab);
@@ -125,25 +126,27 @@ export const FreelancerDashboard: React.FC = () => {
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<'all' | 'dev' | 'design' | 'marketing' | 'ai'>('all');
 
   const myOrders = orders.filter((o) => {
+    if (currentUser.role === 'guest' || !currentUser.id || currentUser.id === 'guest') return false;
     const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     const orderFreeNumericId = o.freelancerId ? o.freelancerId.replace(/\D/g, '') : '';
-    return (
+    return Boolean(
       o.freelancerId === currentUser.id ||
-      o.freelancerId === `free-${currentNumericId}` ||
-      o.freelancerId === `usr-free-${currentNumericId}` ||
-      (currentNumericId && orderFreeNumericId === currentNumericId) ||
-      (currentUser.name && o.freelancerName === currentUser.name)
+      (currentNumericId && o.freelancerId === `free-${currentNumericId}`) ||
+      (currentNumericId && o.freelancerId === `usr-free-${currentNumericId}`) ||
+      (currentNumericId && orderFreeNumericId && currentNumericId === orderFreeNumericId) ||
+      (currentUser.name && currentUser.name !== 'Khách vãng lai' && o.freelancerName === currentUser.name)
     );
   });
   const myProposals = proposals.filter((p) => {
+    if (currentUser.role === 'guest' || !currentUser.id || currentUser.id === 'guest') return false;
     const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     const proposalFreeNumericId = p.freelancerId ? p.freelancerId.replace(/\D/g, '') : '';
-    return (
+    return Boolean(
       p.freelancerId === currentUser.id ||
-      p.freelancerId === `free-${currentNumericId}` ||
-      p.freelancerId === `usr-free-${currentNumericId}` ||
-      (currentNumericId && proposalFreeNumericId === currentNumericId) ||
-      (currentUser.name && p.freelancerName === currentUser.name)
+      (currentNumericId && p.freelancerId === `free-${currentNumericId}`) ||
+      (currentNumericId && p.freelancerId === `usr-free-${currentNumericId}`) ||
+      (currentNumericId && proposalFreeNumericId && currentNumericId === proposalFreeNumericId) ||
+      (currentUser.name && currentUser.name !== 'Khách vãng lai' && p.freelancerName === currentUser.name)
     );
   });
 
@@ -229,6 +232,35 @@ export const FreelancerDashboard: React.FC = () => {
       portfolio: myProfile.portfolio
     });
   };
+
+  if (currentUser.role === 'guest') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
+        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+          <i className="fa-solid fa-user-gear" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Bảng Điều Khiển Freelancer</h2>
+        <p className="text-slate-500 text-sm max-w-md mx-auto">
+          Bạn đang truy cập dưới vai trò Khách. Vui lòng đăng nhập với tài khoản Freelancer để cập nhật hồ sơ năng lực, gửi báo giá và quản lý tiến độ hợp đồng.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => openAuthModal('login')}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            Đăng Nhập Ngay
+          </button>
+          <Link
+            to="/jobs"
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+          >
+            Tìm việc làm
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

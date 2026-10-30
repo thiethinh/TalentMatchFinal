@@ -23,7 +23,8 @@ export const EmployerDashboard: React.FC = () => {
     updateProject,
     jobQuestions,
     fetchJobQuestions,
-    answerJobQuestion
+    answerJobQuestion,
+    openAuthModal
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'projects' | 'saved_freelancers'>('orders');
@@ -100,25 +101,27 @@ export const EmployerDashboard: React.FC = () => {
   const [revisionNote, setRevisionNote] = useState('');
 
   const myOrders = orders.filter((o) => {
+    if (currentUser.role === 'guest' || !currentUser.id || currentUser.id === 'guest') return false;
     const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     const orderEmpNumericId = o.employerId ? o.employerId.replace(/\D/g, '') : '';
-    return (
+    return Boolean(
       o.employerId === currentUser.id ||
-      o.employerId === `usr-emp-${currentNumericId}` ||
-      o.employerId === `emp-${currentNumericId}` ||
-      (currentNumericId && orderEmpNumericId === currentNumericId) ||
-      (currentUser.name && o.employerName === currentUser.name)
+      (currentNumericId && o.employerId === `usr-emp-${currentNumericId}`) ||
+      (currentNumericId && o.employerId === `emp-${currentNumericId}`) ||
+      (currentNumericId && orderEmpNumericId && currentNumericId === orderEmpNumericId) ||
+      (currentUser.name && currentUser.name !== 'Khách vãng lai' && o.employerName === currentUser.name)
     );
   });
   const myProjects = projects.filter((p) => {
+    if (currentUser.role === 'guest' || !currentUser.id || currentUser.id === 'guest') return false;
     const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     const projectEmpNumericId = p.employerId ? p.employerId.replace(/\D/g, '') : '';
-    return (
+    return Boolean(
       p.employerId === currentUser.id ||
-      p.employerId === `usr-emp-${currentNumericId}` ||
-      p.employerId === `emp-${currentNumericId}` ||
-      (currentNumericId && projectEmpNumericId === currentNumericId) ||
-      (currentUser.name && p.employerName === currentUser.name)
+      (currentNumericId && p.employerId === `usr-emp-${currentNumericId}`) ||
+      (currentNumericId && p.employerId === `emp-${currentNumericId}`) ||
+      (currentNumericId && projectEmpNumericId && currentNumericId === projectEmpNumericId) ||
+      (currentUser.name && currentUser.name !== 'Khách vãng lai' && p.employerName === currentUser.name)
     );
   });
 
@@ -158,6 +161,35 @@ export const EmployerDashboard: React.FC = () => {
     setShowRevisionModal(false);
     setRevisionNote('');
   };
+
+  if (currentUser.role === 'guest') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
+        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+          <i className="fa-solid fa-building-user" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Bảng Điều Khiển Nhà Tuyển Dụng</h2>
+        <p className="text-slate-500 text-sm max-w-md mx-auto">
+          Bạn đang truy cập dưới vai trò Khách. Vui lòng đăng nhập với tài khoản Nhà tuyển dụng để đăng tin tìm ứng viên, quản lý dự án và giám sát hợp đồng Escrow.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => openAuthModal('login')}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            Đăng Nhập Ngay
+          </button>
+          <Link
+            to="/projects"
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+          >
+            Khám phá dự án
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

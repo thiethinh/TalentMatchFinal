@@ -12,7 +12,8 @@ export const Contracts: React.FC = () => {
     acceptDelivery,
     requestRevision,
     submitReview,
-    addToast
+    addToast,
+    openAuthModal
   } = useApp();
 
   // Status Filter
@@ -35,27 +36,31 @@ export const Contracts: React.FC = () => {
   // Review Modal State
   const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
 
-  // Filter orders for current user (Freelancer or Employer)
+  // Filter orders for current user (Freelancer or Employer or Admin)
   const myOrders = orders.filter((o) => {
-    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     if (currentUser.role === 'freelancer') {
+      const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
       const orderFreeNumericId = o.freelancerId ? o.freelancerId.replace(/\D/g, '') : '';
-      return (
+      return Boolean(
         o.freelancerId === currentUser.id ||
-        (currentNumericId && orderFreeNumericId === currentNumericId) ||
-        (currentUser.name && o.freelancerName === currentUser.name)
+        (currentNumericId && orderFreeNumericId && currentNumericId === orderFreeNumericId) ||
+        (currentUser.name && currentUser.name !== 'Khách vãng lai' && o.freelancerName === currentUser.name)
       );
     }
     if (currentUser.role === 'employer') {
+      const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
       const orderEmpNumericId = o.employerId ? o.employerId.replace(/\D/g, '') : '';
-      return (
+      return Boolean(
         o.employerId === currentUser.id ||
-        (currentNumericId && orderEmpNumericId === currentNumericId) ||
-        (currentUser.name && o.employerName === currentUser.name)
+        (currentNumericId && orderEmpNumericId && currentNumericId === orderEmpNumericId) ||
+        (currentUser.name && currentUser.name !== 'Khách vãng lai' && o.employerName === currentUser.name)
       );
     }
-    // Admin or Guest: show all
-    return true;
+    if (currentUser.role === 'admin') {
+      return true;
+    }
+    // Guest accounts or unauthenticated users have no contracts
+    return false;
   });
 
   // Calculate Summary Metrics
@@ -164,7 +169,7 @@ export const Contracts: React.FC = () => {
               <i className="fa-solid fa-plus text-xs" />
               <span>Đăng Dự Án Mới</span>
             </Link>
-          ) : (
+          ) : currentUser.role === 'freelancer' ? (
             <Link
               to="/jobs"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors shadow-xs flex items-center gap-1.5"
@@ -172,17 +177,69 @@ export const Contracts: React.FC = () => {
               <i className="fa-solid fa-magnifying-glass text-xs" />
               <span>Tìm Việc Làm Mới</span>
             </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openAuthModal('login')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <i className="fa-solid fa-right-to-bracket text-xs" />
+              <span>Đăng Nhập Quản Lý Hợp Đồng</span>
+            </button>
           )}
 
-          <Link
-            to={currentUser.role === 'employer' ? '/employer/dashboard' : '/freelancer/dashboard'}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors flex items-center gap-1.5"
-          >
-            <i className="fa-solid fa-chart-pie text-xs" />
-            <span>Về Bảng Điều Khiển</span>
-          </Link>
+          {currentUser.role !== 'guest' ? (
+            <Link
+              to={currentUser.role === 'employer' ? '/employer/dashboard' : '/freelancer/dashboard'}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <i className="fa-solid fa-chart-pie text-xs" />
+              <span>Về Bảng Điều Khiển</span>
+            </Link>
+          ) : (
+            <Link
+              to="/projects"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <i className="fa-solid fa-briefcase text-xs" />
+              <span>Khám Phá Việc Làm</span>
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* Guest Notice Banner */}
+      {currentUser.role === 'guest' && (
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border border-blue-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 text-base shadow-xs">
+              <i className="fa-solid fa-shield-halved" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Bạn đang truy cập dưới danh nghĩa Khách (Guest)</h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Hợp đồng và tài khoản thanh toán Escrow được bảo mật theo từng người dùng. Vui lòng đăng nhập tài khoản Freelancer hoặc Nhà tuyển dụng để quản lý hợp đồng thực tế và tiến độ giải ngân của bạn.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => openAuthModal('login')}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-xs transition-colors cursor-pointer"
+            >
+              Đăng Nhập
+            </button>
+            <button
+              type="button"
+              onClick={() => openAuthModal('register')}
+              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+            >
+              Đăng Ký
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -274,20 +331,45 @@ export const Contracts: React.FC = () => {
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-2xl">
               <i className="fa-solid fa-file-contract" />
             </div>
-            <div className="font-bold text-slate-800 text-base">Không tìm thấy hợp đồng nào phù hợp</div>
-            <p className="text-slate-500 text-xs max-w-sm mx-auto">
-              Không có dữ liệu hợp đồng nào khớp với bộ lọc hoặc từ khóa tìm kiếm hiện tại.
+            <div className="font-bold text-slate-800 text-base">
+              {currentUser.role === 'guest'
+                ? 'Bạn chưa đăng nhập để xem hợp đồng'
+                : 'Không tìm thấy hợp đồng nào phù hợp'}
+            </div>
+            <p className="text-slate-500 text-xs max-w-md mx-auto">
+              {currentUser.role === 'guest'
+                ? 'Các hợp đồng thực hiện dự án và quy trình bảo chứng Escrow chỉ hiển thị đối với các bên tham gia (Freelancer / Nhà tuyển dụng). Đăng nhập ngay để xem hợp đồng của bạn.'
+                : 'Không có dữ liệu hợp đồng nào khớp với bộ lọc hoặc từ khóa tìm kiếm hiện tại.'}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setStatusFilter('ALL');
-                setSearchTerm('');
-              }}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
-            >
-              Đặt lại bộ lọc
-            </button>
+            {currentUser.role === 'guest' ? (
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-xs cursor-pointer"
+                >
+                  <i className="fa-solid fa-right-to-bracket mr-1.5" />
+                  Đăng Nhập Ngay
+                </button>
+                <Link
+                  to="/projects"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+                >
+                  Khám phá việc làm
+                </Link>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setSearchTerm('');
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+              >
+                Đặt lại bộ lọc
+              </button>
+            )}
           </div>
         ) : (
           filteredOrders.map((ord) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
-import type { ProjectInvitation } from '../types';
+import type { ProjectInvitation, Proposal } from '../types';
 import { DashboardAnalyticsCharts } from '../components/common/DashboardAnalyticsCharts';
 
 const PRESET_SKILLS = [
@@ -54,6 +54,8 @@ export const FreelancerDashboard: React.FC = () => {
     invitations,
     acceptInvitation,
     declineInvitation,
+    withdrawProposal,
+    updateProposal,
   } = useDemo();
 
   const [activeTab, setActiveTab] = useState<'proposals' | 'invitations' | 'profile'>(initialTab);
@@ -64,6 +66,37 @@ export const FreelancerDashboard: React.FC = () => {
       setActiveTab('invitations');
     }
   }, [searchParams]);
+
+  // Proposal Edit & Withdraw States
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+  const [editBidAmount, setEditBidAmount] = useState<number>(0);
+  const [editEstimatedDays, setEditEstimatedDays] = useState<number>(7);
+  const [editCoverLetter, setEditCoverLetter] = useState<string>('');
+  const [proposalToWithdraw, setProposalToWithdraw] = useState<Proposal | null>(null);
+
+  const handleOpenEditProposal = (prop: Proposal) => {
+    setEditingProposal(prop);
+    setEditBidAmount(prop.bidAmount);
+    setEditEstimatedDays(prop.estimatedDays);
+    setEditCoverLetter(prop.coverLetter);
+  };
+
+  const handleSaveEditProposal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProposal) return;
+    if (editBidAmount <= 0) {
+      alert('Vui lòng nhập mức giá chào hợp lệ!');
+      return;
+    }
+    updateProposal(editingProposal.id, editBidAmount, editEstimatedDays, editCoverLetter);
+    setEditingProposal(null);
+  };
+
+  const handleConfirmWithdraw = () => {
+    if (!proposalToWithdraw) return;
+    withdrawProposal(proposalToWithdraw.id);
+    setProposalToWithdraw(null);
+  };
 
   // Invitations States & Modals
   const [selectedInvitation, setSelectedInvitation] = useState<ProjectInvitation | null>(null);
@@ -92,9 +125,24 @@ export const FreelancerDashboard: React.FC = () => {
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<'all' | 'dev' | 'design' | 'marketing' | 'ai'>('all');
 
   const myOrders = orders.filter(
-    (o) => o.freelancerId === 'free-1' || o.freelancerId === 'free-2' || o.freelancerId === currentUser.id
+    (o) =>
+      o.freelancerId === 'free-1' ||
+      o.freelancerId === 'free-2' ||
+      o.freelancerId === currentUser.id ||
+      o.freelancerId === `free-${currentUser.id}` ||
+      o.freelancerId === currentUser.id.replace('usr-', '') ||
+      o.freelancerName === currentUser.name ||
+      (currentUser.email === 'minhanh.dev@gmail.com' && (o.freelancerId === 'free-8' || o.freelancerId === 'free-1'))
   );
-  const myProposals = proposals.filter((p) => p.freelancerId === 'free-1' || p.freelancerId === currentUser.id);
+  const myProposals = proposals.filter(
+    (p) =>
+      p.freelancerId === 'free-1' ||
+      p.freelancerId === currentUser.id ||
+      p.freelancerId === `free-${currentUser.id}` ||
+      p.freelancerId === currentUser.id.replace('usr-', '') ||
+      p.freelancerName === currentUser.name ||
+      (currentUser.email === 'minhanh.dev@gmail.com' && (p.freelancerId === 'free-8' || p.freelancerId === 'free-1'))
+  );
 
   const myInvitations = invitations.filter(
     (inv) =>
@@ -359,18 +407,28 @@ export const FreelancerDashboard: React.FC = () => {
               const targetProj = projects.find((p) => p.id === prop.projectId);
               return (
                 <div key={prop.id} className="border border-slate-200 rounded-md p-4 space-y-2.5 bg-slate-50/50 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 text-sm">{targetProj?.title || 'Dự án tuyển dụng'}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-900 text-sm">{targetProj?.title || prop.projectTitle || 'Dự án tuyển dụng'}</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-sm shrink-0 ${
                       prop.status === 'ACCEPTED'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        : prop.status === 'REJECTED'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                        : prop.status === 'WITHDRAWN'
+                        ? 'bg-slate-200 text-slate-700 border border-slate-300'
+                        : 'bg-amber-100 text-amber-800 border border-amber-200'
                     }`}>
-                      {prop.status === 'ACCEPTED' ? '✓ ĐÃ ĐƯỢC DUYỆT' : '⏳ ĐANG CHỜ DUYỆT'}
+                      {prop.status === 'ACCEPTED'
+                        ? '✓ ĐÃ ĐƯỢC DUYỆT'
+                        : prop.status === 'REJECTED'
+                        ? '✕ TỪ CHỐI'
+                        : prop.status === 'WITHDRAWN'
+                        ? '↩ ĐÃ RÚT HỒ SƠ'
+                        : '⏳ ĐANG CHỜ DUYỆT'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-4 text-slate-600">
+                  <div className="flex flex-wrap items-center gap-4 text-slate-600">
                     <div>Mức giá bạn chào: <strong className="text-blue-700 font-bold">{prop.bidAmount.toLocaleString('vi-VN')} đ</strong></div>
                     <div>Thời hạn cam kết: <strong>{prop.estimatedDays} ngày</strong></div>
                     <div>Ngày gửi: {prop.createdAt}</div>
@@ -379,6 +437,35 @@ export const FreelancerDashboard: React.FC = () => {
                   <p className="bg-white p-2.5 rounded-md border border-slate-200 text-slate-700 italic">
                     "{prop.coverLetter}"
                   </p>
+
+                  {/* Actions: Edit & Withdraw if PENDING */}
+                  {prop.status === 'PENDING' && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/80">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditProposal(prop)}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-md border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <i className="fa-solid fa-pen-to-square text-[11px] text-blue-600" />
+                        <span>Chỉnh Sửa Báo Giá</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProposalToWithdraw(prop)}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-md border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <i className="fa-solid fa-rotate-left text-[11px]" />
+                        <span>Rút Hồ Sơ</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {prop.status === 'WITHDRAWN' && (
+                    <div className="text-[11px] text-slate-500 italic pt-1 flex items-center gap-1.5">
+                      <i className="fa-solid fa-circle-info text-slate-400" />
+                      <span>Bạn đã rút hồ sơ ứng tuyển này. Bạn có thể nộp đề xuất mới bất kỳ lúc nào nếu dự án còn mở tuyển.</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -997,6 +1084,119 @@ export const FreelancerDashboard: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+
+      {/* Modal: Edit Proposal */}
+      {editingProposal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <form onSubmit={handleSaveEditProposal} className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-xs my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-blue-700 font-bold text-sm">
+                <i className="fa-solid fa-pen-to-square text-base" />
+                <span>Chỉnh Sửa Đề Xuất Báo Giá</span>
+              </div>
+              <button type="button" onClick={() => setEditingProposal(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Mức giá chào thầu (VND):</label>
+                <input
+                  type="number"
+                  value={editBidAmount}
+                  onChange={(e) => setEditBidAmount(Number(e.target.value))}
+                  min={100000}
+                  step={50000}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs font-bold text-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Thời hạn hoàn thành cam kết (ngày):</label>
+                <input
+                  type="number"
+                  value={editEstimatedDays}
+                  onChange={(e) => setEditEstimatedDays(Number(e.target.value))}
+                  min={1}
+                  max={180}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Thư thuyết phục & Phương án triển khai:</label>
+                <textarea
+                  rows={4}
+                  value={editCoverLetter}
+                  onChange={(e) => setEditCoverLetter(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setEditingProposal(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition-colors cursor-pointer text-xs"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md shadow-xs transition-colors cursor-pointer text-xs flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-floppy-disk text-xs" />
+                <span>Lưu Thay Đổi</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal: Confirm Withdraw Proposal */}
+      {proposalToWithdraw && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-xs my-8">
+            <div className="flex items-center gap-3 text-rose-700">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <i className="fa-solid fa-triangle-exclamation text-rose-600 text-lg" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Xác Nhận Rút Hồ Sơ Ứng Tuyển</h3>
+                <p className="text-[11px] text-slate-500">Thao tác này sẽ hủy đề xuất báo giá của bạn</p>
+              </div>
+            </div>
+
+            <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200">
+              Bạn có chắc chắn muốn rút hồ sơ ứng tuyển khỏi dự án? Sau khi rút, hồ sơ của bạn sẽ không còn trong danh sách xem xét của Nhà tuyển dụng.
+            </p>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setProposalToWithdraw(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition-colors cursor-pointer text-xs"
+              >
+                Không Rút
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmWithdraw}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-md shadow-xs transition-colors cursor-pointer text-xs flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-rotate-left text-xs" />
+                <span>Xác Nhận Rút Hồ Sơ</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

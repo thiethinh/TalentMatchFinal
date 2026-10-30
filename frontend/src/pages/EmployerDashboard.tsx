@@ -19,12 +19,79 @@ export const EmployerDashboard: React.FC = () => {
     submitReview,
     currentUser,
     openWithdrawModal,
-    openVNPayModal
+    openVNPayModal,
+    updateProject,
+    jobQuestions,
+    fetchJobQuestions,
+    answerJobQuestion
   } = useDemo();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'projects' | 'saved_freelancers'>('orders');
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Edit Project States
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editBudget, setEditBudget] = useState<number>(0);
+  const [editBudgetType, setEditBudgetType] = useState<'FIXED' | 'MILESTONE'>('FIXED');
+  const [editSkills, setEditSkills] = useState('');
+  const [editDeadline, setEditDeadline] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  // Q&A States
+  const [projectForQnA, setProjectForQnA] = useState<Project | null>(null);
+  const [answerInputs, setAnswerInputs] = useState<Record<number, string>>({});
+
+  const handleOpenEditProject = (prj: Project) => {
+    setProjectToEdit(prj);
+    setEditTitle(prj.title);
+    setEditCategory(prj.category);
+    setEditBudget(prj.budget);
+    setEditBudgetType(prj.budgetType || 'FIXED');
+    setEditSkills(prj.requiredSkills.join(', '));
+    setEditDeadline(prj.deadline ? prj.deadline.split('T')[0] : '');
+    setEditDescription(prj.description);
+  };
+
+  const handleSaveEditProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectToEdit) return;
+    if (!editTitle.trim()) {
+      alert('Vui lòng nhập tiêu đề dự án!');
+      return;
+    }
+
+    const skillsArray = editSkills
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    updateProject(projectToEdit.id, {
+      title: editTitle.trim(),
+      category: editCategory,
+      budget: editBudget,
+      budgetType: editBudgetType,
+      requiredSkills: skillsArray,
+      deadline: editDeadline || undefined,
+      description: editDescription.trim()
+    });
+
+    setProjectToEdit(null);
+  };
+
+  const handleOpenQnA = async (prj: Project) => {
+    setProjectForQnA(prj);
+    await fetchJobQuestions(prj.id);
+  };
+
+  const handleSendAnswer = async (qId: number) => {
+    const text = answerInputs[qId] || (document.getElementById(`answer-input-${qId}`) as HTMLInputElement)?.value;
+    if (!text || !text.trim() || !projectForQnA) return;
+    await answerJobQuestion(qId, text.trim(), projectForQnA.id);
+    setAnswerInputs((prev) => ({ ...prev, [qId]: '' }));
+  };
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -32,8 +99,26 @@ export const EmployerDashboard: React.FC = () => {
   const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<Project | null>(null);
   const [revisionNote, setRevisionNote] = useState('');
 
-  const myOrders = orders.filter((o) => o.employerId === currentUser.id || o.employerId === 'usr-emp-1');
-  const myProjects = projects.filter((p) => p.employerId === currentUser.id || p.employerId === 'usr-emp-1');
+  const myOrders = orders.filter(
+    (o) =>
+      o.employerId === currentUser.id ||
+      o.employerId === 'usr-emp-1' ||
+      o.employerId === `usr-emp-${currentUser.id}` ||
+      o.employerId === `emp-${currentUser.id}` ||
+      o.employerId === currentUser.id.replace('usr-', '') ||
+      o.employerName === currentUser.name ||
+      (currentUser.email === 'ha.le@techstartup.vn' && (o.employerId === 'usr-emp-2' || o.employerId === 'usr-emp-1'))
+  );
+  const myProjects = projects.filter(
+    (p) =>
+      p.employerId === currentUser.id ||
+      p.employerId === 'usr-emp-1' ||
+      p.employerId === `usr-emp-${currentUser.id}` ||
+      p.employerId === `emp-${currentUser.id}` ||
+      p.employerId === currentUser.id.replace('usr-', '') ||
+      p.employerName === currentUser.name ||
+      (currentUser.email === 'ha.le@techstartup.vn' && (p.employerId === 'usr-emp-2' || p.employerId === 'usr-emp-1' || p.employerId === 'usr-emp-15' || p.employerId === '2'))
+  );
 
   const savedFreelancersList = freelancers.filter(
     (f) => savedFreelancerIds.includes(f.id) || savedFreelancerIds.includes(f.userId)
@@ -172,9 +257,20 @@ export const EmployerDashboard: React.FC = () => {
           </h2>
 
           <div className="space-y-2.5">
-            {pendingProposals.map((prop) => (
+            {pendingProposals.map((prop) => {
+              const projectTitle = prop.projectTitle || projects.find((p) => p.id === prop.projectId)?.title || 'Dự án tuyển dụng';
+              return (
               <div key={prop.id} className="bg-white p-4 rounded-md border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                <div className="space-y-1.5">
+                <div className="space-y-2 flex-1">
+                  {/* Project Info Badge */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-200">
+                      <i className="fa-solid fa-briefcase text-[10px]" />
+                      <span>Thuộc dự án: {projectTitle}</span>
+                    </span>
+                    <span className="text-slate-400 text-[11px] font-mono">#{prop.projectId.replace(/\D+/g, '')}</span>
+                  </div>
+
                   <div className="flex items-center space-x-2">
                     <img src={prop.freelancerAvatar} alt={prop.freelancerName} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
                     <div>
@@ -200,7 +296,8 @@ export const EmployerDashboard: React.FC = () => {
                   <span>Duyệt & Nạp Cọc VNPAY</span>
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -403,6 +500,44 @@ export const EmployerDashboard: React.FC = () => {
                   <div className="text-xs text-slate-500 font-medium">
                     Đã nhận: <strong className="text-emerald-700 font-bold">{prj.proposalsCount}</strong> báo giá
                   </div>
+                </div>
+
+                {/* Action Bar for Posted Project */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/80 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProjectForProposals(prj)}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-users text-[11px]" />
+                    <span>Xem Báo Giá ({prj.proposalsCount} đề xuất)</span>
+                  </button>
+
+                  <Link
+                    to={`/jobs/${prj.id}`}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-arrow-up-right-from-square text-[11px]" />
+                    <span>Chi Tiết Tin Tuyển Dụng</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditProject(prj)}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-md border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <i className="fa-solid fa-pen-to-square text-[11px] text-indigo-600" />
+                    <span>Chỉnh Sửa Dự Án</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQnA(prj)}
+                    className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs rounded-md border border-amber-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <i className="fa-solid fa-comments text-[11px] text-amber-600" />
+                    <span>Hỏi Đáp / Giải Đáp (Q&A)</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -759,6 +894,237 @@ export const EmployerDashboard: React.FC = () => {
           order={reviewTargetOrder}
           onSubmitReview={submitReview}
         />
+      )}
+
+
+      {/* Modal: Edit Project */}
+      {projectToEdit && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <form onSubmit={handleSaveEditProject} className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 space-y-4 shadow-2xl border border-slate-200 text-xs my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-indigo-700 font-bold text-base">
+                <i className="fa-solid fa-pen-to-square text-lg" />
+                <span>Chỉnh Sửa Bài Đăng Dự Án Tuyển Dụng</span>
+              </div>
+              <button type="button" onClick={() => setProjectToEdit(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Tiêu đề dự án / công việc:</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Lĩnh vực chuyên môn:</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="IT & Lập trình">IT & Lập trình</option>
+                    <option value="Thiết kế UI/UX">Thiết kế UI/UX</option>
+                    <option value="AI & Dữ liệu">AI & Dữ liệu</option>
+                    <option value="Video & Âm thanh">Video & Âm thanh</option>
+                    <option value="Marketing & Bán hàng">Marketing & Bán hàng</option>
+                    <option value="Dịch thuật & Nội dung">Dịch thuật & Nội dung</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Ngân sách dự kiến (VND):</label>
+                  <input
+                    type="number"
+                    value={editBudget}
+                    onChange={(e) => setEditBudget(Number(e.target.value))}
+                    min={100000}
+                    step={100000}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs font-bold text-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Hình thức ngân sách:</label>
+                  <select
+                    value={editBudgetType}
+                    onChange={(e) => setEditBudgetType(e.target.value as 'FIXED' | 'MILESTONE')}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="FIXED">Trọn gói (Fixed Price)</option>
+                    <option value="MILESTONE">Theo cột mốc (Milestone)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Hạn chót hoàn thành (Deadline):</label>
+                  <input
+                    type="date"
+                    value={editDeadline}
+                    onChange={(e) => setEditDeadline(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Kỹ năng yêu cầu (cách nhau bằng dấu phẩy):</label>
+                <input
+                  type="text"
+                  value={editSkills}
+                  onChange={(e) => setEditSkills(e.target.value)}
+                  placeholder="VD: ReactJS, Node.js, TypeScript, MySQL"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Mô tả chi tiết yêu cầu công việc:</label>
+                <textarea
+                  rows={5}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none leading-relaxed"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setProjectToEdit(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition-colors cursor-pointer text-xs"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md shadow-xs transition-colors cursor-pointer text-xs flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-floppy-disk text-xs" />
+                <span>Lưu Thay Đổi Dự Án</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal: Employer Q&A / Answer Questions */}
+      {projectForQnA && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-7 space-y-4 shadow-2xl border border-slate-200 text-xs my-8 max-h-[85vh] flex flex-col">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div>
+                <div className="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded inline-block mb-1">
+                  Hỏi Đáp Công Khai Của Dự Án
+                </div>
+                <h3 className="font-bold text-slate-900 text-base">{projectForQnA.title}</h3>
+                <p className="text-[11px] text-slate-500">
+                  Giải đáp các câu hỏi, thắc mắc của Freelancer để họ đưa ra phương án và báo giá chính xác nhất.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProjectForQnA(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <i className="fa-solid fa-xmark text-sm" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+              {(!jobQuestions[projectForQnA.id] || jobQuestions[projectForQnA.id].length === 0) ? (
+                <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <i className="fa-solid fa-comments text-3xl text-slate-300" />
+                  <div className="font-bold text-slate-700 text-xs">Chưa có câu hỏi nào từ Freelancer</div>
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                    Khi Freelancer đặt câu hỏi về yêu cầu, tài liệu hoặc phạm vi công việc, thông tin sẽ xuất hiện tại đây để bạn giải đáp.
+                  </p>
+                </div>
+              ) : (
+                jobQuestions[projectForQnA.id].map((q) => (
+                  <div key={q.id} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={q.authorAvatar || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + q.authorName}
+                          alt={q.authorName}
+                          className="w-6 h-6 rounded-full object-cover border border-slate-300"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 text-xs">{q.authorName}</span>
+                          <span className="text-[10px] text-slate-400 ml-2">{q.createdAt}</span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        q.answer ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {q.answer ? '✓ Đã giải đáp' : '⏳ Chờ bạn trả lời'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-slate-800 text-xs leading-relaxed font-medium">
+                      "{q.question}"
+                    </div>
+
+                    {q.answer ? (
+                      <div className="pl-3 border-l-2 border-indigo-400 space-y-1 bg-indigo-50/50 p-2 rounded-r-lg">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-900">
+                          <i className="fa-solid fa-reply text-indigo-600" />
+                          <span>Câu trả lời của bạn:</span>
+                          <span className="text-slate-400 font-normal">({q.answeredAt})</span>
+                        </div>
+                        <p className="text-xs text-indigo-950">{q.answer}</p>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          id={`answer-input-${q.id}`}
+                          value={answerInputs[q.id] || ''}
+                          onChange={(e) => setAnswerInputs((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder="Nhập câu trả lời giải đáp thắc mắc..."
+                          className="flex-1 p-2 bg-white border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSendAnswer(q.id)}
+                          className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-md shadow-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                        >
+                          <i className="fa-solid fa-paper-plane text-[10px]" />
+                          <span>Gửi Trả Lời</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setProjectForQnA(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md text-xs cursor-pointer transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

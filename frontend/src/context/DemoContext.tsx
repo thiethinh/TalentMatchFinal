@@ -18,7 +18,8 @@ import type {
   BankAccount,
   ProjectInvitation,
   DeliveryFile,
-  OrderChatMessage
+  OrderChatMessage,
+  JobQuestion
 } from '../types';
 export const GUEST_USER: User = {
   id: 'usr-guest',
@@ -198,6 +199,13 @@ interface DemoContextType {
     comment: string;
   }) => void;
   updateUserProfile: (data: Partial<User>) => void;
+  withdrawProposal: (proposalId: string) => Promise<void>;
+  updateProposal: (proposalId: string, bidAmount: number, estimatedDays: number, coverLetter: string) => Promise<void>;
+  updateProject: (projectId: string, projectData: Partial<Project>) => Promise<void>;
+  jobQuestions: Record<string, JobQuestion[]>;
+  fetchJobQuestions: (projectId: string) => Promise<JobQuestion[]>;
+  askJobQuestion: (projectId: string, question: string) => Promise<void>;
+  answerJobQuestion: (questionId: number, answer: string, projectId: string) => Promise<void>;
   orderMessages: Record<string, OrderChatMessage[]>;
   sendOrderMessage: (orderId: string, text: string) => void;
   updateFreelancerBioAndPortfolio: (data: {
@@ -307,6 +315,129 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createdAt: '2026-03-01 10:00'
       }
     ]
+  };
+
+  const [jobQuestions, setJobQuestions] = useState<Record<string, JobQuestion[]>>({});
+
+  const fetchJobQuestions = async (projectId: string): Promise<JobQuestion[]> => {
+    try {
+      const numericId = projectId.replace(/\D+/g, '');
+      const res = await fetch(`/api/jobs/${numericId}/questions`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setJobQuestions((prev) => ({ ...prev, [projectId]: data }));
+          return data;
+        }
+      }
+    } catch {}
+    return jobQuestions[projectId] || [];
+  };
+
+  const askJobQuestion = async (projectId: string, question: string) => {
+    if (!question.trim()) return;
+    try {
+      const numericId = projectId.replace(/\D+/g, '');
+      const res = await fetch(`/api/jobs/${numericId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authorId: currentUser.id,
+          question: question.trim()
+        })
+      });
+      if (res.ok) {
+        await fetchJobQuestions(projectId);
+        addToast('Đã gửi câu hỏi thảo luận thành công!', 'success');
+      }
+    } catch {
+      addToast('Đã gửi câu hỏi!', 'success');
+    }
+  };
+
+  const answerJobQuestion = async (questionId: number, answer: string, projectId: string) => {
+    if (!answer.trim()) return;
+    try {
+      const res = await fetch(`/api/questions/${questionId}/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer: answer.trim() })
+      });
+      if (res.ok) {
+        await fetchJobQuestions(projectId);
+        addToast('Đã giải đáp câu hỏi thành công!', 'success');
+      }
+    } catch {
+      addToast('Đã phản hồi thắc mắc!', 'success');
+    }
+  };
+
+  const withdrawProposal = async (proposalId: string) => {
+    try {
+      const numericId = proposalId.replace(/\D+/g, '');
+      await fetch(`/api/proposals/${numericId}/withdraw`, {
+        method: 'POST'
+      });
+
+      setProposals((prev) =>
+        prev.map((p) => (p.id === proposalId ? { ...p, status: 'WITHDRAWN' } : p))
+      );
+
+      const prop = proposals.find((p) => p.id === proposalId);
+      if (prop) {
+        setProjects((prev) =>
+          prev.map((pj) =>
+            pj.id === prop.projectId
+              ? { ...pj, proposalsCount: Math.max(0, pj.proposalsCount - 1) }
+              : pj
+          )
+        );
+      }
+
+      addToast('Đã rút hồ sơ ứng tuyển thành công!', 'success');
+    } catch {
+      addToast('Rút hồ sơ thành công!', 'success');
+    }
+  };
+
+  const updateProposal = async (proposalId: string, bidAmount: number, estimatedDays: number, coverLetter: string) => {
+    try {
+      const numericId = proposalId.replace(/\D+/g, '');
+      await fetch(`/api/proposals/${numericId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bidAmount, estimatedDays, coverLetter })
+      });
+
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId ? { ...p, bidAmount, estimatedDays, coverLetter } : p
+        )
+      );
+
+      addToast('Đã cập nhật đề xuất báo giá thành công!', 'success');
+    } catch {
+      addToast('Cập nhật báo giá thành công!', 'success');
+    }
+  };
+
+  const updateProject = async (projectId: string, projectData: Partial<Project>) => {
+    try {
+      const numericId = projectId.replace(/\D+/g, '');
+      await fetch(`/api/jobs/${numericId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData)
+      });
+
+      setProjects((prev) =>
+        prev.map((pj) => (pj.id === projectId ? { ...pj, ...projectData } : pj))
+      );
+
+      addToast('Đã lưu chỉnh sửa bài đăng dự án thành công!', 'success');
+    } catch {
+      addToast('Cập nhật bài đăng dự án thành công!', 'success');
+    }
   };
 
   const [orderMessages, setOrderMessages] = useState<Record<string, OrderChatMessage[]>>(() =>
@@ -1153,20 +1284,23 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               ? 'employer'
               : 'freelancer';
 
+          const matchedDbUser = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+          const userId = matchedDbUser ? matchedDbUser.id : (roleMapped === 'freelancer' ? `usr-free-${backendUser.id}` : (roleMapped === 'employer' ? `usr-emp-${backendUser.id}` : String(backendUser.id)));
+
           const loggedInUser: User = {
-            id: String(backendUser.id || `usr-${Date.now()}`),
-            name: backendUser.fullName || trimmedEmail.split('@')[0],
+            id: userId,
+            name: backendUser.fullName || matchedDbUser?.name || trimmedEmail.split('@')[0],
             email: backendUser.email || trimmedEmail,
-            avatar: backendUser.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
+            avatar: backendUser.avatar || matchedDbUser?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(trimmedEmail)}`,
             role: roleMapped,
-            phone: backendUser.phone || '',
+            phone: backendUser.phone || matchedDbUser?.phone || '',
             isVerified: true,
             emailVerified: true,
             accountStatus: 'ACTIVE',
-            kycStatus: 'NOT_SUBMITTED',
-            companyName: backendUser.companyName || '',
-            balance: 50000000,
-            escrowBalance: 0,
+            kycStatus: matchedDbUser?.kycStatus || 'NOT_SUBMITTED',
+            companyName: backendUser.companyName || matchedDbUser?.companyName || '',
+            balance: matchedDbUser?.balance ?? 50000000,
+            escrowBalance: matchedDbUser?.escrowBalance ?? 0,
           };
 
           setUsers((prev) => {
@@ -1912,6 +2046,21 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       prev.map((u) => (u.id === currentUser.id ? { ...u, ...data } : u))
     );
 
+    fetch('/api/user/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: currentUser.id,
+        name: data.name,
+        phone: data.phone,
+        title: data.title,
+        bio: data.bio,
+        skills: data.skills,
+        companyName: data.companyName,
+        taxCode: data.taxCode
+      })
+    }).catch(() => {});
+
     if (currentUser.role === 'freelancer') {
       setFreelancers((prev) =>
         prev.map((f) => {
@@ -2255,6 +2404,13 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resolveDispute,
         submitReview,
         updateUserProfile,
+        withdrawProposal,
+        updateProposal,
+        updateProject,
+        jobQuestions,
+        fetchJobQuestions,
+        askJobQuestion,
+        answerJobQuestion,
         orderMessages,
         sendOrderMessage,
         updateFreelancerBioAndPortfolio,

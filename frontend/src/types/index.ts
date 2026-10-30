@@ -95,6 +95,7 @@ export interface Project {
 export interface Proposal {
   id: string;
   projectId: string;
+  projectTitle?: string;
   freelancerId: string;
   freelancerName: string;
   freelancerAvatar: string;
@@ -106,10 +107,23 @@ export interface Proposal {
   bidAmount: number; // VND
   estimatedDays: number;
   coverLetter: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   createdAt: string;
   attachments?: { name: string; size?: string; type?: string; url?: string }[];
   milestonesProposal?: { title: string; amount: number; days: number }[];
+}
+
+export interface JobQuestion {
+  id: number;
+  jobId: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  authorRole?: string;
+  question: string;
+  answer?: string | null;
+  createdAt: string;
+  answeredAt?: string | null;
 }
 
 export type OrderStatus =

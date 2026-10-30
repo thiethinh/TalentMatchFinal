@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 
@@ -11,6 +11,12 @@ export const JobDetail: React.FC = () => {
     savedProjectIds,
     toggleSaveProject,
     submitProposal,
+    updateProposal,
+    withdrawProposal,
+    jobQuestions,
+    fetchJobQuestions,
+    askJobQuestion,
+    answerJobQuestion,
     openAuthModal,
     addToast
   } = useDemo();
@@ -24,6 +30,10 @@ export const JobDetail: React.FC = () => {
   const [estimatedDays, setEstimatedDays] = useState<number>(7);
   const [coverLetter, setCoverLetter] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: string; type: string }[]>([]);
+  const [isEditingProposal, setIsEditingProposal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [questionInput, setQuestionInput] = useState('');
+  const [answerInputs, setAnswerInputs] = useState<Record<number, string>>({});
   const milestonesProposal = [
     { title: 'Giai đoạn 1: Khảo sát & Thiết kế kiến trúc', amount: Math.round((project?.budget || 5000000) * 0.4), days: 3 },
     { title: 'Giai đoạn 2: Lập trình chức năng & Tích hợp', amount: Math.round((project?.budget || 5000000) * 0.4), days: 3 },
@@ -74,14 +84,60 @@ export const JobDetail: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (project) {
+      fetchJobQuestions(project.id);
+    }
+  }, [project?.id]);
+
   const handleRemoveFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleOpenEditProposal = () => {
+    if (!myProposal) return;
+    setBidAmount(myProposal.bidAmount);
+    setEstimatedDays(myProposal.estimatedDays);
+    setCoverLetter(myProposal.coverLetter);
+    setIsEditingProposal(true);
+    setShowApplyModal(true);
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!myProposal) return;
+    await withdrawProposal(myProposal.id);
+    setShowWithdrawModal(false);
+  };
+
+  const handleAskQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || currentUser.role === 'guest') {
+      openAuthModal();
+      return;
+    }
+    if (!questionInput.trim() || !project) return;
+    await askJobQuestion(project.id, questionInput.trim());
+    setQuestionInput('');
+  };
+
+  const handleAnswerQuestion = async (qId: number) => {
+    const text = answerInputs[qId];
+    if (!text || !text.trim() || !project) return;
+    await answerJobQuestion(qId, text.trim(), project.id);
+    setAnswerInputs((prev) => ({ ...prev, [qId]: '' }));
   };
 
   const handleSubmitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     if (!coverLetter.trim()) {
       addToast('Vui lòng nhập thư ngỏ chào giá / phương án thực hiện!', 'warning');
+      return;
+    }
+
+    if (isEditingProposal && myProposal) {
+      updateProposal(myProposal.id, bidAmount, estimatedDays, coverLetter.trim());
+      setShowApplyModal(false);
+      setIsEditingProposal(false);
       return;
     }
 
@@ -355,7 +411,7 @@ export const JobDetail: React.FC = () => {
 
             {myProposal ? (
               <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">
                       ✓
@@ -370,12 +426,16 @@ export const JobDetail: React.FC = () => {
                       ? 'bg-emerald-600 text-white'
                       : myProposal.status === 'REJECTED'
                       ? 'bg-rose-100 text-rose-700'
+                      : myProposal.status === 'WITHDRAWN'
+                      ? 'bg-slate-200 text-slate-700'
                       : 'bg-amber-100 text-amber-800'
                   }`}>
                     {myProposal.status === 'ACCEPTED'
                       ? 'Được chọn làm việc'
                       : myProposal.status === 'REJECTED'
                       ? 'Chưa phù hợp'
+                      : myProposal.status === 'WITHDRAWN'
+                      ? 'Đã rút hồ sơ'
                       : 'Đang chờ xét duyệt'}
                   </span>
                 </div>
@@ -400,6 +460,46 @@ export const JobDetail: React.FC = () => {
                 <div className="text-xs text-slate-700 bg-white/80 p-3 rounded-lg border border-emerald-100 leading-relaxed">
                   <strong>Thư chào giá của bạn:</strong> {myProposal.coverLetter}
                 </div>
+
+                {/* Proposal Actions */}
+                {myProposal.status === 'PENDING' && (
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-emerald-200/60">
+                    <button
+                      type="button"
+                      onClick={handleOpenEditProposal}
+                      className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-md border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <i className="fa-solid fa-pen-to-square text-[11px] text-blue-600" />
+                      <span>Chỉnh Sửa Báo Giá</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWithdrawModal(true)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-md border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <i className="fa-solid fa-rotate-left text-[11px]" />
+                      <span>Rút Hồ Sơ Ứng Tuyển</span>
+                    </button>
+                  </div>
+                )}
+
+                {myProposal.status === 'WITHDRAWN' && (
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-[11px] text-slate-500 italic">
+                      Bạn đã rút hồ sơ ứng tuyển. Bạn có thể nộp lại đề xuất mới nếu muốn.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProposal(false);
+                        setShowApplyModal(true);
+                      }}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded shadow-xs cursor-pointer"
+                    >
+                      Nộp Lại Đề Xuất
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-2">
@@ -422,6 +522,117 @@ export const JobDetail: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* ========================================================= */}
+          {/* SECTION: JOB DISCUSSION & Q&A BEFORE APPLYING             */}
+          {/* ========================================================= */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <i className="fa-solid fa-comments text-amber-500 text-sm" />
+                  <span>Hỏi Đáp & Thảo Luận Về Dự Án ({jobQuestions[project.id]?.length || 0})</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Freelancer có thể đặt câu hỏi về yêu cầu, công nghệ hoặc thời hạn để Nhà tuyển dụng giải đáp công khai trước khi ứng tuyển.
+                </p>
+              </div>
+            </div>
+
+            {/* Ask Question Form */}
+            <form onSubmit={handleAskQuestion} className="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+              <label className="block font-bold text-slate-800 text-xs">
+                Đặt câu hỏi / Thắc mắc của bạn cho Nhà tuyển dụng:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  placeholder="VD: Dự án có yêu cầu làm việc trực tiếp tại văn phòng không? Đã có bản thiết kế Figma chưa?..."
+                  className="flex-1 p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i className="fa-solid fa-paper-plane text-xs" />
+                  <span>Gửi Câu Hỏi</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Questions Thread */}
+            <div className="space-y-3">
+              {(!jobQuestions[project.id] || jobQuestions[project.id].length === 0) ? (
+                <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-1.5">
+                  <i className="fa-solid fa-circle-question text-2xl text-slate-300 block" />
+                  <div className="text-xs font-semibold text-slate-600">Chưa có câu hỏi thảo luận nào</div>
+                  <p className="text-[11px] text-slate-400">Hãy là người đầu tiên đặt câu hỏi cho nhà tuyển dụng!</p>
+                </div>
+              ) : (
+                jobQuestions[project.id].map((q) => (
+                  <div key={q.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={q.authorAvatar || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + q.authorName}
+                          alt={q.authorName}
+                          className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 text-xs">{q.authorName}</span>
+                          <span className="text-[10px] text-slate-400 ml-2">{q.createdAt}</span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        q.answer ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {q.answer ? '✓ Đã phản hồi' : '⏳ Chờ giải đáp'}
+                      </span>
+                    </div>
+
+                    <p className="text-slate-800 bg-white p-3 rounded-lg border border-slate-200 font-medium leading-relaxed">
+                      "{q.question}"
+                    </p>
+
+                    {/* Employer Reply Display */}
+                    {q.answer ? (
+                      <div className="ml-4 pl-3.5 border-l-2 border-indigo-400 bg-indigo-50/60 p-3 rounded-r-xl space-y-1">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-indigo-950">
+                          <i className="fa-solid fa-reply text-indigo-600" />
+                          <span>Phản hồi từ Nhà tuyển dụng ({project.employerName}):</span>
+                          <span className="text-slate-400 font-normal text-[10px]">({q.answeredAt})</span>
+                        </div>
+                        <p className="text-indigo-900 leading-relaxed font-medium">{q.answer}</p>
+                      </div>
+                    ) : (
+                      /* If viewing user is Employer or Author, allow answering */
+                      (currentUser.role === 'employer' || currentUser.id === project.employerId) && (
+                        <div className="flex gap-2 pt-1 ml-4">
+                          <input
+                            type="text"
+                            value={answerInputs[q.id] || ''}
+                            onChange={(e) => setAnswerInputs((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                            placeholder="Nhập câu trả lời công khai của bạn..."
+                            className="flex-1 p-2 bg-white border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleAnswerQuestion(q.id)}
+                            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-md shadow-xs transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                          >
+                            <i className="fa-solid fa-paper-plane text-[10px]" />
+                            <span>Trả Lời</span>
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
         </div>
@@ -713,6 +924,46 @@ export const JobDetail: React.FC = () => {
 
             </form>
 
+          </div>
+        </div>
+      )}
+
+
+      {/* Modal: Confirm Withdraw in JobDetail */}
+      {showWithdrawModal && myProposal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-xs my-8">
+            <div className="flex items-center gap-3 text-rose-700">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <i className="fa-solid fa-triangle-exclamation text-rose-600 text-lg" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Rút Hồ Sơ Ứng Tuyển</h3>
+                <p className="text-[11px] text-slate-500">Xác nhận hủy đề xuất chào giá</p>
+              </div>
+            </div>
+
+            <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-200">
+              Bạn có chắc chắn muốn rút hồ sơ ứng tuyển khỏi dự án <strong>"{project.title}"</strong>? Sau khi rút, hồ sơ sẽ được đóng lại và bạn có thể nộp đề xuất mới bất kỳ lúc nào.
+            </p>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowWithdrawModal(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md transition-colors cursor-pointer text-xs"
+              >
+                Không Rút
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmWithdraw}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-md shadow-xs transition-colors cursor-pointer text-xs flex items-center justify-center gap-1.5"
+              >
+                <i className="fa-solid fa-rotate-left text-xs" />
+                <span>Xác Nhận Rút</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

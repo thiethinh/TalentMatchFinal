@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Order } from '../../types';
+import { useDemo } from '../../context/DemoContext';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ReviewModalProps {
     orderId: string;
     orderTitle: string;
     targetName: string;
+    targetId?: string;
     rating: number;
     qualityRating: number;
     deadlineRating: number;
@@ -23,6 +25,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   order,
   onSubmitReview
 }) => {
+  const { currentUser } = useDemo();
+  const isFreelancer = currentUser.role === 'freelancer';
+
   const [rating, setRating] = useState<number>(5);
   const [qualityRating, setQualityRating] = useState<number>(5);
   const [deadlineRating, setDeadlineRating] = useState<number>(5);
@@ -31,9 +36,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   if (!isOpen) return null;
 
+  const targetName = isFreelancer
+    ? order.employerName
+    : order.freelancerName;
+  const targetAvatar = isFreelancer ? order.employerAvatar : order.freelancerAvatar;
+  const targetRole = isFreelancer ? 'Nhà Tuyển Dụng / Khách Hàng' : 'Freelancer / Chuyên Gia';
+  const targetId = isFreelancer ? order.employerId : order.freelancerId;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) {
+    const finalComment = comment || (document.getElementById('review-comment-textarea') as HTMLTextAreaElement)?.value || '';
+    if (!finalComment.trim()) {
       alert('Vui lòng nhập lời nhận xét đánh giá!');
       return;
     }
@@ -41,12 +54,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     onSubmitReview({
       orderId: order.id,
       orderTitle: order.serviceTitle,
-      targetName: order.freelancerName,
+      targetName,
+      targetId,
       rating,
       qualityRating,
       deadlineRating,
       communicationRating,
-      comment
+      comment: finalComment.trim()
     });
 
     onClose();
@@ -82,7 +96,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <i className="fa-solid fa-award text-sm" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Đánh Giá & Nghiệm Thu Dịch Vụ</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {isFreelancer ? 'Đánh Giá Khách Hàng / Nhà Tuyển Dụng' : 'Đánh Giá & Nghiệm Thu Freelancer'}
+              </h3>
               <p className="text-[11px] text-slate-500">Đơn hàng: {order.orderNumber}</p>
             </div>
           </div>
@@ -93,22 +109,29 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
-          {/* Target Freelancer Info */}
+          {/* Target Info */}
           <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-md border border-slate-200">
             <img
-              src={order.freelancerAvatar}
-              alt={order.freelancerName}
+              src={targetAvatar}
+              alt={targetName}
               className="w-10 h-10 rounded-full object-cover border border-slate-300"
             />
             <div>
-              <div className="font-bold text-slate-900 text-sm">{order.freelancerName}</div>
-              <div className="text-slate-500 text-[11px] line-clamp-1">{order.serviceTitle}</div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-sm">{targetName}</span>
+                <span className="text-[10px] bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.2 rounded-xs">
+                  {targetRole}
+                </span>
+              </div>
+              <div className="text-slate-500 text-[11px] line-clamp-1 mt-0.5">{order.serviceTitle}</div>
             </div>
           </div>
 
           {/* Overall Star Rating */}
           <div className="text-center py-2 bg-amber-50/50 rounded-md border border-amber-200/60 p-4 space-y-2">
-            <div className="text-xs font-bold text-amber-900">Đánh giá mức độ hài lòng chung:</div>
+            <div className="text-xs font-bold text-amber-900">
+              {isFreelancer ? 'Đánh giá mức độ hài lòng khi hợp tác cùng Khách hàng:' : 'Đánh giá mức độ hài lòng chung:'}
+            </div>
             <div className="flex items-center justify-center space-x-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -136,17 +159,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               Đánh giá theo từng tiêu chí cụ thể:
             </div>
             <StarSelector
-              label="1. Chất lượng sản phẩm & Chuyên môn:"
+              label={isFreelancer ? '1. Yêu cầu & mô tả công việc rõ ràng:' : '1. Chất lượng sản phẩm & Chuyên môn:'}
               value={qualityRating}
               onChange={setQualityRating}
             />
             <StarSelector
-              label="2. Đúng thời hạn cam kết (Deadline):"
+              label={isFreelancer ? '2. Hỗ trợ & phản hồi trao đổi kịp thời:' : '2. Đúng thời hạn cam kết (Deadline):'}
               value={deadlineRating}
               onChange={setDeadlineRating}
             />
             <StarSelector
-              label="3. Thái độ giao tiếp & Hợp tác:"
+              label={isFreelancer ? '3. Tác phong nghiệm thu & giải ngân:' : '3. Thái độ giao tiếp & Hợp tác:'}
               value={communicationRating}
               onChange={setCommunicationRating}
             />
@@ -154,12 +177,19 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           {/* Comment Text */}
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Nhận xét chi tiết của bạn:</label>
+            <label className="block font-bold text-slate-700 mb-1">
+              {isFreelancer ? 'Nhận xét chi tiết về Khách hàng / Doanh nghiệp:' : 'Nhận xét chi tiết của bạn:'}
+            </label>
             <textarea
+              id="review-comment-textarea"
               rows={4}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Chia sẻ trải nghiệm làm việc cùng Freelancer, chất lượng bàn giao, thái độ hỗ trợ sửa bài..."
+              placeholder={
+                isFreelancer
+                  ? 'Chia sẻ trải nghiệm hợp tác cùng Khách hàng, mức độ rõ ràng của yêu cầu, sự hỗ trợ trong quá trình thực hiện dự án...'
+                  : 'Chia sẻ trải nghiệm làm việc cùng Freelancer, chất lượng bàn giao, thái độ hỗ trợ sửa bài...'
+              }
               className="w-full p-3 bg-slate-50 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white"
               required
             />
@@ -167,7 +197,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-md border border-slate-200">
             <i className="fa-solid fa-shield-halved text-emerald-600 text-xs shrink-0" />
-            <span>Đánh giá của bạn sẽ giúp xây dựng điểm uy tín <strong>TalentCredit</strong> minh bạch trên sàn.</span>
+            <span>Đánh giá của bạn sẽ giúp xây dựng điểm uy tín <strong>TalentCredit</strong> minh bạch hai chiều trên sàn.</span>
           </div>
 
           {/* Buttons */}
@@ -194,4 +224,3 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     </div>
   );
 };
-

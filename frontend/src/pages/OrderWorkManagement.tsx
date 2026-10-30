@@ -329,6 +329,38 @@ export const OrderWorkManagement: React.FC = () => {
             </div>
           )}
 
+          {/* Completed Order: Rating & Feedback Action Box */}
+          {order.status === 'COMPLETED' && (
+            <div className="p-4 bg-emerald-50/90 rounded-xl border border-emerald-300 space-y-3 shadow-2xs animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <i className="fa-solid fa-award text-amber-500 text-base" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-emerald-950 text-xs sm:text-sm">
+                      {currentUser.role === 'freelancer'
+                        ? 'Hợp đồng đã hoàn thành & giải ngân! Hãy đánh giá Khách hàng'
+                        : 'Hợp đồng đã hoàn thành & giải ngân! Hãy đánh giá Freelancer'}
+                    </h4>
+                    <p className="text-[11px] text-emerald-800">
+                      Đánh giá của bạn sẽ giúp xây dựng điểm uy tín TalentCredit minh bạch hai chiều trên sàn.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(true)}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <i className="fa-solid fa-star text-xs" />
+                  <span>{currentUser.role === 'freelancer' ? 'Đánh Giá Khách Hàng' : 'Đánh Giá Freelancer'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Quy định bàn giao qua Link info alert */}
           <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg flex items-start gap-2.5 text-blue-900 text-[11px] leading-relaxed">
             <i className="fa-solid fa-circle-info text-blue-600 text-xs shrink-0 mt-0.5" />

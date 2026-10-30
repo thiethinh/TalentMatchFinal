@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -104,6 +105,7 @@ public class ApiDataSyncController {
             Map<String, Object> p = new HashMap<>();
             p.put("id", "prop-" + r.get("id"));
             p.put("projectId", "prj-" + r.get("job_id"));
+            p.put("projectTitle", r.get("job_title"));
             p.put("freelancerId", "free-" + r.get("freelancer_id"));
             p.put("freelancerName", r.get("freelancer_name"));
             p.put("freelancerAvatar", r.get("freelancer_avatar"));
@@ -115,7 +117,11 @@ public class ApiDataSyncController {
             p.put("bidAmount", r.get("proposed_price") != null ? ((Number) r.get("proposed_price")).doubleValue() : 10000000.0);
             p.put("estimatedDays", r.get("estimated_days") != null ? ((Number) r.get("estimated_days")).intValue() : 14);
             p.put("coverLetter", r.get("proposal"));
-            p.put("status", r.get("status") != null ? r.get("status") : "SUBMITTED");
+            String rawStatus = r.get("status") != null ? r.get("status").toString() : "PENDING";
+            if ("SUBMITTED".equalsIgnoreCase(rawStatus)) {
+                rawStatus = "PENDING";
+            }
+            p.put("status", rawStatus);
             p.put("createdAt", r.get("created_at") != null ? r.get("created_at").toString().split(" ")[0] : "2026-10-01");
 
             proposals.add(p);
@@ -489,6 +495,241 @@ public class ApiDataSyncController {
             """;
             jdbc.update(sql, userId, bankName, bankCode, accountNumber, accountHolder);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã thêm tài khoản ngân hàng thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 12. POST /api/proposals/{id}/withdraw: Rút hồ sơ ứng tuyển từ Freelancer
+     */
+    @PostMapping("/proposals/{id}/withdraw")
+    @Transactional
+    public ResponseEntity<?> withdrawProposal(@PathVariable String id) {
+        try {
+            Long propId = parseId(id);
+            List<Map<String, Object>> rows = jdbc.queryForList("SELECT job_id FROM job_applications WHERE id = ?", propId);
+            if (!rows.isEmpty()) {
+                Long jobId = ((Number) rows.get(0).get("job_id")).longValue();
+                jdbc.update("UPDATE jobs SET proposals_count = GREATEST(0, proposals_count - 1), updated_at = NOW(6) WHERE id = ?", jobId);
+            }
+            jdbc.update("UPDATE job_applications SET status = 'WITHDRAWN', updated_at = NOW(6) WHERE id = ?", propId);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã rút hồ sơ ứng tuyển thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 13. PUT /api/proposals/{id}: Chỉnh sửa đề xuất báo giá
+     */
+    @PutMapping("/proposals/{id}")
+    @Transactional
+    public ResponseEntity<?> updateProposal(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        try {
+            Long propId = parseId(id);
+            BigDecimal proposedPrice = new BigDecimal(String.valueOf(body.get("bidAmount")));
+            int estimatedDays = ((Number) body.get("estimatedDays")).intValue();
+            String coverLetter = String.valueOf(body.get("coverLetter"));
+
+            jdbc.update("""
+                UPDATE job_applications
+                SET proposed_price = ?, estimated_days = ?, proposal = ?, updated_at = NOW(6)
+                WHERE id = ?
+            """, proposedPrice, estimatedDays, coverLetter, propId);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật đề xuất báo giá thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 14. PUT /api/jobs/{id}: Chỉnh sửa thông tin dự án đã đăng tuyển
+     */
+    @PutMapping("/jobs/{id}")
+    @Transactional
+    public ResponseEntity<?> updateJobSync(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        try {
+            Long jobId = parseId(id);
+            String title = String.valueOf(body.get("title"));
+            String category = String.valueOf(body.getOrDefault("category", "Lập trình & CNTT"));
+            String description = String.valueOf(body.getOrDefault("description", ""));
+            BigDecimal budget = new BigDecimal(String.valueOf(body.getOrDefault("budget", "10000000")));
+            String priceType = String.valueOf(body.getOrDefault("budgetType", "FIXED"));
+            String deadlineStr = body.get("deadline") != null ? String.valueOf(body.get("deadline")).split("T")[0] : null;
+
+            Object skillsObj = body.get("requiredSkills");
+            String skills = skillsObj instanceof List ? String.join(", ", (List<String>) skillsObj) : String.valueOf(skillsObj);
+
+            jdbc.update("""
+                UPDATE jobs
+                SET title = ?, category = ?, description = ?, budget = ?, price_type = ?,
+                    required_skills = ?, deadline = ?, updated_at = NOW(6)
+                WHERE id = ?
+            """, title, category, description, budget, priceType, skills, deadlineStr != null ? LocalDate.parse(deadlineStr) : null, jobId);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật thông tin dự án thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 15. GET /api/jobs/{id}/questions: Lấy danh sách câu hỏi thảo luận của dự án
+     */
+    @GetMapping("/jobs/{id}/questions")
+    public ResponseEntity<?> getJobQuestionsSync(@PathVariable String id) {
+        try {
+            Long jobId = parseId(id);
+            String sql = """
+                SELECT q.*, u.full_name as author_name, u.avatar as author_avatar, u.role as author_role
+                FROM job_questions q
+                JOIN users u ON q.author_id = u.id
+                WHERE q.job_id = ?
+                ORDER BY q.created_at ASC
+            """;
+            List<Map<String, Object>> rows = jdbc.queryForList(sql, jobId);
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (Map<String, Object> r : rows) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", r.get("id"));
+                item.put("jobId", "prj-" + r.get("job_id"));
+                item.put("authorId", "usr-" + r.get("author_id"));
+                item.put("authorName", r.get("author_name"));
+                item.put("authorAvatar", r.get("author_avatar"));
+                item.put("authorRole", r.get("author_role"));
+                item.put("question", r.get("question"));
+                item.put("answer", r.get("answer"));
+                item.put("createdAt", r.get("created_at") != null ? r.get("created_at").toString() : "");
+                item.put("answeredAt", r.get("answered_at") != null ? r.get("answered_at").toString() : null);
+                list.add(item);
+            }
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 16. POST /api/jobs/{id}/questions: Đặt câu hỏi thắc mắc trước khi ứng tuyển
+     */
+    @PostMapping("/jobs/{id}/questions")
+    @Transactional
+    public ResponseEntity<?> askJobQuestionSync(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        try {
+            Long jobId = parseId(id);
+            Long authorId = parseId(String.valueOf(body.get("authorId")));
+            String question = String.valueOf(body.get("question")).trim();
+            if (question.length() < 5) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Nội dung câu hỏi phải có ít nhất 5 ký tự."));
+            }
+            jdbc.update("""
+                INSERT INTO job_questions (job_id, author_id, question, created_at)
+                VALUES (?, ?, ?, NOW(6))
+            """, jobId, authorId, question);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã gửi câu hỏi công khai thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 17. POST /api/questions/{id}/answer: Nhà tuyển dụng giải đáp câu hỏi của Freelancer
+     */
+    @PostMapping("/questions/{id}/answer")
+    @Transactional
+    public ResponseEntity<?> answerQuestionSync(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        try {
+            String answer = String.valueOf(body.get("answer")).trim();
+            if (answer.length() < 3) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Nội dung câu trả lời quá ngắn."));
+            }
+            jdbc.update("""
+                UPDATE job_questions
+                SET answer = ?, answered_at = NOW(6)
+                WHERE id = ?
+            """, answer, id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã giải đáp câu hỏi thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 18. POST /api/reviews: Lưu đánh giá hai chiều (Khách hàng & Freelancer) vào CSDL
+     */
+    @PostMapping("/reviews")
+    @Transactional
+    public ResponseEntity<?> createReviewSync(@RequestBody Map<String, Object> body) {
+        try {
+            Long projectId = parseId(String.valueOf(body.get("orderId")));
+            Long authorId = parseId(String.valueOf(body.get("authorId")));
+            Long targetId = parseId(String.valueOf(body.get("targetId")));
+            int rating = ((Number) body.getOrDefault("rating", 5)).intValue();
+            double quality = ((Number) body.getOrDefault("qualityRating", 5.0)).doubleValue();
+            double deadline = ((Number) body.getOrDefault("deadlineRating", 5.0)).doubleValue();
+            double comm = ((Number) body.getOrDefault("communicationRating", 5.0)).doubleValue();
+            String comment = (String) body.getOrDefault("comment", "Dịch vụ rất tốt");
+
+            jdbc.update("""
+                INSERT INTO talent_reviews (project_id, author_id, target_id, rating, quality_rating, deadline_rating, communication_rating, comment, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(6))
+                ON DUPLICATE KEY UPDATE
+                    rating = VALUES(rating),
+                    quality_rating = VALUES(quality_rating),
+                    deadline_rating = VALUES(deadline_rating),
+                    communication_rating = VALUES(communication_rating),
+                    comment = VALUES(comment),
+                    created_at = NOW(6)
+            """, projectId, authorId, targetId, rating, quality, deadline, comm, comment);
+
+            // Cập nhật điểm uy tín cho người nhận đánh giá
+            jdbc.update("""
+                UPDATE users
+                SET rating = (SELECT ROUND(AVG(rating), 1) FROM talent_reviews WHERE target_id = ?),
+                    updated_at = NOW(6)
+                WHERE id = ?
+            """, targetId, targetId);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã lưu đánh giá thành công vào CSDL!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 19. PUT /api/user/profile: Chỉnh sửa và cập nhật hồ sơ người dùng vào CSDL
+     */
+    @PutMapping("/user/profile")
+    @Transactional
+    public ResponseEntity<?> updateUserProfileSync(@RequestBody Map<String, Object> body) {
+        try {
+            Long uid = parseId(String.valueOf(body.get("id")));
+            String fullName = (String) body.get("name");
+            String phone = (String) body.get("phone");
+            String title = (String) body.get("title");
+            String bio = (String) body.get("bio");
+            String company = (String) body.get("companyName");
+            String taxCode = (String) body.get("taxCode");
+
+            Object skillsObj = body.get("skills");
+            String skills = skillsObj instanceof List ? String.join(", ", (List<String>) skillsObj) : (String) skillsObj;
+
+            jdbc.update("""
+                UPDATE users
+                SET full_name = COALESCE(?, full_name),
+                    phone = COALESCE(?, phone),
+                    professional_title = COALESCE(?, professional_title),
+                    bio = COALESCE(?, bio),
+                    skills = COALESCE(?, skills),
+                    company_name = COALESCE(?, company_name),
+                    tax_code = COALESCE(?, tax_code),
+                    updated_at = NOW(6)
+                WHERE id = ?
+            """, fullName, phone, title, bio, skills, company, taxCode, uid);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật hồ sơ cá nhân vào CSDL!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }

@@ -63,8 +63,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**", "/api/admin/dashboard",
                         "/api/users/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/disputes/**",
-                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/notifications/**", "/api/portfolios/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/jobs", "/api/orders/**", "/api/user/**", "/api/disputes/**", "/api/proposals/**").permitAll()
+                        "/api/vnpay-transactions/**", "/api/invitations/**", "/api/notifications/**", "/api/portfolios/**", "/api/questions/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/jobs/**", "/api/orders/**", "/api/user/**", "/api/disputes/**", "/api/proposals/**", "/api/reviews/**", "/api/questions/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/jobs/**", "/api/proposals/**", "/api/user/**", "/api/questions/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")

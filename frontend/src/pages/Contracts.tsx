@@ -37,11 +37,22 @@ export const Contracts: React.FC = () => {
 
   // Filter orders for current user (Freelancer or Employer)
   const myOrders = orders.filter((o) => {
+    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
     if (currentUser.role === 'freelancer') {
-      return o.freelancerId === currentUser.id || o.freelancerName === currentUser.name || o.freelancerId === 'usr-free-1';
+      const orderFreeNumericId = o.freelancerId ? o.freelancerId.replace(/\D/g, '') : '';
+      return (
+        o.freelancerId === currentUser.id ||
+        (currentNumericId && orderFreeNumericId === currentNumericId) ||
+        (currentUser.name && o.freelancerName === currentUser.name)
+      );
     }
     if (currentUser.role === 'employer') {
-      return o.employerId === currentUser.id || o.employerName === currentUser.name || o.employerId === 'usr-emp-1';
+      const orderEmpNumericId = o.employerId ? o.employerId.replace(/\D/g, '') : '';
+      return (
+        o.employerId === currentUser.id ||
+        (currentNumericId && orderEmpNumericId === currentNumericId) ||
+        (currentUser.name && o.employerName === currentUser.name)
+      );
     }
     // Admin or Guest: show all
     return true;

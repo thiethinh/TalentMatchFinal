@@ -99,11 +99,31 @@ export const OrderWorkManagement: React.FC = () => {
   };
 
   const handleConfirmDispute = (e: React.FormEvent) => {
+    if (!order) return;
     e.preventDefault();
     if (!disputeReason.trim()) return;
     fileDispute(order.id, disputeReason, disputeEvidence);
     setShowDisputeModal(false);
   };
+
+  if (!order) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
+        <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-2xl">
+          <i className="fa-solid fa-file-contract" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Không tìm thấy hợp đồng</h2>
+        <p className="text-slate-500 text-sm">Hợp đồng bạn đang tìm không tồn tại hoặc bạn chưa được phân quyền truy cập.</p>
+        <Link
+          to={currentUser.role === 'freelancer' ? '/freelancer/dashboard' : '/employer/dashboard'}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors"
+        >
+          <i className="fa-solid fa-arrow-left text-xs" />
+          <span>Quay lại Bảng điều khiển</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

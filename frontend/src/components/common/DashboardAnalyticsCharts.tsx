@@ -72,21 +72,12 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
         }
       });
 
-      // If simulated demo has small order dates, add realistic baseline for visuals
-      if (bucketAmount === 0 && orders.length > 0) {
-        const seed = (i * 13 + bStart.getDate() * 7) % orders.length;
-        const sample = orders[seed] || orders[0];
-        const val = userRole === 'freelancer' ? sample.freelancerPayoutAmount : sample.totalAmount;
-        bucketAmount = Math.round(val * (0.3 + (i % 3) * 0.35));
-        orderCount = (i % 2 === 0) ? 1 : 2;
-      }
-
       buckets.push({
         label,
         startDate: bStart,
         endDate: bEnd,
         amount: bucketAmount,
-        count: Math.max(1, orderCount)
+        count: orderCount
       });
     }
 
@@ -98,6 +89,12 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
     return { buckets, maxVal, totalAmount, totalOrders, avgOrderVal };
   }, [fromDate, toDate, orders, userRole]);
 
+  // Color palette for dynamic categories
+  const CATEGORY_COLORS = [
+    '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4',
+    '#ec4899', '#f97316', '#6366f1', '#14b8a6', '#64748b'
+  ];
+
   // Pie chart distribution
   const pieData = useMemo(() => {
     if (pieMode === 'status') {
@@ -106,70 +103,55 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
         'DELIVERED': { label: 'Đã Bàn Giao', count: 0, color: '#f59e0b' },
         'COMPLETED': { label: 'Đã Hoàn Thành', count: 0, color: '#10b981' },
         'REVISION_REQUESTED': { label: 'Yêu Cầu Sửa', count: 0, color: '#ec4899' },
-        'DISPUTED': { label: 'Khiếu Nại Tranh Chấp', count: 0, color: '#ef4444' }
+        'DISPUTED': { label: 'Khiếu Nại Tranh Chấp', count: 0, color: '#ef4444' },
+        'CANCELLED': { label: 'Đã Hủy', count: 0, color: '#94a3b8' }
       };
 
       orders.forEach((ord) => {
-        if (statusMap[ord.status]) {
-          statusMap[ord.status].count++;
+        let st: string = ord.status;
+        if ((st as string) === 'IN_PROGRESS') st = 'ORDER_IN_PROGRESS';
+        if (statusMap[st]) {
+          statusMap[st].count++;
         }
       });
 
-      // Ensure at least sample values if empty
       const items = Object.values(statusMap).filter((item) => item.count > 0);
-      if (items.length === 0) {
-        items.push(
-          { label: 'Đang Thực Hiện', count: 3, color: '#3b82f6' },
-          { label: 'Đã Hoàn Thành', count: 5, color: '#10b981' },
-          { label: 'Đã Bàn Giao', count: 2, color: '#f59e0b' }
-        );
-      }
-
       const total = items.reduce((sum, item) => sum + item.count, 0);
+      if (total === 0) return [];
+
       return items.map((item) => ({
         ...item,
         percent: Math.round((item.count / total) * 100)
       }));
     } else {
-      // By project categories
-      const catMap: Record<string, { label: string; count: number; color: string }> = {
-        'Lập trình Web & Mobile App': { label: 'Web & Mobile App', count: 0, color: '#3b82f6' },
-        'Thiết kế UI/UX & Đồ họa': { label: 'UI/UX & Design', count: 0, color: '#8b5cf6' },
-        'Trí tuệ Nhân tạo & Machine Learning': { label: 'AI & Data Science', count: 0, color: '#06b6d4' },
-        'Marketing & Quảng cáo': { label: 'Digital Marketing', count: 0, color: '#f59e0b' },
-        'Video & Animation': { label: 'Video Editor', count: 0, color: '#ec4899' }
-      };
-
+      // By project categories (dynamic from real MySQL projects)
+      const catCounts: Record<string, number> = {};
       projects.forEach((prj) => {
-        if (catMap[prj.category]) {
-          catMap[prj.category].count++;
-        } else {
-          // Default bucket
-          catMap['Lập trình Web & Mobile App'].count++;
-        }
+        const cat = prj.category?.trim() || 'Chưa phân loại';
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
       });
 
-      const items = Object.values(catMap).filter((item) => item.count > 0);
-      if (items.length === 0) {
-        items.push(
-          { label: 'Web & Mobile App', count: 4, color: '#3b82f6' },
-          { label: 'UI/UX & Design', count: 3, color: '#8b5cf6' },
-          { label: 'AI & Data Science', count: 2, color: '#06b6d4' }
-        );
-      }
+      const sorted = Object.entries(catCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
 
-      const total = items.reduce((sum, item) => sum + item.count, 0);
-      return items.map((item) => ({
-        ...item,
-        percent: Math.round((item.count / total) * 100)
+      const total = sorted.reduce((sum, [, count]) => sum + count, 0);
+      if (total === 0) return [];
+
+      return sorted.map(([label, count], idx) => ({
+        label,
+        count,
+        color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
+        percent: Math.round((count / total) * 100)
       }));
     }
   }, [pieMode, orders, projects]);
 
+  const pieTotal = useMemo(() => pieData.reduce((sum, item) => sum + item.count, 0), [pieData]);
+
   // Calculate SVG Pie/Donut slices using dasharray
   const radius = 65;
   const circumference = 2 * Math.PI * radius;
-  let accumulatedPercent = 0;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-6">
@@ -333,8 +315,8 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
                 const barWidth = Math.max(16, Math.min(36, 420 / barChartData.buckets.length - 8));
                 const barSpacing = (460 - barWidth) / Math.max(1, barChartData.buckets.length - 1);
                 const x = 55 + i * barSpacing;
-                const heightPct = Math.min(1, b.amount / barChartData.maxVal);
-                const barHeight = Math.max(6, heightPct * 150);
+                const heightPct = barChartData.maxVal > 0 ? Math.min(1, b.amount / barChartData.maxVal) : 0;
+                const barHeight = b.amount > 0 ? Math.max(6, heightPct * 150) : 0;
                 const y = 180 - barHeight;
                 const isHovered = hoveredBarIndex === i;
 
@@ -440,69 +422,106 @@ export const DashboardAnalyticsCharts: React.FC<Props> = ({ userRole, orders, pr
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 py-2">
             <div className="relative w-40 h-40 shrink-0">
               <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90 transform">
-                {pieData.map((slice, i) => {
-                  const dashArray = `${(slice.percent / 100) * circumference} ${circumference}`;
-                  const strokeOffset = -((accumulatedPercent / 100) * circumference);
-                  accumulatedPercent += slice.percent;
-                  const isHovered = hoveredSliceIndex === i;
+                {pieData.length === 0 ? (
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r={radius}
+                    fill="transparent"
+                    stroke="#e2e8f0"
+                    strokeWidth="20"
+                  />
+                ) : (
+                  (() => {
+                    let accPercent = 0;
+                    return (
+                      <>
+                        <circle
+                          cx="80"
+                          cy="80"
+                          r={radius}
+                          fill="transparent"
+                          stroke="#f1f5f9"
+                          strokeWidth="22"
+                        />
+                        {pieData.map((slice, i) => {
+                          const dashArray = `${(slice.percent / 100) * circumference} ${circumference}`;
+                          const strokeOffset = -((accPercent / 100) * circumference);
+                          accPercent += slice.percent;
+                          const isHovered = hoveredSliceIndex === i;
 
-                  return (
-                    <circle
-                      key={i}
-                      cx="80"
-                      cy="80"
-                      r={radius}
-                      fill="transparent"
-                      stroke={slice.color}
-                      strokeWidth={isHovered ? 26 : 22}
-                      strokeDasharray={dashArray}
-                      strokeDashoffset={strokeOffset}
-                      onMouseEnter={() => setHoveredSliceIndex(i)}
-                      onMouseLeave={() => setHoveredSliceIndex(null)}
-                      className="transition-all duration-200 cursor-pointer"
-                    />
-                  );
-                })}
+                          return (
+                            <circle
+                              key={i}
+                              cx="80"
+                              cy="80"
+                              r={radius}
+                              fill="transparent"
+                              stroke={slice.color}
+                              strokeWidth={isHovered ? 26 : 22}
+                              strokeDasharray={dashArray}
+                              strokeDashoffset={strokeOffset}
+                              onMouseEnter={() => setHoveredSliceIndex(i)}
+                              onMouseLeave={() => setHoveredSliceIndex(null)}
+                              className="transition-all duration-200 cursor-pointer"
+                            />
+                          );
+                        })}
+                      </>
+                    );
+                  })()
+                )}
               </svg>
 
               {/* Donut Center Display */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                 <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                  {hoveredSliceIndex !== null ? pieData[hoveredSliceIndex].label : 'Tổng Số'}
+                  {hoveredSliceIndex !== null && pieData[hoveredSliceIndex]
+                    ? pieData[hoveredSliceIndex].label
+                    : 'Tổng Số'}
                 </span>
                 <span className="text-xl font-bold text-slate-900 font-mono">
-                  {hoveredSliceIndex !== null ? `${pieData[hoveredSliceIndex].percent}%` : `${barChartData.totalOrders}`}
+                  {hoveredSliceIndex !== null && pieData[hoveredSliceIndex]
+                    ? `${pieData[hoveredSliceIndex].percent}%`
+                    : `${pieTotal}`}
                 </span>
               </div>
             </div>
 
             {/* Legend */}
-            <div className="space-y-2 w-full text-xs">
-              {pieData.map((item, idx) => {
-                const isHovered = hoveredSliceIndex === idx;
-                return (
-                  <div
-                    key={idx}
-                    onMouseEnter={() => setHoveredSliceIndex(idx)}
-                    onMouseLeave={() => setHoveredSliceIndex(null)}
-                    className={`flex items-center justify-between p-1.5 rounded-lg transition-all cursor-pointer ${
-                      isHovered ? 'bg-white shadow-2xs ring-1 ring-slate-200' : 'hover:bg-white/60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className={`text-[11px] truncate max-w-[130px] ${isHovered ? 'font-bold text-slate-900' : 'text-slate-600'}`}>
-                        {item.label}
-                      </span>
+            {pieData.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-xs w-full">
+                <i className="fa-regular fa-folder-open text-2xl mb-1.5 block text-slate-300" />
+                <span>Chưa có dữ liệu {pieMode === 'status' ? 'hợp đồng' : 'dự án'}</span>
+              </div>
+            ) : (
+              <div className="space-y-2 w-full text-xs">
+                {pieData.map((item, idx) => {
+                  const isHovered = hoveredSliceIndex === idx;
+                  return (
+                    <div
+                      key={idx}
+                      onMouseEnter={() => setHoveredSliceIndex(idx)}
+                      onMouseLeave={() => setHoveredSliceIndex(null)}
+                      className={`flex items-center justify-between p-1.5 rounded-lg transition-all cursor-pointer ${
+                        isHovered ? 'bg-white shadow-2xs ring-1 ring-slate-200' : 'hover:bg-white/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className={`text-[11px] truncate max-w-[130px] ${isHovered ? 'font-bold text-slate-900' : 'text-slate-600'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 font-mono text-[11px] shrink-0">
+                        <span className="text-slate-400">{item.count} dự án</span>
+                        <strong className="text-slate-800">{item.percent}%</strong>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 font-mono text-[11px] shrink-0">
-                      <span className="text-slate-400">{item.count} dự án</span>
-                      <strong className="text-slate-800">{item.percent}%</strong>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

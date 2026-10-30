@@ -6,33 +6,42 @@ export const Home: React.FC = () => {
   const { projects, freelancers, currentUser, openAuthModal } = useDemo();
   const navigate = useNavigate();
 
-  // 4 Danh mục nghề nghiệp cốt lõi của sàn Freelance số
+  const getCatCount = (query: string) => {
+    const matched = projects.filter(
+      (p) =>
+        p.category?.toLowerCase().includes(query.toLowerCase()) ||
+        query.toLowerCase().includes(p.category?.toLowerCase() || '')
+    ).length;
+    return `${matched} Dự án`;
+  };
+
+  // 4 Danh mục nghề nghiệp cốt lõi của sàn Freelance số (Dữ liệu động theo MySQL)
   const categories = [
     {
       name: 'IT & Lập trình Web/App',
       icon: <i className="fa-solid fa-code text-[#2563EB] text-lg" />,
-      count: '140+ Dự án',
+      count: getCatCount('IT & Lập trình'),
       color: 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]',
       query: 'IT & Lập trình'
     },
     {
       name: 'Thiết kế UI/UX & Branding',
       icon: <i className="fa-solid fa-pen-ruler text-[#4338CA] text-lg" />,
-      count: '95+ Dự án',
+      count: getCatCount('Thiết kế'),
       color: 'bg-indigo-50 border-indigo-100 text-indigo-700',
       query: 'Thiết kế & Đồ họa'
     },
     {
       name: 'Video Editing & TikTok Ads',
       icon: <i className="fa-solid fa-video text-purple-600 text-lg" />,
-      count: '60+ Dự án',
+      count: getCatCount('Video'),
       color: 'bg-purple-50 border-purple-100 text-purple-700',
       query: 'Video & Animation'
     },
     {
       name: 'Digital Marketing & Content',
       icon: <i className="fa-solid fa-chart-line text-[#059669] text-lg" />,
-      count: '80+ Dự án',
+      count: getCatCount('Marketing'),
       color: 'bg-emerald-50 border-emerald-100 text-emerald-700',
       query: 'Digital Marketing'
     }

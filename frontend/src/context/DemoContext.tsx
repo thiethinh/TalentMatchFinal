@@ -282,40 +282,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadFromStorage(STORAGE_KEY_INVITATIONS, [] as ProjectInvitation[])
   );
 
-  const INITIAL_ORDER_MESSAGES: Record<string, OrderChatMessage[]> = {
-    'ord-1': [
-      {
-        id: 'msg-init-1',
-        orderId: 'ord-1',
-        senderId: 'system',
-        senderName: 'Hệ thống TalentMatch',
-        senderRole: 'system',
-        text: 'Hợp đồng dự án đã kích hoạt thành công. 100% kinh phí đã được phong tỏa an toàn trong Ví Escrow VNPAY.',
-        createdAt: '2026-03-01 09:00',
-        isSystem: true
-      },
-      {
-        id: 'msg-init-2',
-        orderId: 'ord-1',
-        senderId: 'usr-emp-1',
-        senderName: 'Lê Thu Hà',
-        senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=le-thu-ha',
-        senderRole: 'employer',
-        text: 'Chào bạn Minh Anh, mình đã nộp cọc Escrow cho dự án E-commerce Flutter. Bạn xem tài liệu SOW và bắt đầu triển khai các module Phase 1 giúp mình nhé.',
-        createdAt: '2026-03-01 09:15'
-      },
-      {
-        id: 'msg-init-3',
-        orderId: 'ord-1',
-        senderId: 'usr-free-1',
-        senderName: 'Nguyễn Minh Anh',
-        senderAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=nguyen-minh-anh',
-        senderRole: 'freelancer',
-        text: 'Dạ vâng chị Hà, em đã nhận được hợp đồng và tiền cọc Escrow. Em đang cấu hình source code base và chuẩn bị bàn giao bản demo đầu tiên đúng hạn ạ!',
-        createdAt: '2026-03-01 10:00'
-      }
-    ]
-  };
+  const INITIAL_ORDER_MESSAGES: Record<string, OrderChatMessage[]> = {};
 
   const [jobQuestions, setJobQuestions] = useState<Record<string, JobQuestion[]>>({});
 
@@ -564,8 +531,8 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           else if (typeof f.skills === 'string' && f.skills.trim()) {
             skills = f.skills.split(/[,;/]/).map((s: string) => s.trim()).filter(Boolean);
           }
-          const rating = f.rating ? Number(f.rating) : 4.9;
-          const completedCount = f.completedProjects ? Number(f.completedProjects) : 25;
+          const rating = f.rating ? Number(f.rating) : 5.0;
+          const completedCount = f.completedProjects ? Number(f.completedProjects) : 0;
           const talentScore = f.talentCreditBalance && f.talentCreditBalance > 0
             ? f.talentCreditBalance
             : Math.min(990, Math.max(800, Math.round(rating * 195)));
@@ -583,7 +550,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             bio: f.bio || 'Chuyên gia uy tín trên sàn TalentMatch.',
             location: f.location || 'Việt Nam',
             rating,
-            reviewCount: Math.max(12, Math.round(completedCount * 0.9)),
+            reviewCount: completedCount,
             completedOrders: completedCount,
             hourlyRate: f.hourlyRate ? Number(f.hourlyRate) : 250000,
             skills: skills.length > 0 ? skills : ['Chuyên môn'],
@@ -591,16 +558,7 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             talentCreditBadge: badge,
             isVerified: Boolean(f.isVerified || f.kycStatus === 'VERIFIED'),
             portfolioUrl: f.website || 'https://talentmatch.vn',
-            portfolio: userPorts.length > 0 ? userPorts : [
-              {
-                id: `port-${f.id}-1`,
-                title: `${f.professionalTitle || 'Dự Án Tiêu Biểu'} - ${f.fullName}`,
-                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
-                category: f.field || 'Chuyên Môn',
-                description: f.bio || 'Dự án thực tế hoàn thành xuất sắc cho khách hàng doanh nghiệp.',
-                projectUrl: f.website || 'https://talentmatch.vn'
-              }
-            ]
+            portfolio: userPorts
           };
         });
         setFreelancers(mappedFreelancers);
@@ -1320,35 +1278,12 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setPendingVerificationEmail(null);
           addToast(`Đăng nhập thành công! Chào mừng ${loggedInUser.name}.`, 'success');
           return { success: true };
-        } else if (res.status === 401) {
-          return { success: false, message: resData.message || 'Email hoặc mật khẩu không chính xác.' };
+        } else {
+          return { success: false, message: resData?.message || 'Email hoặc mật khẩu không chính xác.' };
         }
-      } catch (_) {}
-    }
-
-    // 2. Fallback kiểm tra mock data (Offline / Demo)
-    const found = users.find((u) => u.email.toLowerCase() === trimmedEmail);
-    if (found) {
-      if (!found.emailVerified) {
-        // BẮT BUỘC: KHÔNG SET currentUser! Yêu cầu nhập OTP trước!
-        setPendingVerificationEmail(found.email);
-        setAuthModalMode('verification');
-        addToast(`Tài khoản ${found.email} chưa được kích hoạt OTP. Vui lòng nhập mã OTP để vào tài khoản! (Mã demo: 123456)`, 'warning');
-        return {
-          success: false,
-          requiresOtp: true,
-          isUnverified: true,
-          unverifiedUserEmail: found.email,
-          message: 'Tài khoản chưa xác thực OTP.'
-        };
+      } catch (_) {
+        return { success: false, message: 'Lỗi kết nối máy chủ xác thực MySQL. Vui lòng thử lại.' };
       }
-
-      setCurrentUser(found);
-      localStorage.setItem(STORAGE_KEY_CURRENT_USER_ID, found.id);
-      setIsAuthModalOpen(false);
-      setPendingVerificationEmail(null);
-      addToast(`Đăng nhập thành công! Chào mừng ${found.name}.`, 'success');
-      return { success: true };
     }
 
     return { success: false, message: 'Email hoặc mật khẩu không chính xác.' };

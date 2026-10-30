@@ -124,25 +124,28 @@ export const FreelancerDashboard: React.FC = () => {
   const [customSkillInput, setCustomSkillInput] = useState('');
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<'all' | 'dev' | 'design' | 'marketing' | 'ai'>('all');
 
-  const myOrders = orders.filter(
-    (o) =>
-      o.freelancerId === 'free-1' ||
-      o.freelancerId === 'free-2' ||
+  const myOrders = orders.filter((o) => {
+    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
+    const orderFreeNumericId = o.freelancerId ? o.freelancerId.replace(/\D/g, '') : '';
+    return (
       o.freelancerId === currentUser.id ||
-      o.freelancerId === `free-${currentUser.id}` ||
-      o.freelancerId === currentUser.id.replace('usr-', '') ||
-      o.freelancerName === currentUser.name ||
-      (currentUser.email === 'minhanh.dev@gmail.com' && (o.freelancerId === 'free-8' || o.freelancerId === 'free-1'))
-  );
-  const myProposals = proposals.filter(
-    (p) =>
-      p.freelancerId === 'free-1' ||
+      o.freelancerId === `free-${currentNumericId}` ||
+      o.freelancerId === `usr-free-${currentNumericId}` ||
+      (currentNumericId && orderFreeNumericId === currentNumericId) ||
+      (currentUser.name && o.freelancerName === currentUser.name)
+    );
+  });
+  const myProposals = proposals.filter((p) => {
+    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
+    const proposalFreeNumericId = p.freelancerId ? p.freelancerId.replace(/\D/g, '') : '';
+    return (
       p.freelancerId === currentUser.id ||
-      p.freelancerId === `free-${currentUser.id}` ||
-      p.freelancerId === currentUser.id.replace('usr-', '') ||
-      p.freelancerName === currentUser.name ||
-      (currentUser.email === 'minhanh.dev@gmail.com' && (p.freelancerId === 'free-8' || p.freelancerId === 'free-1'))
-  );
+      p.freelancerId === `free-${currentNumericId}` ||
+      p.freelancerId === `usr-free-${currentNumericId}` ||
+      (currentNumericId && proposalFreeNumericId === currentNumericId) ||
+      (currentUser.name && p.freelancerName === currentUser.name)
+    );
+  });
 
   const myInvitations = invitations.filter(
     (inv) =>

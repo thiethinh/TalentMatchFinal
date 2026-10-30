@@ -64,208 +64,292 @@ export const AdminDashboard: React.FC = () => {
   const [minDeposit, setMinDeposit] = useState(platformConfig.minDepositAmount);
 
   // Financial calculations
-  const totalGMV = orders.reduce((acc, o) => acc + o.totalAmount, 0);
-  const totalPlatformFees = orders.reduce((acc, o) => acc + o.platformFee, 0);
   const totalEscrowLocked = orders
     .filter((o) => o.status === 'ORDER_IN_PROGRESS' || o.status === 'DELIVERED')
     .reduce((acc, o) => acc + o.totalAmount, 0);
 
   // Dynamic time-based metric calculations for KPI Cards
   const periodMetrics = useMemo(() => {
-    switch (timePreset) {
-      case 'today':
-        return {
-          gmv: 34000000,
-          fees: 3400000,
-          escrow: 28500000,
-          disputes: 0,
-          growthText: '+32.4% so với hôm qua',
-          growthPositive: true,
-          avgPerDay: '34.000.000 đ / ngày',
-          label: 'Hôm nay (24 giờ qua)'
-        };
-      case '7days':
-        return {
-          gmv: 164700000,
-          fees: 16470000,
-          escrow: 48500000,
-          disputes: 1,
-          growthText: '+24.6% so với 7 ngày trước',
-          growthPositive: true,
-          avgPerDay: '23.528.000 đ / ngày',
-          label: '7 ngày qua (10/10 - 16/10)'
-        };
-      case '30days':
-        return {
-          gmv: 420000000,
-          fees: 42000000,
-          escrow: totalEscrowLocked,
-          disputes: disputes.filter((d) => d.status === 'UNDER_REVIEW').length,
-          growthText: '+18.5% so với tháng trước',
-          growthPositive: true,
-          avgPerDay: '14.000.000 đ / ngày',
-          label: '30 ngày qua (16/09 - 16/10)'
-        };
-      case 'this_quarter':
-        return {
-          gmv: 980000000,
-          fees: 98000000,
-          escrow: totalEscrowLocked,
-          disputes: disputes.length,
-          growthText: '+42.1% so với Quý II/2026',
-          growthPositive: true,
-          avgPerDay: '10.880.000 đ / ngày',
-          label: 'Quý III & IV/2026 (01/07 - 16/10)'
-        };
-      case 'custom':
-        return {
-          gmv: Math.round(totalGMV * 0.45),
-          fees: Math.round(totalPlatformFees * 0.45),
-          escrow: totalEscrowLocked,
-          disputes: 1,
-          growthText: '+15.2% trong giai đoạn chọn',
-          growthPositive: true,
-          avgPerDay: '12.400.000 đ / ngày',
-          label: `Khoảng ngày: ${customStartDate} → ${customEndDate}`
-        };
-      case 'year_2026':
-      case 'all':
-      default:
-        return {
-          gmv: Math.max(totalGMV, 1450000000),
-          fees: Math.max(totalPlatformFees, 145000000),
-          escrow: totalEscrowLocked,
-          disputes: disputes.length,
-          growthText: '+156.8% so với năm 2025',
-          growthPositive: true,
-          avgPerDay: '4.980.000 đ / ngày',
-          label: 'Toàn thời gian (Năm 2026)'
-        };
-    }
-  }, [timePreset, customStartDate, customEndDate, totalGMV, totalPlatformFees, totalEscrowLocked, disputes]);
+    const now = new Date();
+    let startTime = 0;
+    let periodLabel = '';
 
-  // Dynamic Chart Datasets based on chartViewMode
-  const chartDatasets = {
-    daily: [
-      { label: '10/10', gmv: 14.5, fee: 1.45, height: '42%' },
-      { label: '11/10', gmv: 16.0, fee: 1.6, height: '48%' },
-      { label: '12/10', gmv: 21.5, fee: 2.15, height: '62%' },
-      { label: '13/10', gmv: 18.2, fee: 1.82, height: '54%' },
-      { label: '14/10', gmv: 26.0, fee: 2.6, height: '76%' },
-      { label: '15/10', gmv: 29.5, fee: 2.95, height: '86%' },
-      { label: '16/10 (Hôm nay)', gmv: 34.0, fee: 3.4, height: '100%' }
-    ],
-    weekly: [
-      { label: 'Tuần 38 (14-20/09)', gmv: 24.0, fee: 2.4, height: '40%' },
-      { label: 'Tuần 39 (21-27/09)', gmv: 29.5, fee: 2.95, height: '50%' },
-      { label: 'Tuần 40 (28/09-04/10)', gmv: 36.0, fee: 3.6, height: '65%' },
-      { label: 'Tuần 41 (05-11/10)', gmv: 43.5, fee: 4.35, height: '80%' },
-      { label: 'Tuần 42 (12-18/10)', gmv: 52.0, fee: 5.2, height: '100%' }
-    ],
-    monthly: [
-      { label: 'Tháng 05/2026', gmv: 35.0, fee: 3.5, height: '32%' },
-      { label: 'Tháng 06/2026', gmv: 52.0, fee: 5.2, height: '48%' },
-      { label: 'Tháng 07/2026', gmv: 68.0, fee: 6.8, height: '62%' },
-      { label: 'Tháng 08/2026', gmv: 85.0, fee: 8.5, height: '78%' },
-      { label: 'Tháng 09/2026', gmv: 110.0, fee: 11.0, height: '90%' },
-      { label: 'Tháng 10/2026 (Hiện tại)', gmv: 145.0, fee: 14.5, height: '100%' }
-    ]
-  };
-
-  // Real-time Event & Activity Timeline items with exact timestamps
-  const activityTimelineItems = [
-    {
-      id: 'act-1',
-      type: 'projects',
-      title: 'Đăng dự án tuyển dụng dịch vụ mới',
-      desc: 'Công ty Nova Digital vừa đăng dự án "Kiểm tra Đăng Dự án Đồng bộ MySQL Trực tiếp" — Ngân sách 18.000.000 đ',
-      time: '13:34:20',
-      date: '16/10/2026',
-      relative: '10 phút trước',
-      icon: 'fa-briefcase',
-      iconBg: 'bg-blue-50 text-blue-600',
-      badge: 'Dự án mới',
-      badgeColor: 'bg-blue-100 text-blue-700'
-    },
-    {
-      id: 'act-2',
-      type: 'transactions',
-      title: 'Nạp cọc Escrow VNPAY thành công',
-      desc: 'Doanh nghiệp TechVision nạp cọc 12.000.000 đ vào Ví Escrow hợp đồng TM-2026-9042',
-      time: '11:20:15',
-      date: '16/10/2026',
-      relative: '2 giờ trước',
-      icon: 'fa-credit-card',
-      iconBg: 'bg-emerald-50 text-emerald-600',
-      badge: '+12.000.000 đ',
-      badgeColor: 'bg-emerald-100 text-emerald-700'
-    },
-    {
-      id: 'act-3',
-      type: 'users',
-      title: 'Xác thực eKYC & Kích hoạt tích xanh',
-      desc: 'Chuyên gia Ngô Phương Thanh (Content Strategist) hoàn tất đối chiếu CCCD và tài khoản ngân hàng Vietcombank',
-      time: '09:45:00',
-      date: '16/10/2026',
-      relative: '4 giờ trước',
-      icon: 'fa-user-check',
-      iconBg: 'bg-purple-50 text-purple-600',
-      badge: 'eKYC Approved',
-      badgeColor: 'bg-purple-100 text-purple-700'
-    },
-    {
-      id: 'act-4',
-      type: 'projects',
-      title: 'Nộp Đề xuất báo giá Proposal',
-      desc: 'Freelancer Bùi Hoàng Đức gửi hồ sơ ứng tuyển dự án "Phối cảnh 3D nội thất" với mức giá 7.500.000 đ (Thời gian 14 ngày)',
-      time: '09:15:30',
-      date: '16/10/2026',
-      relative: '4 giờ trước',
-      icon: 'fa-paper-plane',
-      iconBg: 'bg-indigo-50 text-indigo-600',
-      badge: 'Proposal',
-      badgeColor: 'bg-indigo-100 text-indigo-700'
-    },
-    {
-      id: 'act-5',
-      type: 'users',
-      title: 'Đăng ký tài khoản Khách hàng mới',
-      desc: 'Học viện Giáo dục Trực tuyến EduSparks đăng ký tài khoản Doanh nghiệp mới từ Google Auth',
-      time: '08:30:10',
-      date: '16/10/2026',
-      relative: '5 giờ trước',
-      icon: 'fa-user-plus',
-      iconBg: 'bg-sky-50 text-sky-600',
-      badge: 'Khách hàng mới',
-      badgeColor: 'bg-sky-100 text-sky-700'
-    },
-    {
-      id: 'act-6',
-      type: 'transactions',
-      title: 'Nghiệm thu & Giải ngân tiền cọc Escrow',
-      desc: 'Giải ngân 8.500.000 đ (Khấu trừ phí sàn 850.000 đ) cho Freelancer Nguyễn Minh Anh sau khi Khách hàng chấp thuận bàn giao',
-      time: '21:15:00',
-      date: '15/10/2026',
-      relative: 'Hôm qua lúc 21:15',
-      icon: 'fa-money-bill-transfer',
-      iconBg: 'bg-emerald-50 text-emerald-600',
-      badge: 'Giải ngân thành công',
-      badgeColor: 'bg-emerald-100 text-emerald-700'
-    },
-    {
-      id: 'act-7',
-      type: 'disputes',
-      title: 'Tiếp nhận khiếu nại Trọng tài Tranh chấp',
-      desc: 'Hợp đồng TM-2026-3041: Doanh nghiệp gửi yêu cầu hoàn tiền do Freelancer chậm tiến độ giao file 2 ngày. SLA xử lý: 72 giờ',
-      time: '16:30:45',
-      date: '15/10/2026',
-      relative: 'Hôm qua lúc 16:30',
-      icon: 'fa-triangle-exclamation',
-      iconBg: 'bg-rose-50 text-rose-600',
-      badge: 'Đang thụ lý (Ngày 1/3)',
-      badgeColor: 'bg-rose-100 text-rose-700'
+    if (timePreset === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      startTime = today.getTime();
+      periodLabel = `Hôm nay (${now.toLocaleDateString('vi-VN')})`;
+    } else if (timePreset === '7days') {
+      startTime = now.getTime() - 7 * 86400000;
+      periodLabel = '7 ngày qua';
+    } else if (timePreset === '30days') {
+      startTime = now.getTime() - 30 * 86400000;
+      periodLabel = '30 ngày qua';
+    } else if (timePreset === 'this_quarter') {
+      startTime = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1).getTime();
+      periodLabel = `Quý ${Math.floor(now.getMonth() / 3) + 1}/${now.getFullYear()}`;
+    } else if (timePreset === 'custom') {
+      startTime = new Date(customStartDate).getTime();
+      periodLabel = `${customStartDate} → ${customEndDate}`;
+    } else {
+      startTime = 0;
+      periodLabel = 'Toàn bộ thời gian';
     }
-  ];
+
+    const periodOrders = orders.filter((o) => {
+      if (!startTime) return true;
+      const t = o.createdAt ? new Date(o.createdAt).getTime() : 0;
+      if (timePreset === 'custom') {
+        const endTime = new Date(customEndDate).getTime() + 86400000;
+        return t >= startTime && t <= endTime;
+      }
+      return t >= startTime;
+    });
+
+    const periodGMV = periodOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const periodFees = periodOrders.reduce((sum, o) => sum + o.platformFee, 0);
+    const periodEscrow = periodOrders
+      .filter((o) => o.status === 'ORDER_IN_PROGRESS' || o.status === 'DELIVERED')
+      .reduce((sum, o) => sum + (o.totalAmount - o.platformFee), 0);
+    const periodDisputes = disputes.filter((d) => d.status === 'UNDER_REVIEW').length;
+
+    return {
+      gmv: periodGMV,
+      fees: periodFees,
+      escrow: periodEscrow,
+      disputes: periodDisputes,
+      growthText: periodOrders.length > 0 ? `${periodOrders.length} đơn hàng thực tế` : 'Chưa có đơn hàng trong kỳ',
+      growthPositive: true,
+      avgPerDay: periodOrders.length > 0 ? `${Math.round(periodGMV / Math.max(1, periodOrders.length)).toLocaleString('vi-VN')} đ / đơn` : '0 đ',
+      label: periodLabel
+    };
+  }, [timePreset, customStartDate, customEndDate, orders, disputes]);
+
+  // Dynamic Chart Datasets based on chartViewMode computed from real orders
+  const chartDatasets = useMemo(() => {
+    const now = new Date();
+
+    // 1. Daily: Last 7 days
+    const daily = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayOrders = orders.filter((o) => o.createdAt && o.createdAt.startsWith(dateStr));
+      const gmvVal = dayOrders.reduce((sum, o) => sum + o.totalAmount, 0) / 1000000;
+      const feeVal = dayOrders.reduce((sum, o) => sum + o.platformFee, 0) / 1000000;
+      daily.push({
+        label: `${d.getDate()}/${d.getMonth() + 1}`,
+        gmv: Number(gmvVal.toFixed(2)),
+        fee: Number(feeVal.toFixed(2)),
+        amount: dayOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+      });
+    }
+    const maxDaily = Math.max(...daily.map((d) => d.gmv), 1);
+    const dailyResult = daily.map((d) => ({
+      ...d,
+      height: d.gmv > 0 ? `${Math.max(10, Math.round((d.gmv / maxDaily) * 100))}%` : '4%'
+    }));
+
+    // 2. Weekly: Last 5 weeks
+    const weekly = [];
+    for (let w = 4; w >= 0; w--) {
+      const wStart = new Date(now.getTime() - (w + 1) * 7 * 86400000);
+      const wEnd = new Date(now.getTime() - w * 7 * 86400000);
+      const wOrders = orders.filter((o) => {
+        const t = o.createdAt ? new Date(o.createdAt).getTime() : 0;
+        return t >= wStart.getTime() && t < wEnd.getTime();
+      });
+      const gmvVal = wOrders.reduce((sum, o) => sum + o.totalAmount, 0) / 1000000;
+      const feeVal = wOrders.reduce((sum, o) => sum + o.platformFee, 0) / 1000000;
+      weekly.push({
+        label: `${wStart.getDate()}/${wStart.getMonth() + 1} - ${wEnd.getDate()}/${wEnd.getMonth() + 1}`,
+        gmv: Number(gmvVal.toFixed(2)),
+        fee: Number(feeVal.toFixed(2)),
+        amount: wOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+      });
+    }
+    const maxWeekly = Math.max(...weekly.map((w) => w.gmv), 1);
+    const weeklyResult = weekly.map((w) => ({
+      ...w,
+      height: w.gmv > 0 ? `${Math.max(10, Math.round((w.gmv / maxWeekly) * 100))}%` : '4%'
+    }));
+
+    // 3. Monthly: Last 6 months
+    const monthly = [];
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const nextD = new Date(now.getFullYear(), now.getMonth() - m + 1, 1);
+      const mOrders = orders.filter((o) => {
+        const t = o.createdAt ? new Date(o.createdAt).getTime() : 0;
+        return t >= d.getTime() && t < nextD.getTime();
+      });
+      const gmvVal = mOrders.reduce((sum, o) => sum + o.totalAmount, 0) / 1000000;
+      const feeVal = mOrders.reduce((sum, o) => sum + o.platformFee, 0) / 1000000;
+      monthly.push({
+        label: `T${d.getMonth() + 1}/${d.getFullYear()}`,
+        gmv: Number(gmvVal.toFixed(2)),
+        fee: Number(feeVal.toFixed(2)),
+        amount: mOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+      });
+    }
+    const maxMonthly = Math.max(...monthly.map((m) => m.gmv), 1);
+    const monthlyResult = monthly.map((m) => ({
+      ...m,
+      height: m.gmv > 0 ? `${Math.max(10, Math.round((m.gmv / maxMonthly) * 100))}%` : '4%'
+    }));
+
+    return { daily: dailyResult, weekly: weeklyResult, monthly: monthlyResult };
+  }, [orders]);
+
+  // Real-time Event & Activity Timeline items generated dynamically from MySQL entities
+  const activityTimelineItems = useMemo(() => {
+    const items: Array<{
+      id: string;
+      type: 'projects' | 'transactions' | 'users' | 'disputes';
+      title: string;
+      desc: string;
+      time: string;
+      date: string;
+      relative: string;
+      icon: string;
+      iconBg: string;
+      badge: string;
+      badgeColor: string;
+    }> = [];
+
+    // Projects
+    projects.slice(0, 5).forEach((p) => {
+      items.push({
+        id: `act-prj-${p.id}`,
+        type: 'projects',
+        title: 'Đăng dự án dịch vụ',
+        desc: `${p.employerName || 'Khách hàng'} đăng dự án "${p.title}" — Ngân sách ${p.budget.toLocaleString('vi-VN')} đ`,
+        time: p.createdAt ? new Date(p.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '10:00',
+        date: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : '16/10/2026',
+        relative: 'Dự án mới',
+        icon: 'fa-briefcase',
+        iconBg: 'bg-blue-50 text-blue-600',
+        badge: `${p.budget.toLocaleString('vi-VN')} đ`,
+        badgeColor: 'bg-blue-100 text-blue-700'
+      });
+    });
+
+    // Orders
+    orders.slice(0, 5).forEach((o) => {
+      items.push({
+        id: `act-ord-${o.id}`,
+        type: 'transactions',
+        title: o.status === 'COMPLETED' ? 'Nghiệm thu & Giải ngân Escrow' : 'Hợp đồng kích hoạt bảo chứng Escrow',
+        desc: `Hợp đồng ${o.orderNumber}: "${o.serviceTitle}" (${o.employerName} ➔ ${o.freelancerName}) — ${o.totalAmount.toLocaleString('vi-VN')} đ`,
+        time: o.createdAt ? new Date(o.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '11:00',
+        date: o.createdAt ? new Date(o.createdAt).toLocaleDateString('vi-VN') : '16/10/2026',
+        relative: o.status === 'COMPLETED' ? 'Hoàn thành' : 'Đang xử lý',
+        icon: o.status === 'COMPLETED' ? 'fa-circle-check' : 'fa-credit-card',
+        iconBg: o.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600',
+        badge: `${o.totalAmount.toLocaleString('vi-VN')} đ`,
+        badgeColor: o.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+      });
+    });
+
+    // VNPAY Transactions
+    vnpayTransactions.slice(0, 5).forEach((v) => {
+      items.push({
+        id: `act-vnpay-${v.id}`,
+        type: 'transactions',
+        title: 'Giao dịch cổng VNPAY Escrow',
+        desc: `GD ${v.transactionNo}: ${v.description || 'Nạp tiền cọc'} — Số tiền ${v.amount.toLocaleString('vi-VN')} đ`,
+        time: v.payDate ? new Date(v.payDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '14:00',
+        date: v.payDate ? new Date(v.payDate).toLocaleDateString('vi-VN') : '16/10/2026',
+        relative: v.status,
+        icon: 'fa-shield-halved',
+        iconBg: 'bg-emerald-50 text-emerald-600',
+        badge: `+${v.amount.toLocaleString('vi-VN')} đ`,
+        badgeColor: 'bg-emerald-100 text-emerald-700'
+      });
+    });
+
+    // Disputes
+    disputes.slice(0, 3).forEach((d) => {
+      items.push({
+        id: `act-disp-${d.id}`,
+        type: 'disputes',
+        title: 'Tiếp nhận khiếu nại Trọng tài',
+        desc: `Hợp đồng ${d.orderNumber}: Khiếu nại từ ${d.openedByName} — Lý do: ${d.reason}`,
+        time: d.createdAt ? new Date(d.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '15:00',
+        date: d.createdAt ? new Date(d.createdAt).toLocaleDateString('vi-VN') : '16/10/2026',
+        relative: d.status,
+        icon: 'fa-triangle-exclamation',
+        iconBg: 'bg-rose-50 text-rose-600',
+        badge: d.status,
+        badgeColor: 'bg-rose-100 text-rose-700'
+      });
+    });
+
+    // Users
+    users.slice(0, 4).forEach((u) => {
+      items.push({
+        id: `act-usr-${u.id}`,
+        type: 'users',
+        title: 'Tài khoản người dùng',
+        desc: `Thành viên ${u.name} (${u.email}) — Vai trò: ${u.role === 'employer' ? 'Khách hàng' : u.role === 'admin' ? 'Quản trị' : 'Freelancer'}`,
+        time: '09:00',
+        date: u.createdAt || '16/10/2026',
+        relative: u.accountStatus,
+        icon: 'fa-user-check',
+        iconBg: 'bg-purple-50 text-purple-600',
+        badge: u.role,
+        badgeColor: 'bg-purple-100 text-purple-700'
+      });
+    });
+
+    return items;
+  }, [projects, orders, vnpayTransactions, disputes, users]);
+
+  // Dynamic Category Distribution computed from MySQL projects
+  const adminCategoryDistribution = useMemo(() => {
+    if (projects.length === 0) return [];
+    const catCount: Record<string, number> = {};
+    projects.forEach((p) => {
+      const c = p.category?.trim() || 'Chưa phân loại';
+      catCount[c] = (catCount[c] || 0) + 1;
+    });
+    const colors = [
+      'bg-blue-600',
+      'bg-indigo-600',
+      'bg-purple-600',
+      'bg-emerald-500',
+      'bg-amber-500',
+      'bg-cyan-500'
+    ];
+    return Object.entries(catCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count], idx) => ({
+        name,
+        count: `${count} Dự án`,
+        percent: Math.round((count / projects.length) * 100),
+        color: colors[idx % colors.length]
+      }));
+  }, [projects]);
+
+  // Dynamic VNPAY Payment Method Distribution computed from real transactions
+  const vnpayMethodStats = useMemo(() => {
+    const total = vnpayTransactions.length;
+    if (total === 0) return { qr: 60, atm: 30, intl: 10 };
+    let qr = 0;
+    let atm = 0;
+    let intl = 0;
+    vnpayTransactions.forEach((t) => {
+      const code = (t.bankCode || '').toUpperCase();
+      if (code.includes('QR') || code.includes('VNPAY') || code === '') qr++;
+      else if (code.includes('VISA') || code.includes('MASTER') || code.includes('JCB')) intl++;
+      else atm++;
+    });
+    return {
+      qr: Math.round((qr / total) * 100),
+      atm: Math.round((atm / total) * 100),
+      intl: Math.round((intl / total) * 100)
+    };
+  }, [vnpayTransactions]);
 
   const filteredTimeline = activityTimelineItems.filter((item) => {
     if (activityCategoryFilter === 'all') return true;
@@ -683,32 +767,33 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-2.5 text-xs">
-                  {[
-                    { name: 'IT & Lập trình Web/App', percent: 45, color: 'bg-blue-600', count: '142 Dự án' },
-                    { name: 'Thiết kế UI/UX & Branding', percent: 30, color: 'bg-indigo-600', count: '95 Dự án' },
-                    { name: 'Video & Animation TikTok', percent: 15, color: 'bg-purple-600', count: '48 Dự án' },
-                    { name: 'Digital Marketing & Content', percent: 10, color: 'bg-emerald-500', count: '32 Dự án' }
-                  ].map((cat, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex items-center justify-between text-slate-700 font-semibold">
-                        <span className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-xs ${cat.color}`}></span>
-                          <span>{cat.name}</span>
-                        </span>
-                        <span>{cat.percent}% ({cat.count})</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-sm overflow-hidden">
-                        <div
-                          style={{ width: `${cat.percent}%` }}
-                          className={`h-full ${cat.color} rounded-sm transition-all`}
-                        ></div>
-                      </div>
+                  {adminCategoryDistribution.length === 0 ? (
+                    <div className="py-6 text-center text-slate-400 text-xs">
+                      Chưa có dự án nào trong hệ thống
                     </div>
-                  ))}
+                  ) : (
+                    adminCategoryDistribution.map((cat, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between text-slate-700 font-semibold">
+                          <span className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-xs ${cat.color}`}></span>
+                            <span>{cat.name}</span>
+                          </span>
+                          <span>{cat.percent}% ({cat.count})</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-sm overflow-hidden">
+                          <div
+                            style={{ width: `${cat.percent}%` }}
+                            className={`h-full ${cat.color} rounded-sm transition-all`}
+                          ></div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-md text-[11px] text-blue-900">
-                  Nhu cầu tuyển Freelancer Full-Stack ReactJS/Flutter và UI/UX Designer chiếm trên <strong>75%</strong> tổng ngân sách toàn sàn.
+                  Dữ liệu phân bổ theo <strong>{projects.length}</strong> dự án thực tế ghi nhận từ cơ sở dữ liệu MySQL.
                 </div>
               </div>
 
@@ -799,17 +884,17 @@ export const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   <div className="bg-slate-50 p-2.5 rounded-md border border-slate-200">
                     <div className="text-[11px] text-slate-500 font-semibold">VNPAY-QR</div>
-                    <div className="text-sm font-bold text-blue-700 mt-0.5">62%</div>
+                    <div className="text-sm font-bold text-blue-700 mt-0.5">{vnpayMethodStats.qr}%</div>
                     <div className="text-[10px] text-slate-400">Mobile Banking</div>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-md border border-slate-200">
                     <div className="text-[11px] text-slate-500 font-semibold">ATM Nội Địa</div>
-                    <div className="text-sm font-bold text-indigo-700 mt-0.5">28%</div>
+                    <div className="text-sm font-bold text-indigo-700 mt-0.5">{vnpayMethodStats.atm}%</div>
                     <div className="text-[10px] text-slate-400">Internet Banking</div>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-md border border-slate-200">
                     <div className="text-[11px] text-slate-500 font-semibold">Thẻ Quốc Tế</div>
-                    <div className="text-sm font-bold text-rose-700 mt-0.5">10%</div>
+                    <div className="text-sm font-bold text-rose-700 mt-0.5">{vnpayMethodStats.intl}%</div>
                     <div className="text-[10px] text-slate-400">Visa/MasterCard</div>
                   </div>
                 </div>

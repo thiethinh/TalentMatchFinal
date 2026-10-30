@@ -99,26 +99,28 @@ export const EmployerDashboard: React.FC = () => {
   const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<Project | null>(null);
   const [revisionNote, setRevisionNote] = useState('');
 
-  const myOrders = orders.filter(
-    (o) =>
+  const myOrders = orders.filter((o) => {
+    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
+    const orderEmpNumericId = o.employerId ? o.employerId.replace(/\D/g, '') : '';
+    return (
       o.employerId === currentUser.id ||
-      o.employerId === 'usr-emp-1' ||
-      o.employerId === `usr-emp-${currentUser.id}` ||
-      o.employerId === `emp-${currentUser.id}` ||
-      o.employerId === currentUser.id.replace('usr-', '') ||
-      o.employerName === currentUser.name ||
-      (currentUser.email === 'ha.le@techstartup.vn' && (o.employerId === 'usr-emp-2' || o.employerId === 'usr-emp-1'))
-  );
-  const myProjects = projects.filter(
-    (p) =>
+      o.employerId === `usr-emp-${currentNumericId}` ||
+      o.employerId === `emp-${currentNumericId}` ||
+      (currentNumericId && orderEmpNumericId === currentNumericId) ||
+      (currentUser.name && o.employerName === currentUser.name)
+    );
+  });
+  const myProjects = projects.filter((p) => {
+    const currentNumericId = currentUser.id ? currentUser.id.replace(/\D/g, '') : '';
+    const projectEmpNumericId = p.employerId ? p.employerId.replace(/\D/g, '') : '';
+    return (
       p.employerId === currentUser.id ||
-      p.employerId === 'usr-emp-1' ||
-      p.employerId === `usr-emp-${currentUser.id}` ||
-      p.employerId === `emp-${currentUser.id}` ||
-      p.employerId === currentUser.id.replace('usr-', '') ||
-      p.employerName === currentUser.name ||
-      (currentUser.email === 'ha.le@techstartup.vn' && (p.employerId === 'usr-emp-2' || p.employerId === 'usr-emp-1' || p.employerId === 'usr-emp-15' || p.employerId === '2'))
-  );
+      p.employerId === `usr-emp-${currentNumericId}` ||
+      p.employerId === `emp-${currentNumericId}` ||
+      (currentNumericId && projectEmpNumericId === currentNumericId) ||
+      (currentUser.name && p.employerName === currentUser.name)
+    );
+  });
 
   const savedFreelancersList = freelancers.filter(
     (f) => savedFreelancerIds.includes(f.id) || savedFreelancerIds.includes(f.userId)

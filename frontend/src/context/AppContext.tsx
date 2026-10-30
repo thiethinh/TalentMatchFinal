@@ -568,8 +568,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setUsers(dbUsers);
           setCurrentUser((curr) => {
             if (curr.id === 'usr-guest') return curr;
-            const savedId = localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID);
-            const found = dbUsers.find((u: User) => u.id === savedId || u.email === curr.email);
+            const savedId = localStorage.getItem(STORAGE_KEY_CURRENT_USER_ID) || localStorage.getItem('talentmatch_current_user_id');
+            const savedEmail = localStorage.getItem('talentmatch_current_user_email');
+            const found = dbUsers.find((u: User) => (savedId && isUserMatching(u.id, savedId)) || (savedEmail && u.email === savedEmail) || u.email === curr.email);
             return found || dbUsers[1] || curr; // Default to Lê Thu Hà (usr-emp-2)
           });
         }
@@ -2272,6 +2273,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetch('/api/user/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         id: currentUser.id,
         email: currentUser.email,

@@ -97,13 +97,23 @@ export const UserProfileModal: React.FC = () => {
 
   useEffect(() => {
     if (isUserProfileModalOpen) {
+      const currentTitle = currentUser.title || freelancerProfile?.title || '';
       setEditName(currentUser.name || '');
       setEditPhone(currentUser.phone || '');
-      setEditTitle(currentUser.title || freelancerProfile?.title || '');
+      setEditTitle(currentTitle);
       setEditBio(currentUser.bio || freelancerProfile?.bio || '');
       setEditSkills((currentUser.skills || freelancerProfile?.skills || []).join(', '));
       setEditCompanyName(currentUser.companyName || '');
       setEditTaxCode(currentUser.taxCode || '');
+
+      if (categories && categories.length > 0) {
+        const found = categories.find((c) => c.professions?.some((p) => p.toLowerCase() === currentTitle.toLowerCase()) || c.professions?.includes(currentTitle));
+        if (found) {
+          setSelectedCategoryCode(found.code);
+        } else if (categories[0]) {
+          setSelectedCategoryCode(categories[0].code);
+        }
+      }
 
       setKycFullName(currentUser.name || '');
       setKycIdNumber('');
@@ -111,7 +121,7 @@ export const UserProfileModal: React.FC = () => {
       setKycTaxCode(currentUser.taxCode || '');
       setAccountHolder(currentUser.name ? currentUser.name.toUpperCase() : '');
     }
-  }, [currentUser, freelancerProfile, isUserProfileModalOpen]);
+  }, [currentUser, freelancerProfile, isUserProfileModalOpen, categories]);
 
   if (!isUserProfileModalOpen) return null;
 
@@ -686,69 +696,134 @@ export const UserProfileModal: React.FC = () => {
 
                     {/* FREELANCER: DYNAMIC CATEGORY & PROFESSION DROPDOWNS */}
                     {currentUser.role === 'freelancer' && (
-                      <>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            Nhóm ngành nghề chuyên môn:
-                          </label>
-                          <select
-                            value={selectedCategoryCode}
-                            onChange={(e) => {
-                              const code = e.target.value;
-                              setSelectedCategoryCode(code);
-                              const cat = categories.find((c) => c.code === code);
-                              if (cat && cat.professions && cat.professions.length > 0) {
-                                setEditTitle(cat.professions[0]);
-                                if (cat.suggestedSkills && (!editSkills || editSkills.trim() === '')) {
-                                  setEditSkills(cat.suggestedSkills);
+                      <div id="edit-category-section" className="sm:col-span-2 space-y-3 bg-blue-50/50 p-4 rounded-xl border border-blue-200 shadow-2xs">
+                        <div className="flex items-center justify-between pb-2 border-b border-blue-200/80">
+                          <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                            <i className="fa-solid fa-briefcase text-blue-600 text-xs" />
+                            <span>Nhóm Ngành & Vị Trí Nghề Nghiệp (Dữ Liệu Động MySQL)</span>
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              1. Chọn Nhóm ngành nghề chuyên môn:
+                            </label>
+                            <select
+                              id="edit-category-select"
+                              value={selectedCategoryCode}
+                              onChange={(e) => {
+                                const code = e.target.value;
+                                setSelectedCategoryCode(code);
+                                const cat = categories.find((c) => c.code === code);
+                                if (cat && cat.professions && cat.professions.length > 0) {
+                                  setEditTitle(cat.professions[0]);
+                                  if (cat.suggestedSkills && (!editSkills || editSkills.trim() === '')) {
+                                    setEditSkills(cat.suggestedSkills);
+                                  }
                                 }
-                              }
-                            }}
-                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                          >
-                            {categories.map((c) => (
-                              <option key={c.code} value={c.code}>
-                                {c.name} ({c.professions?.length || 0} nghề)
-                              </option>
-                            ))}
-                          </select>
+                              }}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-2xs"
+                            >
+                              {categories.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                  {c.name} ({c.professions?.length || 0} nghề)
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              2. Chọn Vị trí / Nghề nghiệp liên quan:
+                            </label>
+                            <select
+                              id="edit-profession-select"
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              className="w-full p-2.5 bg-white border border-blue-400 rounded-lg text-xs font-bold text-blue-900 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-2xs"
+                            >
+                              {(categories.find((c) => c.code === selectedCategoryCode)?.professions || [
+                                '3D Character Artist & Unreal Engine Specialist',
+                                'Full-Stack Web Developer',
+                                'Frontend Developer (React/Vue)',
+                                'Backend Developer (Node.js/Java/Go)',
+                                'Mobile App Developer'
+                              ]).map((prof) => (
+                                <option key={prof} value={prof}>
+                                  {prof}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            Vị trí / Nghề nghiệp liên quan:
-                          </label>
-                          <select
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full p-2.5 bg-blue-50/50 border border-blue-300 rounded-lg text-xs font-bold text-blue-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
-                          >
-                            {(categories.find((c) => c.code === selectedCategoryCode)?.professions || [
-                              'Full-Stack Web Developer',
-                              'Frontend Developer (React/Vue)',
-                              'Backend Developer (Node.js/Java/Go)',
-                              'Mobile App Developer'
-                            ]).map((prof) => (
-                              <option key={prof} value={prof}>
-                                {prof}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                            Kỹ năng chuyên môn (cách nhau bởi dấu phẩy):
+                            3. Kỹ năng chuyên môn thành thạo (cách nhau bởi dấu phẩy):
                           </label>
                           <input
+                            id="edit-skills-input"
                             type="text"
                             value={editSkills}
                             onChange={(e) => setEditSkills(e.target.value)}
-                            placeholder="ReactJS, Node.js, TypeScript, Flutter..."
-                            className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none"
+                            placeholder="Blender, Unreal Engine 5, ZBrush, Maya, Rigging..."
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-2xs"
                           />
+
+                          {/* Quick Add Chips from Suggested Skills */}
+                          {(() => {
+                            const activeCat = categories.find((c) => c.code === selectedCategoryCode);
+                            const suggestedList = activeCat?.suggestedSkills
+                              ? activeCat.suggestedSkills.split(',').map((s) => s.trim()).filter(Boolean)
+                              : [];
+                            if (suggestedList.length === 0) return null;
+                            const currentSkillList = editSkills.split(',').map((s) => s.trim().toLowerCase());
+                            return (
+                              <div className="mt-2.5">
+                                <div className="text-[10px] text-slate-500 font-semibold mb-1.5 flex items-center gap-1">
+                                  <i className="fa-solid fa-wand-magic-sparkles text-amber-500" />
+                                  <span>Gợi ý kỹ năng ngành {activeCat?.name} (bấm để thêm / bớt nhanh):</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {suggestedList.map((skill) => {
+                                    const isAdded = currentSkillList.includes(skill.toLowerCase());
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={skill}
+                                        onClick={() => {
+                                          if (isAdded) {
+                                            const updated = editSkills
+                                              .split(',')
+                                              .map((s) => s.trim())
+                                              .filter((s) => s.toLowerCase() !== skill.toLowerCase())
+                                              .join(', ');
+                                            setEditSkills(updated);
+                                          } else {
+                                            const updated = editSkills.trim()
+                                              ? `${editSkills.trim()}, ${skill}`
+                                              : skill;
+                                            setEditSkills(updated);
+                                          }
+                                        }}
+                                        className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                                          isAdded
+                                            ? 'bg-blue-600 text-white shadow-2xs'
+                                            : 'bg-white hover:bg-blue-100 text-blue-700 border border-blue-200'
+                                        }`}
+                                      >
+                                        <span>{skill}</span>
+                                        <i className={`fa-solid ${isAdded ? 'fa-check' : 'fa-plus'} text-[9px]`} />
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
-                      </>
+                      </div>
                     )}
 
                     {/* EMPLOYER FIELDS */}
@@ -815,18 +890,22 @@ export const UserProfileModal: React.FC = () => {
 
                     {/* BIO / RESPONSIBILITY */}
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        {currentUser.role === 'admin'
-                          ? 'Mô tả phạm vi quản trị & trách nhiệm hệ thống:'
-                          : currentUser.role === 'employer'
-                          ? 'Giới thiệu doanh nghiệp & năng lực tuyển dụng:'
-                          : 'Giới thiệu bản thân & năng lực thực hiện:'}
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-semibold text-slate-700">
+                          {currentUser.role === 'admin'
+                            ? 'Mô tả phạm vi quản trị & trách nhiệm hệ thống:'
+                            : currentUser.role === 'employer'
+                            ? 'Giới thiệu doanh nghiệp & năng lực tuyển dụng:'
+                            : 'Mô tả năng lực & Giới thiệu bản thân (Bio):'}
+                        </label>
+                        <span className="text-[10px] text-slate-400">Hiển thị công khai trên Marketplace</span>
+                      </div>
                       <textarea
+                        id="edit-bio-input"
                         rows={3}
                         value={editBio}
                         onChange={(e) => setEditBio(e.target.value)}
-                        placeholder="Mô tả kinh nghiệm, năng lực..."
+                        placeholder="Mô tả kinh nghiệm, năng lực thực hiện dự án, phong cách làm việc..."
                         className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:ring-1 focus:ring-blue-600 focus:outline-none leading-relaxed"
                       />
                     </div>
@@ -1039,12 +1118,27 @@ export const UserProfileModal: React.FC = () => {
               {/* Freelancer Specific Details */}
               {currentUser.role === 'freelancer' && (
                 <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs">
-                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                    <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
-                      <i className="fa-solid fa-award" />
-                    </span>
-                    <span>Năng Lực Chuyên Môn & Điểm Tín Nhiệm TalentCredit</span>
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                        <i className="fa-solid fa-award" />
+                      </span>
+                      <span>Năng Lực Chuyên Môn & Điểm Tín Nhiệm TalentCredit</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProfile(true);
+                        setTimeout(() => {
+                          document.getElementById('edit-category-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                      }}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <i className="fa-solid fa-pen text-[10px]" />
+                      <span>Chỉnh sửa Bio, Nghề & Kỹ năng</span>
+                    </button>
+                  </div>
 
                   {freelancerProfile && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -1072,17 +1166,84 @@ export const UserProfileModal: React.FC = () => {
                   )}
 
                   <div>
-                    <div className="font-semibold text-slate-800 text-xs mb-1.5 flex items-center gap-1.5">
-                      <i className="fa-solid fa-briefcase text-blue-600 text-xs" />
-                      <span>Mô Tả Năng Lực & Giới Thiệu:</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
+                        <i className="fa-solid fa-briefcase text-blue-600 text-xs" />
+                        <span>Mô Tả Năng Lực & Giới Thiệu (Bio):</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(true);
+                          setTimeout(() => {
+                            document.getElementById('edit-bio-input')?.focus();
+                          }, 100);
+                        }}
+                        className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer hover:underline"
+                      >
+                        <i className="fa-solid fa-pen-to-square text-[10px]" />
+                        <span>Sửa Bio</span>
+                      </button>
                     </div>
-                    <p className="text-slate-600 text-xs bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed">
-                      {currentUser.bio || freelancerProfile?.bio || 'Chưa cập nhật mô tả bản thân. Bấm "Chỉnh sửa hồ sơ" để thêm.'}
-                    </p>
+                    <div
+                      onClick={() => {
+                        setIsEditingProfile(true);
+                        setTimeout(() => {
+                          document.getElementById('edit-bio-input')?.focus();
+                        }, 100);
+                      }}
+                      className="text-slate-600 text-xs bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80 leading-relaxed cursor-pointer hover:border-blue-300 hover:bg-blue-50/20 transition-all group"
+                      title="Bấm để chỉnh sửa mô tả Bio"
+                    >
+                      <p>{currentUser.bio || freelancerProfile?.bio || 'Chưa cập nhật mô tả bản thân. Bấm để thêm.'}</p>
+                      <div className="text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex items-center gap-1 font-medium">
+                        <i className="fa-solid fa-pen-to-square text-[9px]" />
+                        <span>Bấm vào để chỉnh sửa Bio</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
-                    <div className="font-semibold text-slate-800 text-xs mb-2">Kỹ năng chuyên môn thành thạo:</div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
+                        <i className="fa-solid fa-tags text-blue-600 text-xs" />
+                        <span>Vị trí công việc & Kỹ năng chuyên môn:</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(true);
+                          setTimeout(() => {
+                            document.getElementById('edit-category-section')?.scrollIntoView({ behavior: 'smooth' });
+                            document.getElementById('edit-profession-select')?.focus();
+                          }, 100);
+                        }}
+                        className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer hover:underline"
+                      >
+                        <i className="fa-solid fa-pen-to-square text-[10px]" />
+                        <span>Chỉnh sửa Nghề & Kỹ năng</span>
+                      </button>
+                    </div>
+
+                    <div className="mb-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-400 font-medium">Nghề nghiệp:</span>
+                        <span className="font-bold text-slate-900">{currentUser.title || freelancerProfile?.title || 'Chưa chọn nghề'}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(true);
+                          setTimeout(() => {
+                            document.getElementById('edit-category-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }}
+                        className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                      >
+                        Đổi vị trí →
+                      </button>
+                    </div>
+
                     <div className="flex flex-wrap gap-2">
                       {(currentUser.skills || freelancerProfile?.skills || []).map((sk) => (
                         <span key={sk} className="bg-blue-50 text-blue-700 border border-blue-200 font-medium px-2.5 py-1 rounded-lg text-xs shadow-2xs">
@@ -1090,7 +1251,13 @@ export const UserProfileModal: React.FC = () => {
                         </span>
                       ))}
                       {(currentUser.skills || freelancerProfile?.skills || []).length === 0 && (
-                        <span className="text-xs text-slate-400 italic">Chưa có kỹ năng nào.</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingProfile(true)}
+                          className="text-xs text-blue-600 italic hover:underline cursor-pointer"
+                        >
+                          + Thêm kỹ năng chuyên môn
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1200,6 +1367,23 @@ export const UserProfileModal: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2.5">
+            {!isEditingProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('profile');
+                  setIsEditingProfile(true);
+                  setTimeout(() => {
+                    document.getElementById('edit-category-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-lg transition-colors border border-blue-200 cursor-pointer shadow-2xs flex items-center gap-1.5"
+              >
+                <i className="fa-solid fa-pen text-[10px]" />
+                <span>Chỉnh Sửa Bio & Kỹ Năng</span>
+              </button>
+            )}
+
             {currentUser.role === 'employer' && (
               <Link
                 to="/employer/dashboard"

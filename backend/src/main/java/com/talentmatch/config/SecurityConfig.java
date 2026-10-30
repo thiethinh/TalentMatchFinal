@@ -77,9 +77,11 @@ public class SecurityConfig {
                 // 4. Freelancer Role Restricted Endpoints (ROLE_FREELANCER)
                 .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
 
-                // 5. Authenticated User Profile & Banking & Uploads
+                // 5. Permitted Sync & Action APIs
+                .requestMatchers("/api/user/profile", "/api/notifications/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/jobs/*/apply").permitAll()
+
+                // 6. Authenticated User Profile & Banking & Uploads
                 .requestMatchers("/api/user/**", "/api/upload/**", "/api/payment/**").authenticated()
-                .requestMatchers("/api/notifications/**", "/api/proposals/**", "/api/orders/**", "/api/reviews/**", "/api/jobs/*/apply").permitAll()
 
                 // 6. Public Read-Only APIs (Marketplace Discovery)
                 .requestMatchers(HttpMethod.GET, "/api/home/**", "/api/jobs/**", "/api/freelancers/**",
